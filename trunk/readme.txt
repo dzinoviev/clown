@@ -15,14 +15,23 @@ Compatibility:
 
 CLOWN is known to compile and run on several variants of Linux, as well as Mac OS X. It should work in any reasonably sane *nix environment, and if not please let us know. A Windows port is planned, and should be underway soon.
 
+The Gnu readline library is also required.
+
 Building:
 
-Assuming that you are running some form of *nix (including OS X), type the following at the terminal prompt:
+We are assuming for now that you are running some form of *nix (including OS X).
+
+Make sure that the readline library is accessible to the linker (modify LD_LIBRARY_PATH if necessary).
+Type the following at the terminal prompt:
 	
 	cd <src-root>
 	make all
 
 Where <src-root> is the path to the directory containing the source distribution. Binaries will be built in the <src-root>/bin/ directory.
+
+Notes:
+
+Set the environment variable CLOWN to <src-root> before running the bin/cas assembler
 
 License:
 

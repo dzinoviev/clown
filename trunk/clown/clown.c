@@ -14,11 +14,17 @@
 #else
 #	include <linux/limits.h>
 #endif
+#include <readln.h>
 
 #include "config.h"
 #include "registers.h"
 
 extern int yyparse ();
+
+struct yy_buffer_state;
+extern struct yy_buffer_state *yy_scan_string(char *);
+extern void yy_delete_buffer(struct yy_buffer_state *);
+
 jmp_buf begin_or_abort;
 Bit silent = 0;
 Bit initial_cpl = 0;
@@ -386,8 +392,15 @@ static void go_interactive ()
 	if (!setjmp (begin_or_abort)) {
 	    normal_terminal ();
 	    signal (SIGINT, SIG_IGN);
-	    fprintf (stderr, "CLOWN> ");
-	    yyparse ();
+	/*    fprintf (stderr, "CLOWN> "); */
+		
+		char *line = rl_gets ();
+		if (line) {
+		  struct yy_buffer_state *my_string_buffer = yy_scan_string (line);
+		  yyparse ();
+		  yy_delete_buffer (my_string_buffer);
+		}
+	/*	free (line); */
 	} else {
 	    fprintf (stderr, "STOPPED\n");
 	    show_cmd_stats (0);
@@ -406,7 +419,7 @@ int main (int argc, char *argv[])
 
     atexit (normal_terminal);
     do_reset ();
-
+	
     if (!silent)
 	fprintf (stderr, "\n");
 
