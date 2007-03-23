@@ -392,7 +392,6 @@ static void go_interactive ()
 	if (!setjmp (begin_or_abort)) {
 	    normal_terminal ();
 	    signal (SIGINT, SIG_IGN);
-	/*    fprintf (stderr, "CLOWN> "); */
 		
 		char *line = rl_gets ();
 		if (line) {
@@ -400,7 +399,10 @@ static void go_interactive ()
 		  yyparse ();
 		  yy_delete_buffer (my_string_buffer);
 		}
-	/*	free (line); */
+		else {
+			fprintf(stderr, "\n");
+			clown_done = 1;
+		}
 	} else {
 	    fprintf (stderr, "STOPPED\n");
 	    show_cmd_stats (0);
