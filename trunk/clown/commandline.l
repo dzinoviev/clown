@@ -79,7 +79,7 @@ HD [0-9A-Fa-f]
 
 [ \t]+
 
-.+ { fprintf (stderr, "\t\"%s\": unrecognized command. Type 'help' to get help\n", yytext); return T_ERROR;}
+.+ { fprintf (stderr, "\t\"%s\": unrecognized command. Type 'help' to get help\n", yytext); return T_EOL;}
 
 
 %% T_DONE
