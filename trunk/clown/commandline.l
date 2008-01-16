@@ -73,13 +73,14 @@ HD [0-9A-Fa-f]
 		 }
 		 return T_NUMBER;}
 
-<<EOF>> { return T_EOL; }
+\n {return T_EOL;}
+<<EOF>> { return T_DONE; }
 
 [\[\]=]   {return yytext[0];}
 
 [ \t]+
 
-.+ { fprintf (stderr, "\t\"%s\": unrecognized command. Type 'help' to get help\n", yytext); return T_EOL;}
+[^\n] { fprintf (stderr, "\t\"%s\": unrecognized command. Type 'help' to get help\n", yytext); return T_ERROR;}
 
 
 %% T_DONE

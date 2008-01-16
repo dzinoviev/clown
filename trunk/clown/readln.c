@@ -20,6 +20,10 @@ char *rl_gets ()
 	
 	/* Get a line from the user. */
 	line_read = readline ("CLOWN> ");
+        if (line_read != NULL) {
+                line_read = realloc(line_read, strlen(line_read)+2);
+                strcat(line_read, "\n");
+        }
 	
 	/* If the line has any text in it,
 	save it on the history. */
