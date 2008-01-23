@@ -7,5 +7,5 @@ Returns NULL on EOF. */
 char *rl_gets ();
 
 
-#endif // READLN_H
+#endif /* READLN_H */
 
