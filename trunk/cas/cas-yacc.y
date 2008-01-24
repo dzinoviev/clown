@@ -155,9 +155,12 @@ line        : T_GLOBAL T_ADDRESS {
 		      YYABORT;
 		  }
 		  offset = 0;
-	      } | 
-              symbol datadef {} | 
-              symbol instruction  {};
+	      } 
+            | labels datadef {}
+            | labels instruction  {}
+            | datadef {}
+            | instruction  {}
+            ;
 
 segtype     : T_CODE {$$ = SEG_CODE} 
             | T_DATA {$$ = SEG_DATA};
@@ -179,14 +182,18 @@ expression  : T_NUMBER {$$ = $1}
             | expression T_LL expression {$$ = $1 << $3}
             | expression T_GG expression {$$ = $1 >> $3};
 
-symbol      : symdef T_LABEL { 
+labels      : label
+            | label labels
+            ;
+
+label       : symdef T_LABEL { 
                 if (-1 == add_label ($2, current_segment, offset, 
 				     $1.global, $1.align8)) {
 		    yyerror ("fatal error");
 		    YYABORT;
 		}
             }
-            | ;
+            ;
 
 symdef      : T_GLOBAL {$$.align8 = 0; $$.global = 1 }
             | T_ALIGN8 {$$.align8 = 1; $$.global = 0 }
