@@ -19,10 +19,10 @@ HD [0-9A-Fa-f]
 "q"|"quit"|"exit" { return T_QUIT; }
 
 \"[^\"]*\"   {
-    int l = strlen (yytext);
-    yylval.s = malloc (l - 1); 
-    strncpy (yylval.s, yytext + 1, l - 2);
-    yylval.s[l - 1] = 0;
+    int l = strlen (yytext) - 2;
+    yylval.s = malloc (l + 1); 
+    strncpy (yylval.s, yytext + 1, l);
+    yylval.s[l] = 0;
     return T_STRING;
 }
 

@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "registers.h"
 
-#define VERSION "CLOWN microcomputer simulator version 2.01 ["__DATE__"]"
+#define VERSION "CLOWN microcomputer simulator version 2.10 ["__DATE__"]"
 
 static void show_version (void)
 {

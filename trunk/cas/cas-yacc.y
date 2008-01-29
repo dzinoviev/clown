@@ -186,7 +186,7 @@ labels      : label
             | label labels
             ;
 
-label       : symdef T_LABEL { 
+label       : symdef T_LABEL {
                 if (-1 == add_label ($2, current_segment, offset, 
 				     $1.global, $1.align8)) {
 		    yyerror ("fatal error");

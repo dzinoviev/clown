@@ -131,6 +131,7 @@ static int create_label (char *label)
     labels.labels[i].interrupt = 0; /* must be aligned? */
     labels.labels[i].defined = 0;
     labels.labels[i].intersegment = 0;
+    labels.labels[i].segment = -1;
 
     labels.size++;
     return i;
@@ -166,26 +167,33 @@ int add_label (char *label, int segment, Dword offset, Bit global, Bit align8)
 {
     int i;
 
-    if (-1 != (i = lookup_label (label))) {
-	if (!labels.labels[i].defined) {
-	    if (labels.labels[i].segment != -1 /* has been defined */
-		&& labels.labels[i].segment != segment)
-		labels.labels[i].intersegment = 1;
-	    if (align8) {
-		if (offset % 8) {
-		    int i;
-		    Dword offset1 = (offset / 8 + 1) * 8;
-		    for (i = 0; i < offset1 - offset; i++)
-			emit (BUILD_INSTRUCTION_A (NOP, 0, 0));
-		    offset = offset1;
-		}
-	    }
-	    define_label (i, segment, offset);
-	} else
-	    component_error ("duplicate symbol: ", label);
-    } else
-	if (-1 != (i = create_label (label)))
-	    define_label (i, segment, offset);
+    if (-1 == (i = lookup_label (label)) &&
+	-1 == (i = create_label (label)))
+      return -1;
+
+    if (labels.labels[i].defined) {
+      component_error ("duplicate symbol: ", label);
+      return -1;
+    }
+	
+    if (labels.labels[i].segment != -1 /* has been defined */
+	&& labels.labels[i].segment != segment)
+      labels.labels[i].intersegment = 1;
+    
+    if (align8) {
+      if (offset % 8) {
+	int i;
+	Dword offset1 = (offset / 8 + 1) * 8;
+	for (i = 0; i < offset1 - offset; i++)
+	  emit (BUILD_INSTRUCTION_A (NOP, 0, 0));
+	offset = offset1;
+      }
+    }
+    
+    if (global)
+      labels.labels[i].export = 1;
+
+    define_label (i, segment, offset);
     
     return i;
 }

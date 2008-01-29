@@ -6,7 +6,7 @@
 #include "cas.h"
 
 #define DEFAULT_OBJECT "a.out"
-#define VERSION "CLOWN assembler version 1.00 ["__DATE__"]"
+#define VERSION "CLOWN assembler version 1.10 ["__DATE__"]"
 
 static void show_version (void)
 {

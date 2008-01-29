@@ -10,5 +10,5 @@
 
 	hlt
 	stop
-	
-oscode:	.align8 .string "Hello kitty!"
+
+.align8 oscode:	.string "Hello kitty!"
