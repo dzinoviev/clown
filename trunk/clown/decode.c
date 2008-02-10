@@ -557,17 +557,23 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
     case xDIVI:
     case xDIVJ:
     case DIV: 
+    case xREMI:
+    case xREMJ:
+    case REM:
 	addr = I_OP1 (i);
 	switch (I_OPC (i)) {
 	case DIV:
+	case REM:
 	    datum = clown.gpr[addr];
 	    datum1 = clown.gpr[I_OP2 (i)];
 	    break;
 	case xDIVI:
+	case xREMI:
 	    datum = clown.gpr[addr];
 	    datum1 = op3;
 	    break;
 	case xDIVJ:
+	case xREMJ:
 	    datum = op3;
 	    datum1 = clown.gpr[addr];
 	    break;
@@ -577,7 +583,11 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	    raise_exception (DIVIDEZERO_EX);
 	    cycles_all = EFAIL;
 	} else {
-	    result = (DDword)datum / (DDword)datum1;
+	    if (I_OPC (i) == REM || I_OPC (i) == xREMI || I_OPC (i) == xREMJ) {
+		result = (DDword)datum % (DDword)datum1;
+	    } else {
+		result = (DDword)datum / (DDword)datum1;
+	    }
 	    cycles_all = do_move_to_regular ((Dword)result, addr);
 	    if (cycles_all != EFAIL)
 		do_flags (result);

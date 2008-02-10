@@ -13,6 +13,12 @@ void secure_write (int file, void *addr, int size)
     }
 }
 
+void secure_string (int file, char *string)
+{
+  size_t len = strlen (string);
+  secure_write (file, string, len);
+}
+
 
 void list_segment (struct Segment s)
 {
@@ -49,58 +55,66 @@ void write_header (int outfile, Bit has_unreferenced,
 		   int interface,
 		   struct LabelTable *labels)
 {
-    Dword instr;
-    int i;
-
+  Dword instr;
+  int i;
+  /*
+  if (module_type == CLOF_EXE) {
+    secure_string (outfile, "<clof>\n");
+  } else 
+    secure_string (outfile, "<clown_bin>\n");
+  */
+  if (module_type == CLOF_EXE) {
     memcpy (&instr, clof_header, 4);
     secure_write (outfile, &instr, sizeof (instr));
     instr = CLOF_EXE;
     if (has_unreferenced)
-	instr |= INCOMPLETE;
+      instr |= INCOMPLETE;
     secure_write (outfile, &instr, sizeof (instr));
 
     /* Segment table - just for EXE files */
     secure_write (outfile, &segments->size, sizeof (segments->size));
     for (i = 0; i < segments->size; i++) {
-	struct Segment s   = segments->segments[i];
-	Dword len = strlen (s.name), j;
-	secure_write (outfile, &len, sizeof (len));
-	for (j = 0; j < len; j++) {
-	    Dword character = s.name[j];		
-	    secure_write (outfile, &character, sizeof (Dword));
-	}
-	j = s.defined;
-	secure_write (outfile, &j, sizeof (j));
-	if (s.defined) {
-	    secure_write (outfile, &s.type, sizeof (s.type));
-	    secure_write (outfile, &s.file_offset, sizeof (s.file_offset));
-	    secure_write (outfile, &s.file_size, sizeof (s.file_size));
-	}
+      struct Segment s   = segments->segments[i];
+      Dword len = strlen (s.name), j;
+      secure_write (outfile, &len, sizeof (len));
+      for (j = 0; j < len; j++) {
+	Dword character = s.name[j];		
+	secure_write (outfile, &character, sizeof (Dword));
+      }
+      j = s.defined;
+      secure_write (outfile, &j, sizeof (j));
+      if (s.defined) {
+	secure_write (outfile, &s.type, sizeof (s.type));
+	secure_write (outfile, &s.file_offset, sizeof (s.file_offset));
+	secure_write (outfile, &s.file_size, sizeof (s.file_size));
+      }
     }
 
     /* Import/reference table - just for EXE file */
     secure_write (outfile, &interface, sizeof (interface));
     for (i = 0; i < labels->size; i++) {
-	Dword len, j;
-	struct Label l = labels->labels[i];
-	if (l.defined && !l.export)
-	    continue;
-	assert (!l.near);
-	len = strlen (l.name);
-	secure_write (outfile, &len, sizeof (len));
-	for (j = 0; j < len; j++) {
-	    Dword character = l.name[j];		
-	    secure_write (outfile, &character, sizeof (Dword));
-	}
-	j = l.defined;
-	secure_write (outfile, &j, sizeof (j));
-	j = l.export;
-	secure_write (outfile, &j, sizeof (j));
-	if (l.export) {
-	    secure_write (outfile, &l.segment, sizeof (l.segment));
-	    secure_write (outfile, &l.address, sizeof (l.address));
-	}
+      Dword len, j;
+      struct Label l = labels->labels[i];
+      if (l.defined && !l.export)
+	continue;
+      assert (!l.near);
+      len = strlen (l.name);
+      secure_write (outfile, &len, sizeof (len));
+      for (j = 0; j < len; j++) {
+	Dword character = l.name[j];		
+	secure_write (outfile, &character, sizeof (Dword));
+      }
+      j = l.defined;
+      secure_write (outfile, &j, sizeof (j));
+      j = l.export;
+      secure_write (outfile, &j, sizeof (j));
+      if (l.export) {
+	secure_write (outfile, &l.segment, sizeof (l.segment));
+	secure_write (outfile, &l.address, sizeof (l.address));
+      }
     }
+  }
+
 }
 
 static int copy_special (Dword state, Dword instr, int scratch, int outfile,

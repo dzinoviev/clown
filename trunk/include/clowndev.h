@@ -56,6 +56,7 @@ extern jmp_buf   failure;
 void list_segment (struct Segment s);
 void list_label (struct Label l, struct Segment *seglist);
 void secure_write (int file, void *addr, int size);
+void secure_string (int file, char *string);
 void write_header (int outfile, Bit has_unreferenced,
 		   struct SegmentTable *segments,
 		   int interface,

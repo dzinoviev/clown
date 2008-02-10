@@ -15,7 +15,7 @@ cas.o: cas.c cas.h $(INCLUDE)clowndev.h $(INCLUDE)isa.h $(INCLUDE)clown_types.h 
 
 options.o: options.c cas.h $(INCLUDE)isa.h $(INCLUDE)clowndev.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h
 
-parse.o: parse.c cas.h $(INCLUDE)isa.h $(INCLUDE)clowndev.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h
+parse.o: parse.c cas.h $(INCLUDE)isa.h $(INCLUDE)clowndev.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h $(INCLUDE)generate.h
 
 common.o: common.c cas.h $(INCLUDE)isa.h $(INCLUDE)clowndev.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h
 

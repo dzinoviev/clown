@@ -49,6 +49,7 @@ return T_ERROR;
 
 \.[gG][lL][oO][bB][aA][lL] {return T_GLOBAL;}
 \.[aA][lL][iI][gG][nN]8 {return T_ALIGN8;}
+\.[pP][aA][gG][eE] {return T_PAGE;}
 
 \.[sS][tT][rR][iI][nN][gG] {return T_DEFSTRING;}
 \.[wW][oO][rR][dD]         {return T_DEFWORD;}
@@ -217,6 +218,7 @@ return T_ERROR;
 [pP][uU][sS][hH]     return T_PUSH   ;
 [pP][uU][sS][hH][fF] return T_PUSHF  ;
 [pP][eE][eE][kK]     return T_PEEK   ;
+[rR][eE][mM]	     return T_REM    ;
 [rR][eE][tT][fF]     return T_RETF   ;
 [rR][eE][tT][fF][iI] return T_RETFI  ;
 [rR][eE][tT][nN]     return T_RETN   ;

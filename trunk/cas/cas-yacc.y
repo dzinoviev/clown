@@ -61,6 +61,7 @@ static void emit_absolute_ref (struct yyLabel l, Visibility type)
 %token T_CMP    
 %token T_DEC    
 %token T_DIV    
+%token T_REM
 %token T_GETB   
 %token T_HLT    
 %token T_IN     
@@ -120,6 +121,7 @@ static void emit_absolute_ref (struct yyLabel l, Visibility type)
 %token T_ERROR
 %token T_GLOBAL
 %token T_ALIGN8
+%token T_PAGE
 %token <i>T_CODE
 %token <i>T_DATA
 
@@ -197,8 +199,11 @@ label       : symdef T_LABEL {
 
 symdef      : T_GLOBAL {$$.align8 = 0; $$.global = 1 }
             | T_ALIGN8 {$$.align8 = 1; $$.global = 0 }
+            | T_PAGE   {$$.align8 = 2; $$.global = 0 }
             | T_ALIGN8 T_GLOBAL {$$.align8 = 1; $$.global = 1 }
             | T_GLOBAL T_ALIGN8 {$$.align8 = 1; $$.global = 1 }
+            | T_PAGE T_GLOBAL {$$.align8 = 8; $$.global = 1 }
+            | T_GLOBAL T_PAGE {$$.align8 = 8; $$.global = 1 }
             | {$$.global = $$.align8 = 0 };
 
 datadef     : T_DEFSTRING T_STRING {
@@ -358,6 +363,17 @@ instruction : error instruction
             | T_DIV expression ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (xDIVJ, $4, 0));
                emit ($2)} /* xDIVJ */
+
+            | T_REM T_GREGISTER ',' T_GREGISTER
+              {emit (BUILD_INSTRUCTION_A (REM, $2, $4))} /* REM */
+
+            | T_REM T_GREGISTER ',' expression
+              {emit (BUILD_INSTRUCTION_A (xREMI, $2, 0));
+               emit ($4)} /* xREMI */
+
+            | T_REM expression ',' T_GREGISTER
+              {emit (BUILD_INSTRUCTION_A (xREMJ, $4, 0));
+               emit ($2)} /* xREMJ */
 
             | T_GETB T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (GETB, $2, $4))} /* GETB */

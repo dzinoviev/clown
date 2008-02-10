@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include "cas.h"
+#include "generate.h"
 
 #ifdef __STRICT_ANSI__
 int fileno (FILE *stream);	/* for Ansi C  */
@@ -163,7 +164,7 @@ static void define_label (int i, int segment, Dword offset)
     labels.labels[i].defined = 1;
 }
 
-int add_label (char *label, int segment, Dword offset, Bit global, Bit align8)
+int add_label (char *label, int segment, Dword offset, int global, int align8)
 {
     int i;
 
@@ -181,9 +182,15 @@ int add_label (char *label, int segment, Dword offset, Bit global, Bit align8)
       labels.labels[i].intersegment = 1;
     
     if (align8) {
-      if (offset % 8) {
+	int boundary;
+	if (align8 == 1) {
+	    boundary = 8;
+	} else {
+	    boundary = CLOWN_FRAME_SIZE;	/* PAGE ALIGNMENT */
+	}
+      if (offset % boundary) {
 	int i;
-	Dword offset1 = (offset / 8 + 1) * 8;
+	Dword offset1 = (offset / boundary + 1) * boundary;
 	for (i = 0; i < offset1 - offset; i++)
 	  emit (BUILD_INSTRUCTION_A (NOP, 0, 0));
 	offset = offset1;
@@ -306,14 +313,24 @@ static int generate (int scratch, int outfile)
 
     ofile = outfile;
 
-    /* Update the signature */
-    if (module_type == CLOF_EXE)
-	write_header (outfile, has_unreferenced, 
-		      &segments, interface, &labels);
-    
+    /* The header */
+    write_header (outfile, has_unreferenced, 
+		  &segments, interface, &labels);
+
+    /*    if (module_type != CLOF_EXE)
+	  secure_string (outfile, "<segment>");*/
+
     /* The code */
     copy_code (scratch, outfile, &segments, &labels);
 
+    /*    if (module_type != CLOF_EXE)
+      secure_string (outfile, "</segment>\n");
+
+    if (module_type == CLOF_EXE)
+      secure_string (outfile, "</clof>\n");
+    else
+      secure_string (outfile, "</clown_bin>\n");
+    */
     return 1;
 }
 
