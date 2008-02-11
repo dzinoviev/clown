@@ -9,7 +9,7 @@ LDFLAGS =
 all: ../bin/cas
 
 ../bin/cas: $(OBJS)
-	$(LD) $^ -o $@ -lc
+	$(LD) $^ -o $@
 
 cas.o: cas.c cas.h $(INCLUDE)clowndev.h $(INCLUDE)isa.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h
 
@@ -28,4 +28,4 @@ cas-yacc.tab.c: cas-yacc.y cas.h $(INCLUDE)clowndev.h $(INCLUDE)isa.h $(INCLUDE)
 	bison $(YACCFLAGS) cas-yacc.y
 
 clean:
-	rm -f $(OBJS) y.tab.* lex.yy.c cas-yacc.tab.* cas-yacc.output ../bin/cas 
+	rm -f $(OBJS) y.tab.* lex.yy.c cas-yacc.tab.* cas-yacc.output ../bin/cas *~

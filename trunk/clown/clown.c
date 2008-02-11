@@ -89,7 +89,7 @@ cycle_t do_one_step ()
     if (fetch) {		/* fetch unit enabled  */
 	clown.old_pc = clown.pc;
 	
-	cycles = clown_read_linear (clown.CODE.base + clown.pc, &clown.ir);
+	cycles = clown_read_linear (clown.CODE.base + clown.pc, (Dword*)&clown.ir);
 	if (cycles == EFAIL) {
 	    cycles_all = EFAIL;
 	    goto pending;
@@ -99,7 +99,7 @@ cycle_t do_one_step ()
 	if (NEEDS_EXTENSION (I_OPC (clown.ir))) {
 	    clown.pc++;
 	    cycles = clown_read_linear (clown.CODE.base + clown.pc, 
-					&clown.op3);
+					(Dword*)&clown.op3);
 	    if (cycles == EFAIL) {
 		cycles_all = EFAIL;
 		goto pending;
@@ -239,6 +239,7 @@ void show_pc (int format)
 {
     fprintf (stderr, "%%PC = ");
     show_val (clown.pc, format);
+    print_debug_info (clown.pc);
     fprintf (stderr, "\n");
 }
 
@@ -308,6 +309,7 @@ void show_mem (Dword address, int format)
 	fprintf (stderr, "Address out of range: ");
 	show_val (address, format);
     }
+    print_debug_info (address);
     fprintf (stderr, "\n");
 }
 

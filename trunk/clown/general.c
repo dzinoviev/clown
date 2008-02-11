@@ -15,20 +15,19 @@ void clown_init (void)
     int i;
 
     if (!silent) {
-	fprintf (stderr, "Initializing CLOWN.\n");
-	fprintf (stderr, "%3d general-purpose registers.\n", CLOWN_NGPR);
-	fprintf (stderr, "%3d segment registers.\n", CLOWN_NSEGR);
+	fprintf (stderr, "\t%3d general-purpose registers.\n", CLOWN_NGPR);
+	fprintf (stderr, "\t%3d segment registers.\n", CLOWN_NSEGR);
     }
 	
     /* Initialize the ports */
     if (!silent)
-	fprintf (stderr, "%3d I/O ports.\n", CLOWN_NPORTS);
+	fprintf (stderr, "\t%3d I/O ports.\n", CLOWN_NPORTS);
     for (i = 0; i < CLOWN_NPORTS; i++)
 	clown_port[i].used = 0;
 
     /* Initialize IRQs */
     if (!silent)
-	fprintf (stderr, "%3d IRQs (%d available).\n", 
+	fprintf (stderr, "\t%3d IRQs (%d available).\n", 
 		 MAX_TRAP, MAX_FAULT - 1);
     for (i = 0; i < MAX_FAULT; i++)
 	Clown_IRQ[i] = 1;
@@ -145,7 +144,7 @@ cycle_t handle_exception (void)
 		return EFAIL;
 	    cycles_all += cycles;
 
-	    if ((cycles = clown_read_linear (clown.ISR.base + i, &isrh) 
+	    if ((cycles = clown_read_linear (clown.ISR.base + i, (Dword*)&isrh) 
 		 == EFAIL))
 		return EFAIL;
 	    cycles_all += cycles;

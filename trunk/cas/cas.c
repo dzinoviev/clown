@@ -21,11 +21,12 @@ FILE *popen(const char *command, const char *type); /* for ANSI compatibility */
 #define INCLUDE "/include/"
 char source[PATH_MAX] = "";
 char *cpp_options = "";			/* should we preprocess the file? */
+FILE *debugfile;
 
 int main (int argc, char *argv[])
 {
     int ecode;
-    char *object = NULL, *cmdline;
+    char *object = NULL, *dfile = NULL, *cmdline;
     FILE *infile;
     int outfile;
     char *clownpath;
@@ -33,6 +34,14 @@ int main (int argc, char *argv[])
 
     if (!get_options (argc, argv, &object, source, &ecode))
 	return ecode;
+
+    dfile = malloc (strlen (object) + 5);
+    if (!dfile) {
+	perror ("malloc");
+	return EXIT_FAILURE;
+    }
+    strcpy (dfile, object);
+    strcat (dfile, ".dbg");
 
     clownpath = getenv ("CLOWN");
     if (clownpath)
@@ -93,10 +102,18 @@ int main (int argc, char *argv[])
 	return EXIT_FAILURE;
     }
 
+    debugfile = fopen (dfile, "w");
+    if (!debugfile) {
+	perror (dfile);
+	return EXIT_FAILURE;
+    }
+    fprintf (debugfile, "1\n0 %s\n", source);
+
     ecode = parse_and_assembly (infile, outfile);
     if (ecode == EXIT_FAILURE)
 	if (-1 == unlink (object))
 	    perror (object);
 
+    fclose (debugfile);
     return ecode;
 }

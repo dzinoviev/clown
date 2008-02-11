@@ -39,7 +39,7 @@ return T_ERROR;
 \/\/.*      			/* eat up comments */
 \/\*            BEGIN(COMMENT);
 <COMMENT>\*\/   BEGIN(INITIAL);
-<COMMENT>\n     line_no++;
+<COMMENT>\n     {line_no++;}
 <COMMENT>.      
 <COMMENT><<EOF>>  {
     lex_error ("unterminated comment");
@@ -242,7 +242,7 @@ return T_ERROR;
 \<\<		{return T_LL;}
 \>\>		{return T_GG;}
 [,\[\]\(\)\+-:^\|&~!%-/]    {return yytext[0];}
-\n                 line_no++;
+\n                 {line_no++;}
 [ \t]*
 
 .		   {

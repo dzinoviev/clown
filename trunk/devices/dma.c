@@ -41,7 +41,7 @@ static const short ucvm_program[] = {
     /* 12 */ UCVM_A (UCVM_xCMPI,              0, OPERATION_REG),
     /* 13 */         0,
     /* 14 */         DMA_DSC2MEM,
-    /* 15 */ UCVM_B (UCVM_JEQ,              37),
+    /* 15 */ UCVM_B (UCVM_JEQ,              42),
     /*       for (i = 0; i < DISC_WORDS_PER_SECTOR; i++) {*/
     /* 16 */ UCVM_A (UCVM_xMOVI,              0, R4),
     /* 17 */         0,
@@ -69,47 +69,55 @@ static const short ucvm_program[] = {
     /* 34 */         DMA_MEM2DSC,
     /*       write_to_port (IOBASE_HDD + 2, sector); -- where to write? */
     /* 35 */ UCVM_A (UCVM_OUT,   IOBASE_HDD + 2, SECTOR_REG), 
-    /* 36 */ UCVM_B (UCVM_JMP,              63),
+    /*       while (read_from_port (IOBASE_HDD + 1) != 1); -- wait */
+    /* 36 */ UCVM_A (UCVM_IN,    IOBASE_HDD + 1, R5),
+    /* 37 */ UCVM_A (UCVM_xCMPI,              0, R5), 
+    /* 38 */         0, 
+    /* 39 */         1,
+    /* 40 */ UCVM_B (UCVM_JEQ,               68),
+    /* 41 */ UCVM_B (UCVM_JMP,               36),
+
+
     /*       } else {*/
     /*       write_to_port (IOBASE_HDD + 0, DMA_DSC2MEM); -- read */
-    /* 37 */ UCVM_A (UCVM_xOUTI, IOBASE_HDD + 0, 0), 
-    /* 38 */         0, 
-    /* 39 */         DMA_DSC2MEM,
+    /* 42 */ UCVM_A (UCVM_xOUTI, IOBASE_HDD + 0, 0), 
+    /* 43 */         0, 
+    /* 44 */         DMA_DSC2MEM,
     /*       write_to_port (IOBASE_HDD + 2, sector); -- what to read? */
-    /* 40 */ UCVM_A (UCVM_OUT,   IOBASE_HDD + 2, SECTOR_REG), 
+    /* 45 */ UCVM_A (UCVM_OUT,   IOBASE_HDD + 2, SECTOR_REG), 
     /*       for (i = 0; i < DISC_WORDS_PER_SECTOR; i++) {*/
-    /* 41 */ UCVM_A (UCVM_xMOVI,              0, R4),
-    /* 42 */         0,
-    /* 43 */         0,
-    /* 44 */ UCVM_A (UCVM_xCMPI,              0, R4), 
-    /* 45 */         0, 
-    /* 46 */         DISC_WORDS_PER_SECTOR,
-    /* 47 */ UCVM_B (UCVM_JEQ,              63),
-    /*       while (read_from_port (IOBASE_HDD + 1) != 1); -- wait */
-    /* 48 */ UCVM_A (UCVM_IN,    IOBASE_HDD + 1, R5),
-    /* 49 */ UCVM_A (UCVM_xCMPI,              0, R5), 
+    /* 46 */ UCVM_A (UCVM_xMOVI,              0, R4),
+    /* 47 */         0,
+    /* 48 */         0,
+    /* 49 */ UCVM_A (UCVM_xCMPI,              0, R4), 
     /* 50 */         0, 
-    /* 51 */         1,
-    /* 52 */ UCVM_B (UCVM_JEQ,               54),
-    /* 53 */ UCVM_B (UCVM_JMP,               48),
-    /*       read the next work */
+    /* 51 */         DISC_WORDS_PER_SECTOR,
+    /* 52 */ UCVM_B (UCVM_JEQ,              68),
+    /*       while (read_from_port (IOBASE_HDD + 1) != 1); -- wait */
+    /* 53 */ UCVM_A (UCVM_IN,    IOBASE_HDD + 1, R5),
+    /* 54 */ UCVM_A (UCVM_xCMPI,              0, R5), 
+    /* 55 */         0, 
+    /* 56 */         1,
+    /* 57 */ UCVM_B (UCVM_JEQ,               59),
+    /* 58 */ UCVM_B (UCVM_JMP,               53),
+    /*       read the next word */
     /*       clown_write_cache (mem_base + i, read_from_port (IOBASE_HDD + 2)); */
-    /* 54 */ UCVM_A (UCVM_IN,    IOBASE_HDD + 2, R5),
-    /* 55 */ UCVM_A (UCVM_ST,      MEM_BASE_REG, R5),
-    /* 56 */ UCVM_A (UCVM_xADDI,              0, R4),
-    /* 57 */         0, 
-    /* 58 */         1,
-    /* 59 */ UCVM_A (UCVM_xADDI,              0, MEM_BASE_REG),
-    /* 60 */         0, 
-    /* 61 */         1,
-    /* 62 */ UCVM_B (UCVM_JMP,              44),
+    /* 59 */ UCVM_A (UCVM_IN,    IOBASE_HDD + 2, R5),
+    /* 60 */ UCVM_A (UCVM_ST,      MEM_BASE_REG, R5),
+    /* 61 */ UCVM_A (UCVM_xADDI,              0, R4),
+    /* 62 */         0, 
+    /* 63 */         1,
+    /* 64 */ UCVM_A (UCVM_xADDI,              0, MEM_BASE_REG),
+    /* 65 */         0, 
+    /* 66 */         1,
+    /* 67 */ UCVM_B (UCVM_JMP,              49),
     /*       }} */
     /*       sector++; */
-    /* 63 */ UCVM_A (UCVM_xADDI,              0, SECTOR_REG),
-    /* 64 */         0,
-    /* 65 */         1,
+    /* 68 */ UCVM_A (UCVM_xADDI,              0, SECTOR_REG),
+    /* 69 */         0,
+    /* 70 */         1,
     /*       mem_base += DISC_WORDS_PER_SECTOR; */
-    /* 66 */ UCVM_A (UCVM_END,                0, 0),
+    /* 71 */ UCVM_A (UCVM_END,                0, 0),
 };
 
 Dword status_dma (void)

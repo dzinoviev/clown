@@ -143,18 +143,20 @@ cycle_t clown_write_cache (Dword phys_addr, Dword datum)
 
 int load_memory (char *fname, Dword offset)
 {
-    int memimage;
-    int size;
+  int memimage;
+  int size;
 
-    memimage = open (fname, O_RDONLY);
-    if (-1 == memimage) {
-	perror (fname);
-	return 0;
-    }
+  if (-1 == (memimage = open (fname, O_RDONLY))) {
+    perror (fname);
+    return 0;
+  }
+  
+  size = (CLOWN_MEMORY_SIZE - offset) * sizeof (Dword);
+  size = read (memimage, &CLOWN_MEMORY[offset], size);
 
-    size = (CLOWN_MEMORY_SIZE - offset) * sizeof (Dword);
-    size = read (memimage, &CLOWN_MEMORY[offset], size);
+  close (memimage);
 
-    close (memimage);
-    return size;
+  load_debug_info (fname, offset, size / sizeof (Dword));
+
+  return size;
 }

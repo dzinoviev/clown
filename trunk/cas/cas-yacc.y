@@ -5,7 +5,7 @@
 #include "registers.h"
 
 Dword offset = 0;
-static int current_segment = -1;
+int current_segment = -1;
 
 static void emit_relative_jump (struct yyLabel l, int opc) 
 {
@@ -212,6 +212,7 @@ datadef     : T_DEFSTRING T_STRING {
 		    Dword d = *s;
 		    emit (d);
 		}
+                emit (0);
 	    }
             | T_DEFWORD  size values {
 		int i;

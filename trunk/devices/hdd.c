@@ -96,7 +96,7 @@ Dword read_hdd (void)
 void write_hdd (Dword datum)
 {
 #ifdef DEBUG
-    printf ("Write: %ld [%d]\n", datum, operation);
+    printf ("Write: %0x [%d]\n", datum, operation);
 #endif
     if (running) {
 	switch (operation) {
@@ -232,6 +232,10 @@ void execute_hdd (Bit dummy)
 	    } else {
 		operation = DSCOP_WRITE;
 		hidden_buffer[0] = buffer[0];
+		/*		hdd_write_sector (track, 
+				 dest_phi / (DISC_WORDS_PER_SECTOR 
+					     + DISC_WORDS_PER_GAP), 
+					     hidden_buffer);*/
 	    }
 	}
 	break;

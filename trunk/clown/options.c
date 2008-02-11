@@ -13,7 +13,7 @@ static void show_version (void)
 
 static void show_copy (void)
 {
-    fputs ("Copyright 2004-2005 D. Zinoviev\n"
+    fputs ("Copyright 2004-2005, 2008 D. Zinoviev\n"
 	   "This program is free software; you may redistribute it under the terms of\n"
 	   "the GNU General Public License.  This program has absolutely no warranty.\n", 
 	   stderr);

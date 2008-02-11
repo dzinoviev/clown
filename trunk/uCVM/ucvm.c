@@ -37,7 +37,7 @@ int ucvm_dostep (struct UCVM *ucvm, Bit iorestr)
     assert (ucvm->memory);
 
 #ifdef DEBUG
-    usleep (100000);
+    /*    usleep (100000);*/
 #endif
     ir = ucvm->memory[ucvm->pc];
     

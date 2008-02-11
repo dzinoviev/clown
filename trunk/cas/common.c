@@ -55,65 +55,47 @@ void write_header (int outfile, Bit has_unreferenced,
 		   int interface,
 		   struct LabelTable *labels)
 {
-  Dword instr;
   int i;
-  /*
-  if (module_type == CLOF_EXE) {
-    secure_string (outfile, "<clof>\n");
-  } else 
-    secure_string (outfile, "<clown_bin>\n");
-  */
-  if (module_type == CLOF_EXE) {
-    memcpy (&instr, clof_header, 4);
-    secure_write (outfile, &instr, sizeof (instr));
-    instr = CLOF_EXE;
-    if (has_unreferenced)
-      instr |= INCOMPLETE;
-    secure_write (outfile, &instr, sizeof (instr));
+  static char params[64];
 
-    /* Segment table - just for EXE files */
-    secure_write (outfile, &segments->size, sizeof (segments->size));
-    for (i = 0; i < segments->size; i++) {
-      struct Segment s   = segments->segments[i];
-      Dword len = strlen (s.name), j;
-      secure_write (outfile, &len, sizeof (len));
-      for (j = 0; j < len; j++) {
-	Dword character = s.name[j];		
-	secure_write (outfile, &character, sizeof (Dword));
-      }
-      j = s.defined;
-      secure_write (outfile, &j, sizeof (j));
-      if (s.defined) {
-	secure_write (outfile, &s.type, sizeof (s.type));
-	secure_write (outfile, &s.file_offset, sizeof (s.file_offset));
-	secure_write (outfile, &s.file_size, sizeof (s.file_size));
-      }
+  secure_string (outfile, "<clof_exe");
+  if (has_unreferenced)
+    secure_string (outfile, " incomplete");
+  secure_string (outfile, ">\n");
+  
+  /* Segment table */
+  secure_string (outfile, "  <segments>\n");
+  for (i = 0; i < segments->size; i++) {
+    struct Segment s  = segments->segments[i];
+    secure_string (outfile, "    <segment");
+    sprintf (params, " name=\"%s\" id=%d", s.name, i);
+    secure_string (outfile, params);
+    if (s.defined) {
+      sprintf (params, " defined type=%d offset=%d size=%d", s.type, s.file_offset, s.file_size);
+      secure_string (outfile, params);
     }
-
-    /* Import/reference table - just for EXE file */
-    secure_write (outfile, &interface, sizeof (interface));
-    for (i = 0; i < labels->size; i++) {
-      Dword len, j;
-      struct Label l = labels->labels[i];
-      if (l.defined && !l.export)
-	continue;
-      assert (!l.near);
-      len = strlen (l.name);
-      secure_write (outfile, &len, sizeof (len));
-      for (j = 0; j < len; j++) {
-	Dword character = l.name[j];		
-	secure_write (outfile, &character, sizeof (Dword));
-      }
-      j = l.defined;
-      secure_write (outfile, &j, sizeof (j));
-      j = l.export;
-      secure_write (outfile, &j, sizeof (j));
-      if (l.export) {
-	secure_write (outfile, &l.segment, sizeof (l.segment));
-	secure_write (outfile, &l.address, sizeof (l.address));
-      }
-    }
+    secure_string (outfile, " />\n");
   }
+  secure_string (outfile, "  </segments>\n  <symbols>\n");
+
+  /* Import/reference table */
+  for (i = 0; i < labels->size; i++) {
+    struct Label l = labels->labels[i];
+    if (l.defined && !l.export)
+      continue;
+    assert (!l.near);
+
+    sprintf (params, "    <symbol name=\"%s\"", l.name);
+    secure_string (outfile, params);
+
+    if (l.export) {
+      assert (l.defined);
+      sprintf (params, " segment=%d offset=%ld", l.segment, l.address);
+      secure_string (outfile, params);
+    }
+    secure_string (outfile, " />\n");
+  }
+  secure_string (outfile, "  </symbols>\n");
 
 }
 
@@ -212,41 +194,41 @@ static int copy_special (Dword state, Dword instr, int scratch, int outfile,
 int copy_code (int scratch, int outfile, struct SegmentTable *segments,
 	       struct LabelTable *labels)
 {
-    Dword instr, escape = ~FIX_SEGMENT;
+  Dword instr, escape = ~FIX_SEGMENT;
 
-    while (sizeof (Dword) == read (scratch, &instr, sizeof (Dword))) {
-	switch (instr) {
-	case FIX_SEGMENT:
-	case FIX_DISPLACEMENT:
-	case FIX_ADDRESS_LOC:
-	case FIX_ADDRESS_GLOB:
-	    if        (escape == instr) {/* real escape! */
-		secure_write (outfile, &instr, sizeof (Dword));
-		escape = ~FIX_SEGMENT;
-	    } else if (escape == ~FIX_SEGMENT) /* escape prefix */
-		escape = instr;
-	    else {		/* special symbol */
-		copy_special (escape, instr, scratch, outfile, 
-			      segments, labels);
-		escape = ~FIX_SEGMENT;
-	    }
-	    break;
-	default:
-	    if (escape == ~FIX_SEGMENT)	/* normal copy */
-		secure_write (outfile, &instr, sizeof (Dword));
-	    else {		/* special symbol */
-		copy_special (escape, instr, scratch, outfile, 
-			      segments, labels);
-		escape = ~FIX_SEGMENT;
-	    }
-	    break;
-	}
+  while (sizeof (Dword) == read (scratch, &instr, sizeof (Dword))) {
+    switch (instr) {
+    case FIX_SEGMENT:
+    case FIX_DISPLACEMENT:
+    case FIX_ADDRESS_LOC:
+    case FIX_ADDRESS_GLOB:
+      if        (escape == instr) {/* real escape! */
+	secure_write (outfile, &instr, sizeof (Dword));
+	escape = ~FIX_SEGMENT;
+      } else if (escape == ~FIX_SEGMENT) /* escape prefix */
+	escape = instr;
+      else {		/* special symbol */
+	copy_special (escape, instr, scratch, outfile, 
+		      segments, labels);
+	escape = ~FIX_SEGMENT;
+      }
+      break;
+    default:
+      if (escape == ~FIX_SEGMENT)	/* normal copy */
+	secure_write (outfile, &instr, sizeof (Dword));
+      else {		/* special symbol */
+	copy_special (escape, instr, scratch, outfile, 
+		      segments, labels);
+	escape = ~FIX_SEGMENT;
+      }
+      break;
     }
+  }
 
-    if (escape != ~FIX_SEGMENT)
-	component_error ("warning: incomplete escape sequence at EOF: ",
-		   "ESC");
+  if (escape != ~FIX_SEGMENT)
+    component_error ("warning: incomplete escape sequence at EOF: ",
+		     "ESC");
 
-    return 1;
+  return 1;
 }
 

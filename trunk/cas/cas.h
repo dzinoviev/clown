@@ -12,8 +12,9 @@ extern Clof_Type module_type;
 extern char source[];
 extern int listing;
 extern int line_no;
-extern FILE *yyin;
+extern FILE *yyin, *debugfile;
 extern Dword offset;
+extern int current_segment;
 
 struct labelDef {
     int global;

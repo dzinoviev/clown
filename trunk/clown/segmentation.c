@@ -28,15 +28,15 @@ cycle_t clown_load_seg_descr (Selector seg_sel,
     }
 
     /* Load the body of the descriptor from the respective table */
-    cycles = clown_read_linear (table.base + offset + 0, &seg_descr->limit);
+    cycles = clown_read_linear (table.base + offset + 0, (Dword*)&seg_descr->limit);
     if (cycles == EFAIL) 
 	return EFAIL;
     cycles_all += cycles;
-    cycles = clown_read_linear (table.base + offset + 1, &seg_descr->base);
+    cycles = clown_read_linear (table.base + offset + 1, (Dword*)&seg_descr->base);
     if (cycles == EFAIL) 
 	return EFAIL;
     cycles_all += cycles;
-    cycles = clown_read_linear (table.base + offset + 2, &datum);
+    cycles = clown_read_linear (table.base + offset + 2, (Dword*)&datum);
     if (cycles == EFAIL) 
 	return EFAIL;
     cycles_all += cycles;

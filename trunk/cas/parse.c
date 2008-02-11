@@ -8,6 +8,8 @@
 #include "cas.h"
 #include "generate.h"
 
+static const int NOT_FOUND = -1;
+
 #ifdef __STRICT_ANSI__
 int fileno (FILE *stream);	/* for Ansi C  */
 #endif
@@ -39,7 +41,7 @@ static int search_segment (char *name)
     for (i = 0; i < segments.size; i++)
 	if (! (strcmp (segments.segments[i].name, name)))
 	    return i;
-    return -1;
+    return NOT_FOUND;
 }
 
 static int create_segment (char *name)
@@ -48,7 +50,7 @@ static int create_segment (char *name)
 
     if (seg == 1 && module_type == CLOF_BIN) {
 	component_error ("too many segments in a BIN file: ", name);
-	return -1;
+	return NOT_FOUND;
     }
 
     segments.segments = realloc (segments.segments, 
@@ -56,14 +58,14 @@ static int create_segment (char *name)
 				 * (segments.size + 1));
     
     if (!segments.segments)
-	return -1;
+	return NOT_FOUND;
     
     segments.segments[seg].name = malloc (strlen (name) + 1);
     if (!segments.segments[seg].name)
-	return -1;
+	return NOT_FOUND;
     strcpy (segments.segments[seg].name, name);
     segments.segments[seg].defined = 0;
-    segments.segments[seg].new_index = -1;
+    segments.segments[seg].new_index = NOT_FOUND;
 
     segments.size++;
 
@@ -73,7 +75,7 @@ static int create_segment (char *name)
 int lookup_segment (char *name)
 {
     int seg = search_segment (name);
-    if (seg == -1)
+    if (seg == NOT_FOUND)
 	return create_segment (name);
     else
 	return seg;
@@ -83,15 +85,15 @@ int begin_segment (int type, char *name)
 {
     int seg = search_segment (name);
 
-    if (-1 != seg) {
+    if (NOT_FOUND != seg) {
 	if (segments.segments[seg].defined) {
 	    component_error ("duplicate segment definition: ", name);
-	    return -1;
+	    return NOT_FOUND;
 	}
     } else {
 	seg = create_segment (name);
-	if (-1 == seg)
-	    return -1;
+	if (NOT_FOUND == seg)
+	    return NOT_FOUND;
     }
 
     /* define segment */
@@ -112,7 +114,7 @@ static int lookup_label (char *label)
     for (i = 0; i < labels.size; i++)
 	if (! (strcmp (labels.labels[i].name, label)))
 	    return i;
-    return -1;
+    return NOT_FOUND;
 }
 
 static int create_label (char *label)
@@ -121,18 +123,18 @@ static int create_label (char *label)
     labels.labels = realloc (labels.labels, 
 			     sizeof (struct Label) * (labels.size + 1));
     if (!labels.labels)
-	return -1;
+	return NOT_FOUND;
 
     labels.labels[i].name = malloc (strlen (label) + 1);
     if (!labels.labels[i].name)
-	return -1;
+	return NOT_FOUND;
     strcpy (labels.labels[i].name, label);
     labels.labels[i].near = 0;	/* must be near? */
     labels.labels[i].export = 0; /* can be exported? */
     labels.labels[i].interrupt = 0; /* must be aligned? */
     labels.labels[i].defined = 0;
     labels.labels[i].intersegment = 0;
-    labels.labels[i].segment = -1;
+    labels.labels[i].segment = NOT_FOUND;
 
     labels.size++;
     return i;
@@ -147,11 +149,11 @@ int mark_export_label (char *label)
 {
     int lab;
     
-    if (-1 != (lab = lookup_label (label)))
+    if (NOT_FOUND != (lab = lookup_label (label)))
 	component_error ("warning: duplicate export definition: ",
 		   label);
     else 
-	if (-1 != (lab = create_label (label)))
+	if (NOT_FOUND != (lab = create_label (label)))
 	    labels.labels[lab].export = 1;
 
     return lab;
@@ -168,16 +170,16 @@ int add_label (char *label, int segment, Dword offset, int global, int align8)
 {
     int i;
 
-    if (-1 == (i = lookup_label (label)) &&
-	-1 == (i = create_label (label)))
-      return -1;
+    if (NOT_FOUND == (i = lookup_label (label)) &&
+	NOT_FOUND == (i = create_label (label)))
+      return NOT_FOUND;
 
     if (labels.labels[i].defined) {
       component_error ("duplicate symbol: ", label);
-      return -1;
+      return NOT_FOUND;
     }
 	
-    if (labels.labels[i].segment != -1 /* has been defined */
+    if (labels.labels[i].segment != NOT_FOUND /* has been defined */
 	&& labels.labels[i].segment != segment)
       labels.labels[i].intersegment = 1;
     
@@ -207,19 +209,19 @@ int add_label (char *label, int segment, Dword offset, int global, int align8)
 
 int use_label (char *label, int segment)
 {
-    int i;
+  int i;
 
-    if (-1 == (i = lookup_label (label)))
-	i = create_label (label);
-    else
-	if (   labels.labels[i].segment != -1 /* has been defined */
-	    && labels.labels[i].segment != segment)
-	    labels.labels[i].intersegment = 1;
-
-    if (-1 != i)
-	labels.labels[i].segment = segment;
+  if (NOT_FOUND == (i = lookup_label (label))) {
+    i = create_label (label);
+    if (NOT_FOUND != i)
+      labels.labels[i].segment = segment;
+  } else {
+    if (   labels.labels[i].segment != NOT_FOUND /* has been defined */
+	   && labels.labels[i].segment != segment)
+      labels.labels[i].intersegment = 1;
+  }
    
-    return i;    
+  return i;    
 }
 
 static int find_undefined_labels ()
@@ -275,6 +277,14 @@ static int find_undefined_labels ()
 
 void emit (Dword instr)
 {
+    {
+      static int prev_line_no = -100;
+      if (line_no != prev_line_no) {
+	prev_line_no = line_no;
+	fprintf (debugfile, "%d %ld 0 %d\n", current_segment, offset, line_no - 1);
+      }
+    }
+
     if (   instr == FIX_SEGMENT 
 	|| instr == FIX_DISPLACEMENT
 	|| instr == FIX_ADDRESS_LOC
@@ -295,6 +305,7 @@ void emit (Dword instr)
       fprintf (stderr, "0x%08lX: 0x%08lX %s\n", offset - 1, instr, 
 	       character);
     }
+
 }
 
 void emit_escape (Dword escape)
@@ -306,32 +317,28 @@ void emit_escape (Dword escape)
 
 static int generate (int scratch, int outfile)
 {
-    if ((off_t)-1 == lseek (scratch, 0, SEEK_SET)) {
-	perror ("temporary file");
-	return 0;
-    }
+  if ((off_t)-1 == lseek (scratch, 0, SEEK_SET)) {
+    perror ("temporary file");
+    return 0;
+  }
 
-    ofile = outfile;
+  ofile = outfile;
 
-    /* The header */
+  /* The header */
+  if (module_type == CLOF_EXE) {
     write_header (outfile, has_unreferenced, 
 		  &segments, interface, &labels);
+    secure_string (outfile, "  <code>");
+  }
 
-    /*    if (module_type != CLOF_EXE)
-	  secure_string (outfile, "<segment>");*/
+  /* The code */
+  copy_code (scratch, outfile, &segments, &labels);
 
-    /* The code */
-    copy_code (scratch, outfile, &segments, &labels);
+  if (module_type == CLOF_EXE) {
+    secure_string (outfile, "</code>\n</clof_exe>\n");
+  }
 
-    /*    if (module_type != CLOF_EXE)
-      secure_string (outfile, "</segment>\n");
-
-    if (module_type == CLOF_EXE)
-      secure_string (outfile, "</clof>\n");
-    else
-      secure_string (outfile, "</clown_bin>\n");
-    */
-    return 1;
+  return 1;
 }
 
 int find_undefined_segments ()

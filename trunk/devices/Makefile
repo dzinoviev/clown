@@ -11,4 +11,4 @@ hddlib.o:   hddlib.c $(INCLUDE)clown_types.h $(INCLUDE)generate.h $(INCLUDE)exce
 dma.o:   dma.c   $(INCLUDE)clown_types.h $(INCLUDE)generate.h $(INCLUDE)exceptions.h $(INCLUDE)hdd.h $(INCLUDE)config.h $(INCLUDE)prototypes.h $(INCLUDE)ucvm.h 
 
 clean:
-	rm -f clown $(DEVICES)
+	rm -f clown $(DEVICES) *~
