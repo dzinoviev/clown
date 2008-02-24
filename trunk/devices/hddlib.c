@@ -26,12 +26,15 @@ Bit hdd_init (char disc_path[], struct Clown_Hdd *params, Uword *track_len)
 
     if (sizeof (struct Clown_Hdd) 
 	!= read (clown_disk, params,  sizeof (struct Clown_Hdd))) {
+      perror (disc_path);
 	close (clown_disk);
 	return 0;
     }
 
-    n_words = params->n_sectors * (DISC_WORDS_PER_SECTOR + DISC_WORDS_PER_GAP);
-    *track_len = n_words;
+    if (track_len) {
+      n_words = params->n_sectors * (DISC_WORDS_PER_SECTOR + DISC_WORDS_PER_GAP);
+      *track_len = n_words;
+    }
     return 1;
 }
 

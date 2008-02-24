@@ -129,8 +129,8 @@ cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
 	}
 
 	/* one cannot execute segments from the inner rings */
-	if ((is_door && (dpl <  MAX (rpl, clown.flags.bitwise.cpl))) 
-	             || (dpl !=           clown.flags.bitwise.cpl)) {
+	if (   (!is_door && (dpl <  MAX (rpl, clown.flags.bitwise.cpl))) 
+	    || ( is_door && (dpl !=           clown.flags.bitwise.cpl ))) {
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}

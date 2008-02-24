@@ -5,6 +5,7 @@ all:
 	make -C devices
 	make -C clown
 	make -C makedisc
+	make -C clodd
 
 clean:
 	make -C uCVM clean
@@ -13,3 +14,4 @@ clean:
 	make -C devices clean
 	make -C clown clean
 	make -C makedisc clean
+	make -C clodd clean
