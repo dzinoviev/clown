@@ -299,30 +299,48 @@ void set_refregs (Dword nmb, Dword value)
   }
 }
 
-void show_mem (Dword address, int format)
+static void show_mem (Dword address, int format)
 {
     if (address < CLOWN_MEMORY_SIZE && address >= 0) {
 	Dword datum;
 	clown_read_mem (address, &datum);
+	fprintf (stderr, "RAM[0x%08X] = ", (unsigned int)address);
 	show_val (datum, format);
     } else {
-	fprintf (stderr, "Address out of range: ");
-	show_val (address, format);
+	fprintf (stderr, "Address out of range: 0x%08X", (unsigned int)address);
     }
     print_debug_info (address);
     fprintf (stderr, "\n");
 }
 
-void show_refregs (Dword nmb, int format)
+void show_range (Dword address, Dword range, int format) 
+{
+    int i;
+    if (range >= 0) {
+	for (i = 0; i < range; i++)
+	    show_mem (address + i, format);
+    } else {
+	for (i = range; i < 0; i++)
+	    show_mem (address + i, format);
+    }
+}
+
+void show_refrange (Dword nmb, Dword range, int format)
 {
   int i;
+  if (range != 1 && nmb < 0) {
+      fprintf (stderr, "Cannot combine [%%all] and 'range\n");
+      return;
+  }
+
   for (i = ((nmb < 0) ? 0 : nmb); 
        i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
        i++) {
       Dword address;
       address = clown.gpr[i];
-      fprintf (stderr, "[%%R%-2u] = ", i);
-      show_mem (address, format);
+      if (range == 1)
+	  fprintf (stderr, "[%%R%-2u]: ", i);
+      show_range (address, range, format);
   }
 }
 

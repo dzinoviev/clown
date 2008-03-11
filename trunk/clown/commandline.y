@@ -87,7 +87,10 @@ set_register: T_GREGISTER '=' T_NUMBER T_EOL {
 };
 
 show_refregister: '[' T_GREGISTER ']' optformat T_EOL {
-    show_refregs ($2, $4); 
+    show_refrange ($2, 1, $4); 
+    return 0; 
+} |  '[' T_GREGISTER ']' '\'' T_NUMBER optformat T_EOL {
+    show_refrange ($2, $5, $6); 
     return 0; 
 };
 
@@ -97,9 +100,13 @@ set_refregister: '[' T_GREGISTER ']' '=' T_NUMBER T_EOL {
 };
 
 show_memory: '[' T_NUMBER ']' optformat T_EOL {
-    show_mem ($2, $4); 
+    show_range ($2, 1, $4); 
     return 0; 
-};
+} |  '[' T_NUMBER ']' '\'' T_NUMBER optformat T_EOL {
+    show_range ($2, $5, $6); 
+    return 0; 
+}
+;
 
 set_memory: '[' T_NUMBER ']' '=' T_NUMBER T_EOL {
     set_mem ($2, $5); 

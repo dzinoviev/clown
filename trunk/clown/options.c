@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "registers.h"
-
-#define VERSION "CLOWN microcomputer simulator version 2.10 ["__DATE__"]"
+#include "version.h"
 
 static void show_version (void)
 {

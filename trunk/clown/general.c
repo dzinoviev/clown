@@ -109,9 +109,8 @@ static void report_exception (enum Clown_Exception exc_no)
 {
     fprintf (stderr, "Interrupt #%2d [%-24s]\n", exc_no, 
 	     exception_names[exc_no].name);
-    fprintf (stderr, "\tCS:PC = 0x%08lx:%08lx.\n", 
-	     clown.CODE.base, 
-	     clown.old_pc); 
+    fprintf (stderr, "\tCS:PC = %012ld:%012ld.\n", 
+	     clown.CODE.base, clown.old_pc); 
     fprintf (stderr, "\tIR    = 0x%08lx.\n", 
 	     clown.ir); 
     if (exc_no == PAGEFAULT_EX)

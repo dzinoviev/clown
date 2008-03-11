@@ -76,7 +76,7 @@ HD [0-9A-Fa-f]
 \n {return T_EOL;}
 <<EOF>> { return T_DONE; }
 
-[\[\]=]   {return yytext[0];}
+[\[\]=\']   {return yytext[0];}
 
 [ \t]+
 

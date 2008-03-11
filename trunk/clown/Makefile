@@ -18,7 +18,7 @@ paging.o: paging.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h 
 segmentation.o: segmentation.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h  $(INCLUDE)generate.h $(INCLUDE)clown_types.h $(INCLUDE)prototypes.h
 ioint.o: ioint.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h  $(INCLUDE)generate.h $(INCLUDE)clown_types.h $(INCLUDE)prototypes.h
 
-options.o: options.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h  $(INCLUDE)generate.h $(INCLUDE)clown_types.h $(INCLUDE)prototypes.h
+options.o: options.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h  $(INCLUDE)generate.h $(INCLUDE)clown_types.h $(INCLUDE)prototypes.h version.h
 
 tlb.o: tlb.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h  $(INCLUDE)generate.h $(INCLUDE)clown_types.h $(INCLUDE)prototypes.h
 
@@ -39,4 +39,4 @@ commandline.tab.c: commandline.y
 commandline.tab.o: commandline.tab.c
 
 clean:
-	rm -f ../bin/clown *.o commandline.tab.c lex.yy.c *~
+	rm -f ../bin/clown *.o commandline.tab.c commandline.tab.h lex.yy.c *~
