@@ -23,11 +23,6 @@ struct SegmentTable {
     struct Segment *segments;
 };
 
-struct yyLabel {
-    Dword index;
-    Dword offset;
-};
-
 struct Label {
     char  *name;
     int   segment;
