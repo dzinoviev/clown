@@ -4,29 +4,79 @@
 #include "cas.h"
 #include "registers.h"
 
-Dword offset = 0;
-int current_segment = -1;
+void yywarning (char *s);
+static void emit_expression (Expression *target);
+static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative);
 
-static void emit_relative_jump (struct yyLabel l, int opc) 
-{
-    mark_near_label (l.index);
-    emit_escape (FIX_DISPLACEMENT);
-    emit (BUILD_INSTRUCTION_B (opc, 0, 0));
-    emit_escape (l.index);  /* label index */
-    emit_escape (l.offset); /* label dispacement */
-    emit_escape (offset);   /* current_offset */
-}
+enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX};
+ static struct {
+     char *concise;
+     char *full;
+     int count;
+ } _errors[] = {
+     {
+	 "port name must start with a question mark...",
+	 "\n\tport name must start with a question mark, e.g., ?12; this is done"
+	 "\n\tto avoid confusion with the parameters to the OUT instruction;"
+	 "\n\tthe notation without a question mark will soon be obsolete",
+	 0
+     },
 
-typedef enum {LOCAL, GLOBAL} Visibility;
-static void emit_absolute_ref (struct yyLabel l, Visibility type) 
+     {
+	 "port number must be a positive constant...",
+	 "\n\tport number must be an expression that evaluates to a positive "
+	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
+	 0
+     },
+
+     {
+	 "array size must be a positive constant...",
+	 "\n\tarray size must be an expression that evaluates to a positive "
+	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
+	 0
+     },
+
+     {
+	 "invalid indirection...",
+	 "\n\tinvalid indirection: there must be a register name or an expression"
+	 "\n\tin the brackets, e.g., [%r0] or [lock+5]",
+	 0
+     },
+
+     {
+	 "named segment in s BIN module...",
+	 "\n\ta BIN module consists of one implicit anonymous segment;"
+	 "\n\tnamed segments are allowed only in EXE modules",
+	 0
+     },
+
+     {
+	 "byte access index must be a positive constant...",
+	 "\n\tbyte access index must be an expression that evaluates to a positive "
+	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
+	 0
+     },
+
+};
+
+#define MAX_ERROR 1024    
+Dword offset;
+int current_segment = DEFAULT_SEGMENT;
+static char error_buffer[MAX_ERROR];
+int success = 1;
+
+static void report (int severe, int id)
 {
-    if (type == LOCAL)
-	emit_escape (FIX_ADDRESS_LOC);
+    char *message;
+    if (_errors[id].count > 0)
+	message = _errors[id].concise;
     else
-	emit_escape (FIX_ADDRESS_GLOB);
-    emit (0);
-    emit_escape (l.index);  /* label index */
-    emit_escape (l.offset); /* label dispacement */
+	message = _errors[id].full;
+    if (severe)
+	yyerror (message);
+    else
+	yywarning (message);
+    _errors[id].count++;
 }
 
 %}
@@ -38,8 +88,8 @@ static void emit_absolute_ref (struct yyLabel l, Visibility type)
 	int size;
 	Dword *data;
     } v;
-    struct yyLabel label;
     struct labelDef sym;
+    struct _Expression *expr;
 };
 
 %left '|'
@@ -126,70 +176,70 @@ static void emit_absolute_ref (struct yyLabel l, Visibility type)
 %token <i>T_DATA
 
 %type <i>segtype
-%type <i>expression
+%type <expr>expression
 %type <i>size
 %type <i>segment
 %type <v>values
-%type <label>address
+%type <i>address
 %type <sym>symdef
 
 %start program
 
 %%
 
-program     : lines {		  
-    if (current_segment != -1)
-	end_segment (current_segment, offset);
-};
+program     : { if ((current_segment = begin_segment (SEG_DEFAULT, "code*")) == NOT_FOUND) {
+		      yyerror ("fatal error");
+		      YYABORT;
+		  } 
+              }
+              lines
+	      { end_segment (current_segment, offset); };
 
 lines       : line lines 
             | ;
 
-line        : T_GLOBAL T_ADDRESS { 
-                  yyerror ("this use of .global declaration is depricated");
-                  mark_export_label ($2) 
-	      }
-            | segtype T_SEGMENT {    
-		  if (current_segment != -1)
-		      end_segment (current_segment, offset);
-		  if ((current_segment = begin_segment ($1, $2)) == -1) {
+line        : segtype T_SEGMENT {    
+		  end_segment (current_segment, offset);
+		  if ((current_segment = begin_segment ($1, $2)) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;
 		  }
 		  offset = 0;
 	      } 
-            | labels datadef {}
-            | labels instruction  {}
-            | datadef {}
-            | instruction  {}
+            | labels datadef
+            | labels instruction
+            | datadef
+            | instruction
             ;
 
 segtype     : T_CODE {$$ = SEG_CODE} 
             | T_DATA {$$ = SEG_DATA};
 
-expression  : T_NUMBER {$$ = $1}
-            | '(' expression ')' {$$ = $2}
-            | '(' error ')' {$$ = 0; yyerror ("malformed expression")}  
-            | expression '+' expression {$$ = $1 + $3}
-            | '-' expression %prec UNARY_MIN {$$ = -$2}
-            | expression '-' expression {$$ = $1 - $3}
-            | expression '*' expression {$$ = $1 * $3}
-            | expression '/' expression {$$ = $1 / $3}
-            | expression '%' expression {$$ = $1 % $3}
-            | expression '^' expression {$$ = $1 ^ $3}
-            | expression '&' expression {$$ = $1 & $3}
-            | expression '|' expression {$$ = $1 | $3}
-            |            '!' expression {$$ = !$2}
-            |            '~' expression {$$ = ~$2}
-            | expression T_LL expression {$$ = $1 << $3}
-            | expression T_GG expression {$$ = $1 >> $3};
+expression  : T_NUMBER                       { $$ = newConstant ($1); }
+            | address                        { $$ = newLabel ($1); }
+            | '(' expression ')'             { $$ = $2; }
+            | expression '+' expression      { $$ = do_math ('+', $1, $3); }
+            | '-' expression %prec UNARY_MIN { $$ = do_math (UNARY_MIN, $2, NULL); }
+            | expression '-' expression      { $$ = do_math ('-', $1, $3); }
+            | expression '*' expression      { $$ = do_math ('*', $1, $3); }
+            | expression '/' expression      { $$ = do_math ('/', $1, $3); }
+            | expression '%' expression      { $$ = do_math ('%', $1, $3); }
+            | expression '^' expression      { $$ = do_math ('^', $1, $3); }
+            | expression '&' expression      { $$ = do_math ('&', $1, $3); }
+            | expression '|' expression      { $$ = do_math ('|', $1, $3); }
+            |            '!' expression      { $$ = do_math ('!', $2, NULL); }
+            |            '~' expression      { $$ = do_math ('~', $2, NULL); }
+            | expression T_LL expression     { $$ = do_math (T_LL, $1, $3); }
+            | expression T_GG expression     { $$ = do_math (T_GG, $1, $3); }
+            | '(' error ')'                  { $$ = NULL; yyerror ("malformed expression"); }  
+            ;
 
 labels      : label
             | label labels
             ;
 
 label       : symdef T_LABEL {
-                if (-1 == add_label ($2, current_segment, offset, 
+                if (NOT_FOUND == add_label ($2, current_segment, offset, 
 				     $1.global, $1.align8)) {
 		    yyerror ("fatal error");
 		    YYABORT;
@@ -202,8 +252,8 @@ symdef      : T_GLOBAL {$$.align8 = 0; $$.global = 1 }
             | T_PAGE   {$$.align8 = 2; $$.global = 0 }
             | T_ALIGN8 T_GLOBAL {$$.align8 = 1; $$.global = 1 }
             | T_GLOBAL T_ALIGN8 {$$.align8 = 1; $$.global = 1 }
-            | T_PAGE T_GLOBAL {$$.align8 = 8; $$.global = 1 }
-            | T_GLOBAL T_PAGE {$$.align8 = 8; $$.global = 1 }
+            | T_PAGE T_GLOBAL {$$.align8 = 2; $$.global = 1 }
+            | T_GLOBAL T_PAGE {$$.align8 = 2; $$.global = 1 }
             | {$$.global = $$.align8 = 0 };
 
 datadef     : T_DEFSTRING T_STRING {
@@ -216,140 +266,139 @@ datadef     : T_DEFSTRING T_STRING {
 	    }
             | T_DEFWORD  size values {
 		int i;
-		if ($2 < $3.size)
-		    yyerror ("warning: too many initializers");
-		for (i = 0; i < $3.size; i++)
-		    emit ($3.data[i]);
+		if ($2 < $3.size) {
+		    sprintf (error_buffer, "%d initializers given, %ld expected",
+			     $3.size, $2);
+		    yywarning (error_buffer);
+		    $3.size = $2;
+		}
+		for (i = 0; i < $3.size; i++) {		    
+		    emit_expression ((Expression*)$3.data[i]);
+		}
 		for (     ; i < $2     ; i++)
 		    emit (0);
 	    };
 
 size        : {$$ = 1}
             | '[' expression ']' {
-		if ($2 <= 0) {
-		    yyerror ("invalid array size");
-		    YYABORT;
-		} 
-		$$ = $2
+		if ($2->type != CONSTANT || $2->detail.constant <= 0) {
+		    report (1, ARRAY_SIZE);
+		    $$ = 0;
+		} else
+		    $$ = $2->detail.constant;
 	    }
-            | '[' error ']' { $$ = -1;  yyerror ("malformed array")};
+            | '[' error ']' { $$ = -1;  yyerror ("malformed array size")};
 
 values      : {$$.size = 0; $$.data = NULL}
-            | expression { 
+            | expression {
 		$$.data = malloc (sizeof (Dword)); 
-		$$.data[0] = $1;
+		$$.data[0] = (Dword)$1;
 		$$.size = 1;
 	    }
             | values ',' expression { 
 		$$.data = realloc ($1.data, ($1.size + 1) * sizeof (Dword)); 
-		$$.data[$1.size] = $3;
+		$$.data[$1.size] = (Dword)$3;
 		$$.size = $1.size + 1;
 	    } ;
 
 address     : T_ADDRESS {
                 int label = use_label ($1, current_segment);
-		if (-1 == label) {
+		if (NOT_FOUND == label) {
 		    yyerror ("fatal error");
 		    YYABORT;
 		}
-                $$.index = label;
-		$$.offset = 0;
-	    }
-            | address '+' expression {
-		$$.index = $1.index;
-		$$.offset += $3;
-	    }
-            | address '-' expression {
-		$$.index = $1.index;
-		$$.offset += -$3;
-	    };
+                $$ = label;
+            } ;
 
 segment     : T_SEGMENT {
               $$ = lookup_segment ($1); 
-	      if (-1 == $$) {
+	      if (NOT_FOUND == $$) {
 		  yyerror ("fatal error");
 		  YYABORT;
 	      }
 	  };
 
 instruction : error instruction
+              { yyerror ("unrecognized instruction, trying to recover"); }
             | T_ADD T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (ADD, $2, $4))} /* ADD */
 
             | T_ADD T_GREGISTER ',' expression
               {emit (BUILD_INSTRUCTION_A (xADDI, $2, 0));
-	       emit ($4)} /* xADDI */
+	       emit_expression ($4)} /* xADDI */
 
             | T_AND T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (AND, $2, $4))} /* AND */
 
             | T_AND T_GREGISTER ',' expression 
               {emit (BUILD_INSTRUCTION_A (xANDI, $2, 0));
-	       emit ($4)} /* xADDI */
+	       emit_expression ($4)} /* xADDI */
 
-            | T_CALL address	/* xNCALL */
-              { 
-              mark_near_label ($2.index);
-              emit (BUILD_INSTRUCTION_A (xNCALL, 0, 0));
-              emit_absolute_ref ($2, LOCAL);
-              }
             | T_CALL expression	/* xNCALL */
               { 
-              emit (BUILD_INSTRUCTION_A (xNCALL, 0, 0));
-              emit ($2);
+		  emit (BUILD_INSTRUCTION_A (xNCALL, 0, 0));
+		  emit_expression ($2);
               }
 
             | T_CALL '[' T_GREGISTER ']'
               {emit (BUILD_INSTRUCTION_A (NCALLX, $3, 0))} /* NCALLX */
-            | T_CALL '[' error ']'
-              {yyerror ("invalid indirection")}
 
-            | T_CALL segment ':' address
+            | T_CALL '[' error ']'
+              { report (1, INDIRECTION); }
+
+            | T_CALL segment ':' expression
               {
 		  Selector s = MK_SELECTOR ($2, 0, _LDT); 
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE)
+		  if (module_type == CLOF_EXE) {
 		      emit_escape (FIX_SEGMENT); 
-		  emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
-                  emit_absolute_ref ($4, GLOBAL);
+		      emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
+		      emit_expression ($4);
+		  } else {
+		      report (1, SEGMENTINBIN);
+		  }
 	      } /* xFCALL */
 
             | T_CALL segment	/* for doors */
               {
-                  struct yyLabel dummy = {0, 0};
 		  Selector s = MK_SELECTOR ($2, 0, _LDT); 
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE)
+		  if (module_type == CLOF_EXE) {
 		      emit_escape (FIX_SEGMENT); 
-		  emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
-                  emit_absolute_ref (dummy, LOCAL);
+		      emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
+		      emit_expression (NULL);
+		  } else {
+		      report (1, SEGMENTINBIN);
+		  }
 	      } /* xFCALL */
 
-            | T_CHIO expression 
-              {emit (BUILD_INSTRUCTION_B (CHIO, 0, $2))} /* CHIO */
+            | T_CHIO expression
+              { emit_displacement (CHIO, 0, $2, 0); } /* CHIO */
 
             | T_CLC 
-              {emit (BUILD_INSTRUCTION_A (CLC, 0, 0))} /* CLC */
+              { emit (BUILD_INSTRUCTION_A (CLC, 0, 0))} /* CLC */
 
             | T_CLI 
-              {emit (BUILD_INSTRUCTION_A (CLI, 0, 0))} /* CLI */
+              { emit (BUILD_INSTRUCTION_A (CLI, 0, 0))} /* CLI */
 
             | T_CLRB T_GREGISTER ',' expression 
-              {emit (BUILD_INSTRUCTION_B (CLRBI, $2, $4))} /* CLRBI */
+              { emit_displacement (CLRBI, $2, $4, 0); /* CLRBI */ }
 
             | T_CLRB T_GREGISTER ','  T_GREGISTER
-              {emit (BUILD_INSTRUCTION_A (CLRB, $2, $4))} /* CLRB */
+              { emit (BUILD_INSTRUCTION_A (CLRB, $2, $4))} /* CLRB */
 
             | T_CMP T_GREGISTER ',' T_GREGISTER
-              {emit (BUILD_INSTRUCTION_A (CMP, $2, $4))} /* CMP */
+              { emit (BUILD_INSTRUCTION_A (CMP, $2, $4))} /* CMP */
 
             | T_CMP T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_A (xCMPI, $2, 0));
-               emit ($4)} /* xCMPI */
+              { 
+		  emit (BUILD_INSTRUCTION_A (xCMPI, $2, 0));
+		  emit_expression ($4);
+	      } /* xCMPI */
 
             | T_DEC T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (DEC, $2, 0))} /* DEC */
@@ -359,124 +408,120 @@ instruction : error instruction
 
             | T_DIV T_GREGISTER ',' expression
               {emit (BUILD_INSTRUCTION_A (xDIVI, $2, 0));
-               emit ($4)} /* xDIVI */
+               emit_expression ($4)} /* xDIVI */
 
             | T_DIV expression ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (xDIVJ, $4, 0));
-               emit ($2)} /* xDIVJ */
+               emit_expression ($2)} /* xDIVJ */
 
             | T_REM T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (REM, $2, $4))} /* REM */
 
             | T_REM T_GREGISTER ',' expression
               {emit (BUILD_INSTRUCTION_A (xREMI, $2, 0));
-               emit ($4)} /* xREMI */
+               emit_expression ($4)} /* xREMI */
 
             | T_REM expression ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (xREMJ, $4, 0));
-               emit ($2)} /* xREMJ */
+               emit_expression ($2)} /* xREMJ */
 
             | T_GETB T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (GETB, $2, $4))} /* GETB */
 
             | T_GETB T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (GETBI, $2, $4))} /* GETBI */
+              { emit_displacement (GETBI, $2, $4, 0); } /* GETBI */
 
             | T_HLT {emit (BUILD_INSTRUCTION_A (HLT, 0, 0))} /* HLT */ 
 
+            | T_IN T_GREGISTER ',' '?' expression
+              { emit_displacement (IN, $2, $5, 0);} /* IN */
+
             | T_IN T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (IN, $2, $4))} /* IN */
+              {
+		  report (0, PORT_NAME);
+		  emit_displacement (IN, $2, $4, 0);
+	      } /* IN */
 
             | T_INC T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (INC, $2, 0))} /* INC */
 
-            | T_JMP address	/* absolute address */
-              { 
-              mark_near_label ($2.index);
-              emit (BUILD_INSTRUCTION_A (xNJMP, 0, 0));
-              emit_absolute_ref ($2, LOCAL);
-              }
-
             | T_JMP expression	/* absolute address */
               { 
-              emit (BUILD_INSTRUCTION_A (xNJMP, 0, 0));
-              emit ($2);
+		  emit (BUILD_INSTRUCTION_A (xNJMP, 0, 0));
+		  emit_expression ($2);
               }
 
-            | T_JMP segment ':' address
+            | T_JMP segment ':' expression
               {
 		  Selector s = MK_SELECTOR ($2, 0, _LDT); 
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE)
+		  if (module_type == CLOF_EXE) {
 		      emit_escape (FIX_SEGMENT); 
-		  emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
-                  emit_absolute_ref ($4, GLOBAL);
+		      emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
+		      emit_expression ($4);
+		  } else {
+		      report (1, SEGMENTINBIN);
+		  }
 	      } /* xFJMP */
 
             | T_JMP segment
               {
-                  struct yyLabel dummy = {0, 0};
 		  Selector s = MK_SELECTOR ($2, 0, _LDT); 
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE)
+		  if (module_type == CLOF_EXE) {
 		      emit_escape (FIX_SEGMENT); 
-		  emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
-                  emit_absolute_ref (dummy, LOCAL);
+		      emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
+		      emit_expression (NULL);
+		  } else {
+		      report (1, SEGMENTINBIN);
+		  }
 	      } /* xFJMP */
 
-            | T_JNZ address
-              { emit_relative_jump ($2, JNZ); }
-            | T_JZ address
-              { emit_relative_jump ($2, JZ); }
-            | T_JNC address
-              { emit_relative_jump ($2, JNC); }
-            | T_JC address
-              { emit_relative_jump ($2, JC); }
-            | T_JNO address
-              { emit_relative_jump ($2, JNO); }
-            | T_JO address
-              { emit_relative_jump ($2, JO); }
-            | T_JNS address
-              { emit_relative_jump ($2, JNS); }
-            | T_JS address
-              { emit_relative_jump ($2, JS); }
+            | T_JNZ expression
+              { emit_displacement (JNZ, 0, $2, 1); }
+            | T_JZ expression
+              { emit_displacement (JZ, 0, $2, 1); }
+            | T_JNC expression
+              { emit_displacement (JNC, 0, $2, 1); }
+            | T_JC expression
+              { emit_displacement (JC, 0, $2, 1); }
+            | T_JNO expression
+              { emit_displacement (JNO, 0, $2, 1); }
+            | T_JO expression
+              { emit_displacement (JO, 0, $2, 1); }
+            | T_JNS expression
+              { emit_displacement (JNS, 0, $2, 1); }
+            | T_JS expression
+              { emit_displacement (JS, 0, $2, 1); }
 
-            | T_MOV T_GREGISTER ',' '['  address ']' /* xLD */
+            | T_MOV T_GREGISTER ',' '['  expression ']' /* xLD */
               { 
-              emit (BUILD_INSTRUCTION_A (xLD, $2, 0));
-              emit_absolute_ref ($5, GLOBAL);
+		  emit (BUILD_INSTRUCTION_A (xLD, $2, 0));
+		  emit_expression ($5);
               }
             | T_MOV T_GREGISTER ',' '['  error ']'
-              {yyerror ("invalid indirection")}
+              { report (1, INDIRECTION); }
 
-            | T_MOV T_GREGISTER ',' address
-              {
-               emit (BUILD_INSTRUCTION_A (xLDI, $2, 0));
-               emit_absolute_ref ($4, GLOBAL)
-              } /* XLDI */
-
-            | T_MOV address ',' T_GREGISTER
-              {
-                 yyerror ("Did you forget [] around the variable name?");
-              } 
+            | T_MOV error ',' T_GREGISTER
+              { yyerror ("Did you forget [] around the variable name?"); } 
 
             | T_MOV T_GREGISTER ',' expression
               {
                emit (BUILD_INSTRUCTION_A (xLDI, $2, 0));
-	       emit ($4)
-              } /* XLDI */
+               emit_expression ($4);
+	       } /* XLDI */
 
-            | T_MOV '[' address ']' ',' T_GREGISTER
+            | T_MOV '[' expression ']' ',' T_GREGISTER
               { 
-              emit (BUILD_INSTRUCTION_A (xST, $6, 0));
-              emit_absolute_ref ($3, GLOBAL);
+		  emit (BUILD_INSTRUCTION_A (xST, $6, 0));
+		  emit_expression ($3);
               }
             | T_MOV '[' error ']' ',' T_GREGISTER
-              {yyerror ("invalid indirection")}
+              { report (1, INDIRECTION); }
 
             | T_MOV T_SREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (MOVTS, $2, $4))} /* MOVTS */
@@ -493,9 +538,12 @@ instruction : error instruction
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE)
+		  if (module_type == CLOF_EXE) {
 		      emit_escape (FIX_SEGMENT); 
-		  emit (BUILD_INSTRUCTION_C (MOVSI, $2, s))
+		      emit (BUILD_INSTRUCTION_C (MOVSI, $2, s));
+		  } else {
+		      report (1, SEGMENTINBIN);
+		  }
 	      } /* MOVSI */
 
             | T_MOV T_GREGISTER ',' '[' T_GREGISTER ']'
@@ -504,30 +552,44 @@ instruction : error instruction
             | T_MOV '[' T_GREGISTER ']' ','  T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (STX, $3, $6))} /* STX */
 
-            | T_MOV T_GREGISTER ',' T_SREGISTER ':' address
+            | T_MOV T_GREGISTER ',' T_SREGISTER ':' expression
               {
 		  emit (BUILD_INSTRUCTION_A (xLDS, $2, $4));
-                  emit_absolute_ref ($6, GLOBAL);
+                  emit_expression ($6);
 	      } /* xLDS */
 
-            | T_MOV T_SREGISTER ':' address ',' T_GREGISTER 
+            | T_MOV T_SREGISTER ':' expression ',' T_GREGISTER 
               {
 		  emit (BUILD_INSTRUCTION_A (xSTS, $2, $6));
-                  emit_absolute_ref ($4, GLOBAL);
+                  emit_expression ($4);
 	      } /* xSTS */
 
             | T_MOV T_GREGISTER '(' expression ')' ',' T_GREGISTER
-              {emit (BUILD_INSTRUCTION_D (SETBY, $7, $2, $4))} /* SETBY */
+              {
+		  if ($4->type != CONSTANT) {
+		      report (1, VARINDEX);
+		  } else {
+		      emit (BUILD_INSTRUCTION_D (SETBY, $7, $2, $4->detail.constant));
+		  } /* SETBY */
+	      }
 
             | T_MOV T_GREGISTER ',' T_GREGISTER '(' expression ')'
-              {emit (BUILD_INSTRUCTION_D (GETBY, $2, $4, $6))} /* GETBY */
+              {
+		  if ($6->type != CONSTANT) {
+		      report (1, VARINDEX);
+		  } else {
+		      emit (BUILD_INSTRUCTION_D (GETBY, $2, $4, $6->detail.constant));
+		  } /* GETBY */
+	      }
 
             | T_MUL T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (MUL, $2, $4))} /* MUL */
 
             | T_MUL T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_A (xMULI, $2, 0));
-               emit ($4)} /* xMULI */
+              {
+		  emit (BUILD_INSTRUCTION_A (xMULI, $2, 0));
+		  emit_expression ($4);
+	      } /* xMULI */
 
             | T_NEG T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (NEG, $2, 0))} /* NEG */
@@ -542,15 +604,32 @@ instruction : error instruction
               {emit (BUILD_INSTRUCTION_A (OR, $2, $4))} /* OR */
 
             | T_OR T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_A (xORI, $2, 0));
-               emit ($4)} /* xORI */
+              {
+		  emit (BUILD_INSTRUCTION_A (xORI, $2, 0));
+		  emit_expression ($4);
+	      } /* xORI */
+
+            | T_OUT T_GREGISTER ',' '?' expression
+              { emit_displacement (OUT, $2, $5, 0); } /* OUT */
+
+            | T_OUT expression ',' '?' expression
+              { 
+		  emit_displacement (xOUTI, 0, $5, 0); 
+		  emit_expression ($2);
+	      } /* xOUTI */
 
             | T_OUT T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (OUT, $2, $4))} /* OUT */
+              {
+		  report (0, PORT_NAME);
+		  emit_displacement (OUT, $2, $4, 0); 
+	      }	/* OUT */
 
             | T_OUT expression ',' expression
-              {emit (BUILD_INSTRUCTION_B (xOUTI, 0, $4));
-               emit ($2)} /* xOUTI */
+	       {
+		  report (0, PORT_NAME);
+		  emit_displacement (xOUTI, 0, $4, 0); 
+		  emit_expression ($2);
+	       } /* xOUTI */
 
             | T_POP T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (POP, $2, 0))} /* POP */
@@ -562,22 +641,16 @@ instruction : error instruction
               {emit (BUILD_INSTRUCTION_A (PUSH, $2, 0))} /* PUSH */
 
             | T_PUSH expression
-              {emit (BUILD_INSTRUCTION_A (xPUSHI, 0, 0));
-               emit ($2)} /* xPUSHI */
+              {
+		  emit (BUILD_INSTRUCTION_A (xPUSHI, 0, 0));
+		  emit_expression ($2);
+	      } /* xPUSHI */
 
-            | T_PEEK T_GREGISTER ',' expression
-              {if ($4 < 0) {
-		  yyerror ("negative offset in peek/poke");
-		  YYABORT;
-	      }
-              emit (BUILD_INSTRUCTION_B (PEEK, $2, $4))} /* PEEK */
+            | T_PEEK T_GREGISTER ',' expression	/* PEEK */
+              { emit_displacement (PEEK, $2, $4, 0); }
 
-            | T_POKE T_GREGISTER ',' expression
-              {if ($4 < 0) {
-		  yyerror ("negative offset in peek/poke");
-		  YYABORT;
-	      }
-              emit (BUILD_INSTRUCTION_B (POKE, $2, $4))} /* POKE */
+            | T_POKE T_GREGISTER ',' expression	/* POKE */
+              { emit_displacement (POKE, $2, $4, 0); }
 
             | T_PUSHF 
               {emit (BUILD_INSTRUCTION_A (PUSHF, 0, 0))} /* PUSHF */
@@ -589,40 +662,40 @@ instruction : error instruction
               {emit (BUILD_INSTRUCTION_A (INRET, 0, 0))} /* RETNI */
 
             | T_RETF 
-              {emit (BUILD_INSTRUCTION_A (FRET, 0, 0))} /* RETF */
+              { emit (BUILD_INSTRUCTION_A (FRET, 0, 0))} /* RETF */
 
             | T_RETFI 
-              {emit (BUILD_INSTRUCTION_A (IFRET, 0, 0))} /* RETFI */
+              { emit (BUILD_INSTRUCTION_A (IFRET, 0, 0))} /* RETFI */
 
             | T_ROL T_GREGISTER ',' T_GREGISTER
-              {emit (BUILD_INSTRUCTION_A (ROL, $2, $4))} /* ROL */
+              { emit (BUILD_INSTRUCTION_A (ROL, $2, $4))} /* ROL */
 
             | T_ROL T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (ROLI, $2, $4))} /* ROLI */
+              { emit_displacement (ROLI, $2, $4, 0); } /* ROLI */
 
             | T_ROR T_GREGISTER ',' T_GREGISTER 
-              {emit (BUILD_INSTRUCTION_A (ROR, $2, $4))} /* ROR */
+              { emit (BUILD_INSTRUCTION_A (ROR, $2, $4))} /* ROR */
 
             | T_ROR T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (RORI, $2, $4))} /* RORI */
+              { emit_displacement (RORI, $2, $4, 0); } /* RORI */
 
             | T_SAL T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (SAL, $2, $4))} /* SAL */
 
             | T_SAL T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (SALI, $2, $4))} /* SALI */
+              { emit_displacement (SALI, $2, $4, 0); } /* SALI */
 
             | T_SAR T_GREGISTER ',' T_GREGISTER
-              {emit (BUILD_INSTRUCTION_A (SAR, $2, $4))} /* SAR */
+              { emit (BUILD_INSTRUCTION_A (SAR, $2, $4))} /* SAR */
 
             | T_SAR T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (SARI, $2, $4))} /* SARI */
+              { emit_displacement (SARI, $2, $4, 0); } /* SARI */
 
             | T_SETB T_GREGISTER ',' T_GREGISTER
-              {emit (BUILD_INSTRUCTION_A (SETB, $2, $4))} /* SETB */
+              { emit (BUILD_INSTRUCTION_A (SETB, $2, $4))} /* SETB */
 
             | T_SETB T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_B (SETBI, $2, $4))} /* SETBI */
+              { emit_displacement (SETBI, $2, $4, 0); } /* SETBI */
 
             | T_STC {emit (BUILD_INSTRUCTION_A (STC, 0, 0))} /* STC */
 
@@ -639,37 +712,78 @@ instruction : error instruction
               {emit (BUILD_INSTRUCTION_A (SUB, $2, $4))} /* SUB */
 
             | T_SUB T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_A (xSUBI, $2, 0));
-               emit ($4)} /* SUBI */
+              {
+		  emit (BUILD_INSTRUCTION_A (xSUBI, $2, 0));
+		  emit_expression ($4);
+	      } /* xSUBI */
 
             | T_TST T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (TST, $2, $4))} /* TST */
 
             | T_TST T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_A (xTSTI, $2, 0));
-               emit ($4)} /* xTSTI */
+              {
+		  emit (BUILD_INSTRUCTION_A (xTSTI, $2, 0));
+		  emit_expression ($4);
+	      } /* xTSTI */
 
-            | T_XCHG T_GREGISTER ',' '[' address ']' /* xXCHG */
+            | T_XCHG T_GREGISTER ',' '[' expression ']' /* xXCHG */
               { 
-              emit (BUILD_INSTRUCTION_A (xXCHG, $2, 0));
-              emit_absolute_ref ($5, GLOBAL);
+		  emit (BUILD_INSTRUCTION_A (xXCHG, $2, 0));
+		  emit_expression ($5);
               }
             | T_XCHG T_GREGISTER ',' '[' error ']' /* xXCHG */
-              {yyerror ("invalid indirection")}
+              { report (1, INDIRECTION); }
 
             | T_XOR T_GREGISTER ',' T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (XOR, $2, $4))} /* XOR */
 
             | T_XOR T_GREGISTER ',' expression
-              {emit (BUILD_INSTRUCTION_A (xXORI, $2, 0));
-               emit ($4)} /* xXORI */
+              {
+		  emit (BUILD_INSTRUCTION_A (xXORI, $2, 0));
+		  emit_expression ($4);
+	      } /* xXORI */
 
 ;
 
 %%
 
+static void emit_expression (Expression *target) 
+{
+    if (!target) {		/* zero constant */
+	emit (0);
+	return;
+    }
+    switch (target->type) {
+    case CONSTANT:
+	emit (target->detail.constant);
+	break;
+    case EXPRESSION:
+    case LABEL:
+	emit_escape (FIX_EXPRESSION);
+	emit (0);		/* fake instruction */
+	emit_escape ((Dword)target);
+	break;	
+    }
+}
+
+static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative) 
+{
+    emit_escape (relative ? FIX_RDISPLACEMENT : FIX_ADISPLACEMENT);
+    emit (BUILD_INSTRUCTION_B (opc, op1, 0));
+    emit_escape ((Dword)dspl);
+    if (relative)
+	emit_escape (offset);   /* current_offset */
+}
+
+void yywarning (char *s)
+{
+    fprintf (stderr, "warning:%s:%d: %s\n", source, line_no, s);
+}
+
 int yyerror (char *s)
 {
-    fprintf (stderr, "cas:%s:%d: %s\n", source, line_no, s);
+    fprintf (stderr, "%s:%d: %s\n", source, line_no, s);
+    success = 0;
     return 0;
 }
+

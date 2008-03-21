@@ -241,7 +241,7 @@ return T_ERROR;
 
 \<\<		{return T_LL;}
 \>\>		{return T_GG;}
-[,\[\]\(\)\+-:^\|&~!%-/]    {return yytext[0];}
+[,\[\]\(\)\+-:^\|&~!%-/\?]    {return yytext[0];}
 \n                 {line_no++;}
 [ \t]*
 

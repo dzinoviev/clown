@@ -90,7 +90,8 @@ static int parse_debug_info (FILE * file, Dword offset, Dword size, time_t dfile
     }
     
     if (buf.st_mtime >= dfile_mod_time) {
-      fprintf (stderr, "--> Source file %s is newer than the debug file.\n", fname);
+	if (!silent)
+	    fprintf (stderr, "--> Source file %s is newer than the debug file.\n", fname);
       return 0;
     }
 
@@ -109,7 +110,8 @@ static int parse_debug_info (FILE * file, Dword offset, Dword size, time_t dfile
     while (4 == fscanf (file, "%d %d %d %d", &cmd_segment, &cmd_offset, &fileno, &lineno)) {
       int j;
       if (cmd_segment != -1) {
-	fprintf (stderr, "--> Source file %s contains non-default segments.\n", fname);	
+	  if (!silent)
+	      fprintf (stderr, "--> Source file %s contains non-default segments.\n", fname);	
 	return n_lines;
       }
       info[n_lines].offset = cmd_offset;
@@ -122,7 +124,8 @@ static int parse_debug_info (FILE * file, Dword offset, Dword size, time_t dfile
 	}
       }
       if (j < 0) {
-	fprintf (stderr, "--> Malformed debug file.\n");	
+	  if (!silent)
+	      fprintf (stderr, "--> Malformed debug file.\n");	
 	return n_lines;	
       }
 
@@ -167,8 +170,9 @@ void load_debug_info (char *fname, Dword offset, Dword size)
     
     if (-1 == stat (dfile, &buf) 
 	|| !((buf.st_mode & S_IRUSR) || (buf.st_mode & S_IRGRP) || (buf.st_mode & S_IROTH))) {
-      fprintf (stderr, "--> File %s does not exist or is not readable.\n"
-	       "--> Debug info is not available.\n\n", dfile);
+	if (!silent)
+	    fprintf (stderr, "--> File %s does not exist or is not readable.\n"
+		     "--> Debug info is not available.\n\n", dfile);
       free (dfile);
       return;
     } 
@@ -179,10 +183,12 @@ void load_debug_info (char *fname, Dword offset, Dword size)
     } else {
       int n_lines;
       n_lines = parse_debug_info (debug_info, offset, size, buf.st_mtime);
-      if (!n_lines)
-	fputs ("--> Debug info is not available.\n\n", stderr);
-      else {
-	fprintf (stderr, "--> %d lines of debug info loaded from %s\n\n", n_lines, dfile);
+      if (!silent) {
+	  if (!n_lines) {
+	      fputs ("--> Debug info is not available.\n\n", stderr);
+	  } else {
+	      fprintf (stderr, "--> %d lines of debug info loaded from %s\n\n", n_lines, dfile);
+	  }
       }
      fclose (debug_info);
     }

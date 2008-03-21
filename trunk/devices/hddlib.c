@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include "hdd.h"
+#include "registers.h"
 
 #define BUFFER_SIZE (sizeof (Dword) * DISC_WORDS_PER_SECTOR)
 
@@ -18,9 +19,11 @@ Bit hdd_init (char disc_path[], struct Clown_Hdd *params, Uword *track_len)
 
     clown_disk = open (disc_path, O_RDWR);
     if (-1 == clown_disk) {
-	fputs ("\n\t", stderr);
-	perror (disc_path);
-	fputs ("\tDid you forget to set CLOWN_DISC variable?\n", stderr);
+	if (!silent) {
+	    fputs ("\n\t", stderr);
+	    perror (disc_path);
+	    fputs ("\tDid you forget to set CLOWN_DISC variable?\n", stderr);
+	}
 	return 0;
     }
 
@@ -41,7 +44,8 @@ Bit hdd_init (char disc_path[], struct Clown_Hdd *params, Uword *track_len)
 Bit hdd_read_sector (Dword track, Dword sector, Dword *hidden_buffer) 
 {
   if (-1 == clown_disk) {
-    fputs ("Clown HDD not initialized\n", stderr);
+      if (!silent)
+	  fputs ("Clown HDD not initialized\n", stderr);
     return 0;
   }
 
@@ -65,7 +69,8 @@ Bit hdd_read_sector (Dword track, Dword sector, Dword *hidden_buffer)
 Bit hdd_write_sector (Dword track, Dword sector, Dword *hidden_buffer) 
 {
   if (-1 == clown_disk) {
-    fputs ("Clown HDD not initialized\n", stderr);
+      if (!silent)
+	  fputs ("Clown HDD not initialized\n", stderr);
     return 0;
   }
 
@@ -89,7 +94,8 @@ Bit hdd_write_sector (Dword track, Dword sector, Dword *hidden_buffer)
 Bit hdd_close ()
 {
     if (-1 == clown_disk) {
-	fputs ("Clown HDD not initialized\n", stderr);
+	if (!silent)
+	    fputs ("Clown HDD not initialized\n", stderr);
 	return 0;
     }
     close (clown_disk);

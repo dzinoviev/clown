@@ -5,8 +5,8 @@
 
 #include "cas.h"
 
-#define DEFAULT_OBJECT "a.out"
-#define VERSION "CLOWN assembler version 1.10 ["__DATE__"]"
+#define DEFAULT_OBJECT "a.cle"
+#define VERSION "CLOWN assembler version 1.10.99 ["__DATE__"]"
 
 static void show_version (void)
 {
@@ -15,7 +15,7 @@ static void show_version (void)
 
 static void show_copy (void)
 {
-    fputs ("Copyright 2004 D. Zinoviev\n"
+    fputs ("Copyright 2004-2008 D. Zinoviev\n"
 	   "This program is free software; you may redistribute it under the terms of\n"
 	   "the GNU General Public License.  This program has absolutely no warranty.\n", 
 	   stderr);
@@ -34,7 +34,7 @@ static void show_usage (char *name)
     fputs ("  -b, --bin                generate a BIN module (default)\n", stderr);
     fputs ("  -x, --exe                generate an EXE module\n", stderr);
     fprintf (stderr, "  -e ADDR, --entry ADDR    set start address (default %ld)\n", offset);
-    fputs ("  -o OFILE                 set output file name (default IFILE.bin)\n", stderr);
+    fputs ("  -o OFILE                 set output file name (default IFILE.cle/IFILE.clo)\n", stderr);
     fputs ("  -v, --version            print assembler version number and exit\n", stderr);
     fputs ("  -l, --listing            produce listings\n", stderr);
     fputs ("  -V                       print assembler version number\n", stderr);
@@ -45,6 +45,7 @@ int get_options (int argc, char *argv[], char **object,
 		 char source[], int *ecode)
 {
     int i;
+    char *suffix = NULL;
 
     assert (argv);
     assert (object);
@@ -184,6 +185,17 @@ int get_options (int argc, char *argv[], char **object,
 	}
     }
 
+    switch (module_type) {
+    case CLOF_UNKNOWN:
+      module_type = CLOF_BIN;
+    case CLOF_BIN:
+      suffix = "cle";
+      break;
+    case CLOF_EXE:
+      suffix = "clo";
+      break;
+    }
+
     if (!*object) {
       if (source[0]) {
 	int len;
@@ -197,20 +209,18 @@ int get_options (int argc, char *argv[], char **object,
 	if (!strncmp (filename + len - 2, ".s", 2)) {
 	  *object = malloc (len + 3);
 	  strcpy (*object, filename);
-	  strcpy (*object + len - 1, "bin");
+	  strcpy (*object + len - 1, suffix);
 	} else {
 	  *object = malloc (len + 5);
 	  strcpy (*object, filename);
-	  strcat (*object, ".bin");
+	  strcat (*object, ".");
+	  strcat (*object, suffix);
 	}
       } else {
 	*object = DEFAULT_OBJECT; 
       }
     }
     
-    if (module_type == CLOF_UNKNOWN)
-	module_type = CLOF_BIN;
-
     return 1;
 }
 

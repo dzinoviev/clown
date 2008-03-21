@@ -13,6 +13,7 @@
 
 #include "clodd.h"
 
+Bit silent = 0;
 int sector = 0;
 int track = 0;
 int size = 0;

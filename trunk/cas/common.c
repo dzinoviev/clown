@@ -2,15 +2,47 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "registers.h"
 #include "cas.h"
 
+static int output_offset;
+
+void store (Dword item)
+{
+  struct Segment *s = &segments.segments[current_segment];
+
+  if (s->image_size >= s->image_extent) {
+    s->image_extent += IMAGE_CHUNK;
+    s->image = realloc (s->image, s->image_extent * sizeof (Dword));
+    if (!s->image) {
+      perror ("realloc");
+      longjmp (failure, 1);
+    }
+  }
+  s->image[s->image_size++] = item;
+}
+
+static void list_word (Dword instr)
+{
+  char character[] = "' '";
+  if (!listing)
+    return;
+    
+  if (instr == (char)instr && isprint ((char)instr))
+    character[1] = (char)instr;
+  else
+    character[0] = character[2] = ' ';
+  fprintf (stderr, "0x%08x: 0x%08lX %s\n", output_offset, instr, character);
+  output_offset++;
+}
+
 void secure_write (int file, void *addr, int size)
 {
-    if (size != write (file, addr, size)) {
-	perror ("Output file");
-	longjmp (failure, 1);
-    }
+  if (size != write (file, addr, size)) {
+    perror ("Output file");
+    longjmp (failure, 1);
+  }    
 }
 
 void secure_string (int file, char *string)
@@ -19,36 +51,6 @@ void secure_string (int file, char *string)
   secure_write (file, string, len);
 }
 
-
-void list_segment (struct Segment s)
-{
-    if (s.defined)
-	fprintf (stderr, "$%-15s %c DEF offset=%4d size=%4d\n", 
-		 s.name,
-		 s.type == SEG_DATA ? 'D' : 'C',
-		 s.file_offset,
-		 s.file_size);
-    else
-	fprintf (stderr, "$%-15s UNDEF\n", s.name);
-}
-
-void list_label (struct Label l, struct Segment *seglist)
-{
-    fprintf (stderr, 
-	     "%-16s %c %s ", 
-	     l.name, 
-	     l.export ? 'G' : ' ', 
-	     l.near ? "NEAR" : "FAR ");
-    if (l.defined) {
-	fprintf (stderr, 
-		 "DEF    %s $%s:(0x%08lx)\n", 
-		 l.intersegment ? "XSEG" : "    ",
-		 (l.segment != -1) ? seglist[l.segment].name : "code*",
-		 l.address);
-    } else {
-	fputs ("UNDEF \n", stderr);
-    }
-}
 
 void write_header (int outfile, Bit has_unreferenced,
 		   struct SegmentTable *segments,
@@ -66,169 +68,243 @@ void write_header (int outfile, Bit has_unreferenced,
   /* Segment table */
   secure_string (outfile, "  <segments>\n");
   for (i = 0; i < segments->size; i++) {
-    struct Segment s  = segments->segments[i];
-    secure_string (outfile, "    <segment");
-    sprintf (params, " name=\"%s\" id=%d", s.name, i);
-    secure_string (outfile, params);
-    if (s.defined) {
-      sprintf (params, " defined type=%d offset=%d size=%d", s.type, s.file_offset, s.file_size);
+    if (segments->segments[i].file_size) {
+      struct Segment s  = segments->segments[i];
+      secure_string (outfile, "    <segment");
+      sprintf (params, " name=%s", s.name);
       secure_string (outfile, params);
+      if (s.defined) {
+	sprintf (params, " defined type=%d size=%d", s.type, s.file_size);
+	secure_string (outfile, params);
+      }
+      secure_string (outfile, " />\n");
     }
-    secure_string (outfile, " />\n");
   }
   secure_string (outfile, "  </segments>\n  <symbols>\n");
 
   /* Import/reference table */
   for (i = 0; i < labels->size; i++) {
     struct Label l = labels->labels[i];
-    if (l.defined && !l.export)
-      continue;
-    assert (!l.near);
 
-    sprintf (params, "    <symbol name=\"%s\"", l.name);
+    sprintf (params, "    <symbol name=%s", l.name);
     secure_string (outfile, params);
 
     if (l.export) {
       assert (l.defined);
+    }
+
+    if (l.defined) {
       sprintf (params, " segment=%d offset=%ld", l.segment, l.address);
       secure_string (outfile, params);
     }
-    secure_string (outfile, " />\n");
+
+    sprintf (params, " id=%d />\n", i);
+    secure_string (outfile, params);
   }
   secure_string (outfile, "  </symbols>\n");
 
 }
 
-static int copy_special (Dword state, Dword instr, int scratch, int outfile,
-			 struct SegmentTable *segments,
-			 struct LabelTable *labels)
+static void write_expression (int outfile, Expression *e)
 {
-    struct yyLabel l;
-    Dword my_offset, segment;
-
-    switch (state) {
-    case FIX_SEGMENT:
-      /*
-       * emit (instr); -- this is "instr"
-       */
-      segment = SEL_ID (I_SEG (instr));
-      if (segments->segments[segment].defined 
-	  && segments->segments[segment].new_index != -1) {
-	  Dword newseg = I_SEG (instr);
-	  SET_NEWID (newseg, segments->segments[segment].new_index);
-	  UPDATE_SEGMENT (instr, newseg);
-      } else {
-	  /* do nothing */
-	  secure_write (outfile, &state, sizeof (Dword));
-      }
-      secure_write (outfile, &instr, sizeof (Dword));
-      break;
-    case FIX_DISPLACEMENT:
-      /*
-       * emit (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
-       * emit_escape (l.index); 
-       * emit_escape (l.offset); 
-       * emit_escape (offset);
-       */
-	if (   sizeof (Dword) != read (scratch, &l.index, sizeof (Dword))
-	    || sizeof (Dword) != read (scratch, &l.offset, sizeof (Dword)) 
-	    || sizeof (Dword) != read (scratch, &my_offset, sizeof (Dword))) {
-		perror ("temporary file");
-		return 0;
-	    }
-	
-	assert (l.index < labels->size);
-	assert (labels->labels[l.index].defined);
-
-	my_offset = (labels->labels[l.index].address + l.offset) - my_offset;
-	if (abs (my_offset) >= MAX_OFFSET) {
-	    component_error ("too long jump: ", 
-		       labels->labels[l.index].name);
-	    return 0;
-	}
-	instr = BUILD_INSTRUCTION_B (I_OPC (instr), 0, my_offset);
-	secure_write (outfile, &instr, sizeof (Dword));
-	break;
-
-    case FIX_ADDRESS_LOC:
-    case FIX_ADDRESS_GLOB:
-	assert (!instr);
-	/*
-	 * emit (0); -- this is "instr"
-	 * emit_escape (l.index); 
-	 * emit_escape (l.offset);
-	 */
-
-	if (   sizeof (Dword) != read (scratch, &l.index, sizeof (Dword))
-	    || sizeof (Dword) != read (scratch, &l.offset, sizeof (Dword))) {
-		perror ("temporary file");
-		return 0;
-	    }
-	
-	assert (l.index < labels->size);
-
-	if (!labels->labels[l.index].defined) {
-	    if (state == FIX_ADDRESS_LOC) {
-		component_error ("undefined symbol: ",
-			   labels->labels[l.index].name);
-		return 0;
-	    }
-	    /* undefined label; do nothing */
-	    secure_write (outfile, &state, sizeof (Dword));
-	    secure_write (outfile, &instr, sizeof (Dword));
-	    secure_write (outfile, &l.index, sizeof (Dword));
-	    secure_write (outfile, &l.offset, sizeof (Dword));
-	} else {
-	    my_offset = labels->labels[l.index].address + l.offset;
-	    secure_write (outfile, &my_offset, sizeof (Dword));
-	}
-	break;
-
-    default:
-	assert (0);
-    }
-
-    return 1;
+  if (!e) {
+    e = NULL;
+    secure_write (outfile, &e->type, sizeof (Dword));
+    list_word (e->type);
+    return;
+  }
+  secure_write (outfile, &e->type, sizeof (Dword));
+  list_word (e->type);
+  switch (e->type) {
+  case CONSTANT:
+    secure_write (outfile, &e->detail.constant, sizeof (Dword));
+    list_word (e->detail.constant);
+    break;
+  case LABEL:
+    secure_write (outfile, &e->detail.label, sizeof (Dword));
+    list_word (e->detail.label);
+    break;
+  case EXPRESSION:
+    secure_write (outfile, &e->detail.expression.operation, sizeof (Dword));
+    list_word (e->detail.expression.operation);
+    write_expression (outfile, e->detail.expression.left);
+    write_expression (outfile, e->detail.expression.right);
+    break;
+  }
 }
 
-int copy_code (int scratch, int outfile, struct SegmentTable *segments,
-	       struct LabelTable *labels)
+static int save_escape (int pointer, Dword state, Dword instr, int outfile,
+			     struct Segment *seg,
+			     struct LabelTable *labels)
+{
+  Expression *e;
+  Dword my_offset, target_offset, segment = NOT_FOUND;
+
+  switch (state) {
+  case FIX_SEGMENT:
+    /*
+     * emit_escape (instr); -- this is "instr"
+     */
+    segment = SEL_ID (I_SEG (instr));
+    if (seg->defined && seg->new_index != DEFAULT_SEGMENT) {
+      Dword newseg = I_SEG (instr);
+      SET_NEWID (newseg, seg->new_index);
+      UPDATE_SEGMENT (instr, newseg);
+    } else {
+      /* do nothing -- let the linker take care of this */
+      secure_write (outfile, &state, sizeof (Dword));
+      list_word (state);
+    }
+    secure_write (outfile, &instr, sizeof (Dword));
+    list_word (instr);
+    break;
+
+  case FIX_RDISPLACEMENT:
+    /*
+     * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
+     * emit_escape (target); 
+     * emit_escape (offset);
+     */
+    e = (Expression*)(seg->image[pointer++]);
+    assert (e);
+
+    my_offset = seg->image[pointer++];
+
+    if (0 >= try_to_evaluate (e, labels, &target_offset, &segment)) {
+      component_error ("relative jump", "undefined displacement");
+      return -1;
+    }
+    my_offset = target_offset - my_offset;
+    if (abs (my_offset) >= MAX_OFFSET) {
+      component_error ("too long jump", "suppressed");
+      return -1;
+    }
+    instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), my_offset);
+    secure_write (outfile, &instr, sizeof (Dword));
+    list_word (instr);
+    break;
+
+  case FIX_ADISPLACEMENT:
+    /*
+     * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
+     * emit_escape (expression); 
+     */
+    e = (Expression*)(seg->image[pointer++]);
+    assert (e);
+
+    if (module_type == CLOF_EXE) {
+      /* do nothing -- let the linker take care of this */
+      secure_write (outfile, &state, sizeof (Dword));
+      list_word (state);
+      secure_write (outfile, &instr, sizeof (Dword));
+      list_word (instr);
+      write_expression (outfile, e);
+    } else {
+      if (0 >= try_to_evaluate (e, labels, &target_offset, &segment)) {
+	component_error ("immediate parameter", "cannot be computed");
+	return -1;
+      }
+      instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), target_offset);
+      secure_write (outfile, &instr, sizeof (Dword));
+      list_word (instr);
+    }
+    break;
+
+  case FIX_EXPRESSION:
+    /*
+     * emit_escape (0); -- this is "instr"
+     * emit_escape (expression); 
+     */
+    e = (Expression*)(seg->image[pointer++]);
+    assert (instr == 0 && e);
+
+    if (module_type == CLOF_EXE) {
+      /* do nothing -- let the linker take care of this */
+      secure_write (outfile, &state, sizeof (Dword));
+      list_word (state);
+      secure_write (outfile, &instr, sizeof (Dword));
+      list_word (instr);
+      write_expression (outfile, e);
+    } else {
+      if (0 >= try_to_evaluate (e, labels, &target_offset, &segment)) {
+	component_error ("undefined symbols", "suppressed");
+	return -1;
+      }
+      instr = target_offset;
+      secure_write (outfile, &instr, sizeof (Dword));
+      list_word (instr);
+    }
+    break;
+
+  default:
+    assert (0);
+  }
+
+  return pointer;
+}
+
+int save_segment (int outfile, struct Segment *seg, struct LabelTable *labels)
 {
   Dword instr, escape = ~FIX_SEGMENT;
+  int pointer = 0; 
+  int status = 1, newpointer;
+  static char tmp[1000];
 
-  while (sizeof (Dword) == read (scratch, &instr, sizeof (Dword))) {
+  if (module_type == CLOF_EXE) {
+    sprintf (tmp, "  <bin segment=%s>",  seg->name);
+    secure_string (outfile, tmp);
+  }
+
+  if (listing)
+    fprintf (stderr, "$%s\n", seg->name);
+
+  output_offset = 0;
+  while (pointer < seg->image_size) {
+    instr = seg->image[pointer++];
+     
     switch (instr) {
     case FIX_SEGMENT:
-    case FIX_DISPLACEMENT:
-    case FIX_ADDRESS_LOC:
-    case FIX_ADDRESS_GLOB:
+    case FIX_ADISPLACEMENT:
+    case FIX_RDISPLACEMENT:
+    case FIX_EXPRESSION:
       if        (escape == instr) {/* real escape! */
 	secure_write (outfile, &instr, sizeof (Dword));
+	list_word (instr);
 	escape = ~FIX_SEGMENT;
       } else if (escape == ~FIX_SEGMENT) /* escape prefix */
 	escape = instr;
       else {		/* special symbol */
-	copy_special (escape, instr, scratch, outfile, 
-		      segments, labels);
+	newpointer = save_escape (pointer, escape, instr, outfile, seg, labels);
 	escape = ~FIX_SEGMENT;
+	if (newpointer == -1)
+	  status = 0;
+	else
+	  pointer = newpointer;
       }
       break;
     default:
-      if (escape == ~FIX_SEGMENT)	/* normal copy */
+      if (escape == ~FIX_SEGMENT) {	/* normal copy */
 	secure_write (outfile, &instr, sizeof (Dword));
-      else {		/* special symbol */
-	copy_special (escape, instr, scratch, outfile, 
-		      segments, labels);
+	list_word (instr);
+      } else {		/* special symbol */
+	newpointer = save_escape (pointer, escape, instr, outfile, seg, labels);
 	escape = ~FIX_SEGMENT;
+	if (newpointer == -1)
+	  status = 0;
+	else
+	  pointer = newpointer;
       }
       break;
     }
   }
 
   if (escape != ~FIX_SEGMENT)
-    component_error ("warning: incomplete escape sequence at EOF: ",
+    component_error ("warning: incomplete escape sequence at EOF",
 		     "ESC");
-
-  return 1;
+  free (seg->image);
+  if (module_type == CLOF_EXE) {
+    secure_string (outfile, "</bin>\n");
+  }
+  return status;
 }
 

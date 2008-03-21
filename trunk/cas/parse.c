@@ -3,12 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <setjmp.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include "cas.h"
 #include "generate.h"
-
-static const int NOT_FOUND = -1;
 
 #ifdef __STRICT_ANSI__
 int fileno (FILE *stream);	/* for Ansi C  */
@@ -17,7 +14,6 @@ int fileno (FILE *stream);	/* for Ansi C  */
        Clof_Type module_type      = CLOF_UNKNOWN;
 static Bit       has_unreferenced = 0;
 static int       interface        = 0;
-static int       ofile;
 jmp_buf   failure;
 
        int listing = 0;
@@ -27,7 +23,7 @@ struct LabelTable      labels       = {0, NULL};
 
 void component_error (const char *msg, char *detail)
 {
-    fprintf (stderr, "cas:%s: %s\n", msg, detail);
+    fprintf (stderr, "%s: %s: %s\n", source, msg, detail);
 }
 
 void end_segment (int segment, Dword size)
@@ -49,7 +45,7 @@ static int create_segment (char *name)
     int seg = segments.size;
 
     if (seg == 1 && module_type == CLOF_BIN) {
-	component_error ("too many segments in a BIN file: ", name);
+	component_error ("too many segments in a BIN file", name);
 	return NOT_FOUND;
     }
 
@@ -57,18 +53,21 @@ static int create_segment (char *name)
 				 sizeof (struct Segment) 
 				 * (segments.size + 1));
     
-    if (!segments.segments)
-	return NOT_FOUND;
+    if (!segments.segments) {
+      perror ("realloc");
+      return NOT_FOUND;
+    }
     
     segments.segments[seg].name = malloc (strlen (name) + 1);
-    if (!segments.segments[seg].name)
+    if (!segments.segments[seg].name) {
+      perror ("malloc");
 	return NOT_FOUND;
+    }
     strcpy (segments.segments[seg].name, name);
     segments.segments[seg].defined = 0;
     segments.segments[seg].new_index = NOT_FOUND;
 
     segments.size++;
-
     return seg;
 }
 
@@ -87,7 +86,7 @@ int begin_segment (int type, char *name)
 
     if (NOT_FOUND != seg) {
 	if (segments.segments[seg].defined) {
-	    component_error ("duplicate segment definition: ", name);
+	    component_error ("duplicate segment definition", name);
 	    return NOT_FOUND;
 	}
     } else {
@@ -101,10 +100,93 @@ int begin_segment (int type, char *name)
     segments.segments[seg].defined = 1;
     segments.segments[seg].file_offset = offset;
 
-    if (listing)
-	fprintf (stderr, "\n$%s\n", name);
+    segments.segments[seg].image = malloc (sizeof (Dword) * IMAGE_CHUNK);
+    if (!segments.segments[seg].image) {
+      perror ("malloc");
+      return NOT_FOUND;
+    }
+    segments.segments[seg].image_size = 0;
+    segments.segments[seg].image_extent = IMAGE_CHUNK;
 
     return seg;
+}
+
+static void list_segment (struct Segment s)
+{
+  if (s.defined) {
+    char type = 0;
+    switch (s.type) {
+    case SEG_DATA:
+      type = 'D';
+      break;
+    case SEG_CODE:
+      type = 'C';
+      break;
+    case SEG_DEFAULT:
+      type = 'M';
+      break;
+    }
+    fprintf (stderr, "$%-15s %c DEF size=%4d\n", 
+	     s.name,
+	     type,
+	     s.file_size);
+  } else
+    fprintf (stderr, "$%-15s UNDEF\n", s.name);
+}
+
+static void list_segments ()
+{
+  int i, found = 0;
+  fputs ("\nSegments:\n--------------------------\n", stderr);
+
+  for (i = 0; i < segments.size; i++)
+    if (segments.segments[i].file_size) {
+      list_segment (segments.segments[i]);
+      found = 1;
+    }
+  
+  if (!found)
+    fputs ("No named segments in this file\n", stderr);
+}
+
+static void list_label (struct Label l, struct Segment *seglist)
+{
+    fprintf (stderr, 
+	     "%-16s %c ", 
+	     l.name, 
+	     l.export ? 'G' : ' ');
+    if (l.defined) {
+	fprintf (stderr, 
+		 "DEF $%s:(0x%08lx)\n", 
+		 (l.segment != DEFAULT_SEGMENT) ? seglist[l.segment].name : "code*",
+		 l.address);
+    } else {
+	fputs ("UNDEF \n", stderr);
+    }
+}
+
+static int compare_labels (const void *l1, const void *l2)
+{
+  struct Label *label1, *label2;
+  label1 = (struct Label*)l1;
+  label2 = (struct Label*)l2;
+  return (label1->segment != label2->segment) ? 
+    label1->segment > label2->segment :
+    label1->address > label2->address;
+}
+
+static void list_labels ()
+{
+  int i;
+  fputs ("\nSymbols:\n--------------------------\n", stderr);
+ 
+  if (labels.size) {
+    qsort ((void *)labels.labels, labels.size, sizeof (struct Label), compare_labels);
+    for (i = 0; i < labels.size; i++)
+      list_label (labels.labels[i], segments.segments);
+  } else {
+	fputs ("No symbols in this file\n", stderr);
+  }
 }
 
 static int lookup_label (char *label)
@@ -129,20 +211,12 @@ static int create_label (char *label)
     if (!labels.labels[i].name)
 	return NOT_FOUND;
     strcpy (labels.labels[i].name, label);
-    labels.labels[i].near = 0;	/* must be near? */
     labels.labels[i].export = 0; /* can be exported? */
-    labels.labels[i].interrupt = 0; /* must be aligned? */
     labels.labels[i].defined = 0;
-    labels.labels[i].intersegment = 0;
-    labels.labels[i].segment = NOT_FOUND;
+    labels.labels[i].segment = DEFAULT_SEGMENT;
 
     labels.size++;
     return i;
-}
-
-void mark_near_label (int i)
-{
-    labels.labels[i].near = 1;	/* must be near! */
 }
 
 int mark_export_label (char *label)
@@ -150,8 +224,7 @@ int mark_export_label (char *label)
     int lab;
     
     if (NOT_FOUND != (lab = lookup_label (label)))
-	component_error ("warning: duplicate export definition: ",
-		   label);
+	component_error ("warning: duplicate export definition", label);
     else 
 	if (NOT_FOUND != (lab = create_label (label)))
 	    labels.labels[lab].export = 1;
@@ -175,14 +248,10 @@ int add_label (char *label, int segment, Dword offset, int global, int align8)
       return NOT_FOUND;
 
     if (labels.labels[i].defined) {
-      component_error ("duplicate symbol: ", label);
+      component_error ("duplicate symbol", label);
       return NOT_FOUND;
     }
 	
-    if (labels.labels[i].segment != NOT_FOUND /* has been defined */
-	&& labels.labels[i].segment != segment)
-      labels.labels[i].intersegment = 1;
-    
     if (align8) {
 	int boundary;
 	if (align8 == 1) {
@@ -215,11 +284,7 @@ int use_label (char *label, int segment)
     i = create_label (label);
     if (NOT_FOUND != i)
       labels.labels[i].segment = segment;
-  } else {
-    if (   labels.labels[i].segment != NOT_FOUND /* has been defined */
-	   && labels.labels[i].segment != segment)
-      labels.labels[i].intersegment = 1;
-  }
+  } 
    
   return i;    
 }
@@ -229,46 +294,21 @@ static int find_undefined_labels ()
     int status = 1;
     int i;
 
-    if (listing)
-	fputs ("\nSymbols:\n", stderr);
-
     for (i = 0; i < labels.size; i++) {
 	/* count interface symbols: global and undefined */
 	interface += labels.labels[i].export + !labels.labels[i].defined;
 
-	if (listing)
-	    list_label (labels.labels[i], segments.segments);
-
 	if (labels.labels[i].defined) {
 	    if (labels.labels[i].export && module_type != CLOF_EXE) {
-	      component_error ("warning: exported symbol ignored in a BIN file", 
+	      component_error ("warning: exported symbol ignored", 
 			 labels.labels[i].name);
 	    }
 	} else {
-	    if (labels.labels[i].export)
-		component_error ("warning: exported symbol declared but "
-			   "not defined", 
-			   labels.labels[i].name);
-	    else {
-		if (module_type != CLOF_EXE) {
-		    component_error ("undefined symbol in a BIN file", 
-			       labels.labels[i].name);
-		    status = 0;
-		} else
-		    has_unreferenced = 1;
-	    }
-	    
-	}
-	if (labels.labels[i].near) {
-	    if  (!labels.labels[i].defined) {
-		component_error ("undefined symbol: ", labels.labels[i].name);
-		status = 0;
-	    } 
-	    if (labels.labels[i].intersegment) {
-		component_error ("invalid cross-segment reference: ", 
-			   labels.labels[i].name);
-		status = 0;
-	    }
+	  if (module_type != CLOF_EXE) {
+	    component_error ("undefined symbol", labels.labels[i].name);
+	    status = 0;
+	  } else
+	    has_unreferenced = 1;
 	}
     }
 
@@ -277,116 +317,70 @@ static int find_undefined_labels ()
 
 void emit (Dword instr)
 {
-    {
-      static int prev_line_no = -100;
-      if (line_no != prev_line_no) {
-	prev_line_no = line_no;
-	fprintf (debugfile, "%d %ld 0 %d\n", current_segment, offset, line_no - 1);
-      }
-    }
+  static int prev_line_no = -100;
+  if (line_no != prev_line_no) {
+    prev_line_no = line_no;
+    fprintf (debugfile, "%d %ld 0 %d\n", current_segment  - 1, offset, line_no - 1);
+  }
 
-    if (   instr == FIX_SEGMENT 
-	|| instr == FIX_DISPLACEMENT
-	|| instr == FIX_ADDRESS_LOC
-	|| instr == FIX_ADDRESS_GLOB ) {
-	if (listing)
-	    fprintf (stderr, "            0x%08lX (ESC)\n", instr);
-	secure_write (ofile, &instr, sizeof (Dword));
-    } else
-	offset++;
-    secure_write (ofile, &instr, sizeof (Dword));
-
-    if (listing) {
-      char character[] = "' '";
-      if (isprint ((char)instr))
-	character[1] = (char)instr;
-      else
-	character[0] = character[2] = ' ';
-      fprintf (stderr, "0x%08lX: 0x%08lX %s\n", offset - 1, instr, 
-	       character);
-    }
-
+  if (   instr == FIX_SEGMENT 
+      || instr == FIX_ADISPLACEMENT
+      || instr == FIX_RDISPLACEMENT
+      || instr == FIX_EXPRESSION ) {
+    store (instr);
+  } else
+    offset++;
+  store (instr);
 }
 
 void emit_escape (Dword escape)
 {
-    if (listing)
-	fprintf (stderr, "            0x%08lX *\n", escape);
-    secure_write (ofile, &escape, sizeof (Dword));
+    store (escape);
 }
 
-static int generate (int scratch, int outfile)
+static int generate (int outfile)
 {
-  if ((off_t)-1 == lseek (scratch, 0, SEEK_SET)) {
-    perror ("temporary file");
-    return 0;
-  }
-
-  ofile = outfile;
-
+  int status = 1, i;
   /* The header */
   if (module_type == CLOF_EXE) {
     write_header (outfile, has_unreferenced, 
 		  &segments, interface, &labels);
-    secure_string (outfile, "  <code>");
   }
 
   /* The code */
-  copy_code (scratch, outfile, &segments, &labels);
+  for (i = 0; i < segments.size; i++)
+    if (segments.segments[i].file_size)
+      status &= save_segment (outfile, &segments.segments[i], &labels);
 
   if (module_type == CLOF_EXE) {
-    secure_string (outfile, "</code>\n</clof_exe>\n");
+    secure_string (outfile, "</clof_exe>\n");
   }
 
-  return 1;
+  return status;
 }
 
-int find_undefined_segments ()
-{
-    int i, status = 1;
-
-    if (listing)
-	fprintf (stderr, "\nSegments:\n");
-
-    for (i = 0; i < segments.size; i++) {
-	if (module_type != CLOF_EXE && !segments.segments[i].defined) {
-	    component_error ("undefined segment in a BIN file: ", 
-		       labels.labels[i].name);
-	    status = 0;
-	}
-	if (listing)
-	    list_segment (segments.segments[i]);
-    }
-
-    return status;
-}
-
+extern int success;
 int parse_and_assembly (FILE *infile, int outfile)
 {
-    FILE *tf;
-
     assert (infile);
     assert (outfile);
 
-    tf = tmpfile ();
-    if (!tf) {
-	perror ("temporary file");
-	return EXIT_FAILURE;
-    }
-    ofile = fileno (tf);
     yyin = infile;
 
-    if (!setjmp (failure) && yyparse ())
-	return EXIT_FAILURE;
-
-    if (!find_undefined_segments ())
-	return EXIT_FAILURE;
+    if ((!setjmp (failure) && yyparse ())
+	|| !success)
+      return EXIT_FAILURE;
 
     if (!find_undefined_labels ())
 	return EXIT_FAILURE;
 
-    if (!generate (ofile, outfile))
+    if (!generate (outfile))
 	return EXIT_FAILURE;
+
+    if (listing) {
+      list_segments ();
+      list_labels ();
+    }
 
     return EXIT_SUCCESS;
 }

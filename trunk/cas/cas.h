@@ -15,17 +15,18 @@ extern int line_no;
 extern FILE *yyin, *debugfile;
 extern Dword offset;
 extern int current_segment;
+extern struct SegmentTable segments;
 
 struct labelDef {
     int global;
     int align8;
 };
 
+void store (Dword item);
 int begin_segment (int type, char *name);
 void end_segment (int segment, Dword size);
 int add_label (char *label, int segment, Dword offset, int global, int align8);
 int mark_export_label (char *label);
-int mark_interrupt_label (char *label);
 int lookup_segment (char *name);
 int use_label (char *label, int segment);
 void mark_near_label (int i);
@@ -38,5 +39,12 @@ void emit_escape (Dword i);
 int get_options (int argc, char *argv[], char **object, char source[], 
 		 int *ecode);
 int parse_and_assembly (FILE *infile, int outfile);
+int copy_code_ram (int outfile, 
+		   struct SegmentTable *segments,
+		   struct LabelTable *labels);
+
+#define DEFAULT_SEGMENT 0
+#define NOT_FOUND (-1)
+
 
 #endif
