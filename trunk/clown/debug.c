@@ -3,7 +3,11 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <linux/limits.h>
+#ifdef __APPLE__
+#	include <limits.h>
+#else
+#	include <linux/limits.h>
+#endif
 #include <unistd.h>
 #include "registers.h"
 
