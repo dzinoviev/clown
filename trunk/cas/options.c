@@ -31,8 +31,8 @@ static void show_usage (char *name)
     fputs ("  -P, --nocpp              do not preprocess\n", stderr);
     fputs ("  --pass-to-cpp \"OPTIONS\"  pass OPTIONS to preprocessor\n", stderr);
     fputs ("      option -I($CLOWN/include/) is passed implicitly\n", stderr);
-    fputs ("  -b, --bin                generate a BIN module (default)\n", stderr);
-    fputs ("  -x, --exe                generate an EXE module\n", stderr);
+    fputs ("  -b, --cle                generate a CLE module (default)\n", stderr);
+    fputs ("  -s, --clo                generate a CLO module\n", stderr);
     fprintf (stderr, "  -e ADDR, --entry ADDR    set start address (default %ld)\n", offset);
     fputs ("  -o OFILE                 set output file name (default IFILE.cle/IFILE.clo)\n", stderr);
     fputs ("  -v, --version            print assembler version number and exit\n", stderr);
@@ -117,7 +117,7 @@ int get_options (int argc, char *argv[], char **object,
 	    continue;
 	}
 
-	if (   !strcmp (argv[i], "--bin")
+	if (   !strcmp (argv[i], "--cle")
 	    || !strcmp (argv[i], "-b")) {
 	    if (module_type != CLOF_UNKNOWN) {
 		fprintf (stderr,
@@ -127,8 +127,8 @@ int get_options (int argc, char *argv[], char **object,
 	    continue;
 	}
 
-	if (   !strcmp (argv[i], "--exe")
-	    || !strcmp (argv[i], "-x")) {
+	if (   !strcmp (argv[i], "--clo")
+	    || !strcmp (argv[i], "-s")) {
 	    if (module_type != CLOF_UNKNOWN) {
 		fprintf (stderr,
 			 "%s: module type cannot be redefined\n",argv[0]);

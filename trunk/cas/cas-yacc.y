@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "cas.h"
 #include "registers.h"
 
@@ -60,7 +61,6 @@ enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX};
 };
 
 #define MAX_ERROR 1024    
-Dword offset;
 int current_segment = DEFAULT_SEGMENT;
 static char error_buffer[MAX_ERROR];
 int success = 1;
@@ -180,7 +180,7 @@ static void report (int severe, int id)
 %type <i>size
 %type <i>segment
 %type <v>values
-%type <i>address
+%type <i>symbol
 %type <sym>symdef
 
 %start program
@@ -216,7 +216,7 @@ segtype     : T_CODE {$$ = SEG_CODE}
             | T_DATA {$$ = SEG_DATA};
 
 expression  : T_NUMBER                       { $$ = newConstant ($1); }
-            | address                        { $$ = newLabel ($1); }
+            | symbol                         { $$ = newLabel ($1); }
             | '(' expression ')'             { $$ = $2; }
             | expression '+' expression      { $$ = do_math ('+', $1, $3); }
             | '-' expression %prec UNARY_MIN { $$ = do_math (UNARY_MIN, $2, NULL); }
@@ -301,7 +301,7 @@ values      : {$$.size = 0; $$.data = NULL}
 		$$.size = $1.size + 1;
 	    } ;
 
-address     : T_ADDRESS {
+symbol     : T_ADDRESS {
                 int label = use_label ($1, current_segment);
 		if (NOT_FOUND == label) {
 		    yyerror ("fatal error");
@@ -353,7 +353,7 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
+		      emit_escape (FIX_SEGMENT); current_overhead++;
 		      emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
 		      emit_expression ($4);
 		  } else {
@@ -368,7 +368,7 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
+		      emit_escape (FIX_SEGMENT); current_overhead++; 
 		      emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
 		      emit_expression (NULL);
 		  } else {
@@ -458,7 +458,7 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
+		      emit_escape (FIX_SEGMENT); current_overhead++; 
 		      emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
 		      emit_expression ($4);
 		  } else {
@@ -473,7 +473,7 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
+		      emit_escape (FIX_SEGMENT); current_overhead++; 
 		      emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
 		      emit_expression (NULL);
 		  } else {
@@ -539,7 +539,7 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
+		      emit_escape (FIX_SEGMENT); current_overhead++; 
 		      emit (BUILD_INSTRUCTION_C (MOVSI, $2, s));
 		  } else {
 		      report (1, SEGMENTINBIN);
@@ -747,22 +747,25 @@ instruction : error instruction
 
 %%
 
-static void emit_expression (Expression *target) 
+static void emit_expression (Expression *e) 
 {
-    if (!target) {		/* zero constant */
+    if (!e) {		/* zero constant */
 	emit (0);
 	return;
     }
-    switch (target->type) {
+    switch (e->type) {
     case CONSTANT:
-	emit (target->detail.constant);
+	emit (e->detail.constant);
 	break;
     case EXPRESSION:
     case LABEL:
 	emit_escape (FIX_EXPRESSION);
 	emit (0);		/* fake instruction */
-	emit_escape ((Dword)target);
+	emit_escape ((Dword)e);
+	current_overhead += 1 + expression_overhead (e);
 	break;	
+    case DUMMY:
+	assert (e->type != DUMMY);
     }
 }
 
@@ -771,8 +774,11 @@ static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative)
     emit_escape (relative ? FIX_RDISPLACEMENT : FIX_ADISPLACEMENT);
     emit (BUILD_INSTRUCTION_B (opc, op1, 0));
     emit_escape ((Dword)dspl);
-    if (relative)
+    if (relative) {
 	emit_escape (offset);   /* current_offset */
+    } else {
+	current_overhead += 1 + expression_overhead (dspl);
+    }
 }
 
 void yywarning (char *s)

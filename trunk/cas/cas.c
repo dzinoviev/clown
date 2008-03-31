@@ -114,6 +114,7 @@ int main (int argc, char *argv[])
 	if (-1 == unlink (object))
 	    perror (object);
 
+    close (outfile);
     fclose (debugfile);
     return ecode;
 }

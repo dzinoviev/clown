@@ -15,6 +15,7 @@ extern int line_no;
 extern FILE *yyin, *debugfile;
 extern Dword offset;
 extern int current_segment;
+extern int current_overhead;
 extern struct SegmentTable segments;
 
 struct labelDef {
@@ -22,8 +23,8 @@ struct labelDef {
     int align8;
 };
 
-void store (Dword item);
 int begin_segment (int type, char *name);
+void component_error (const char *msg, char *detail);
 void end_segment (int segment, Dword size);
 int add_label (char *label, int segment, Dword offset, int global, int align8);
 int mark_export_label (char *label);
@@ -43,8 +44,6 @@ int copy_code_ram (int outfile,
 		   struct SegmentTable *segments,
 		   struct LabelTable *labels);
 
-#define DEFAULT_SEGMENT 0
-#define NOT_FOUND (-1)
 
 
 #endif

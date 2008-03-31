@@ -6,8 +6,9 @@
 
 #include "clink.h"
 
-#define DEFAULT_OBJECT "a.out"
-#define VERSION "CLOWN linker version 1.00 ["__DATE__"]"
+#define DEFAULT_OBJECT "default.clo"
+#define DEFAULT_EXE "default.cle"
+#define VERSION "CLOWN linker version 1.10 ["__DATE__"]"
 
 static void show_version (void)
 {
@@ -16,7 +17,7 @@ static void show_version (void)
 
 static void show_copy (void)
 {
-    fputs ("Copyright 2004 D. Zinoviev\n"
+    fputs ("Copyright 2004,2008 D. Zinoviev\n"
 	   "This program is free software; you may redistribute it under the terms of\n"
 	   "the GNU General Public License.  This program has absolutely no warranty.\n", 
 	   stderr);
@@ -29,11 +30,12 @@ static void show_usage (char *name)
     fprintf (stderr, "USAGE: %s [option...] binfile [binfile...]\n", name);
     fputs ("Options:\n", stderr);
     fputs ("  -h, --help                show this message and exit\n", stderr);
-    fputs ("  -o FILE                   set output file name (default "DEFAULT_OBJECT")\n", stderr);
+    fputs ("  -b, --cle                 generate a CLE module (default)\n", stderr);
+    fputs ("  -s, --clo                 generate a CLO module\n", stderr);
+    fputs ("  -o FILE                   set output file name ("DEFAULT_OBJECT"/"DEFAULT_EXE")\n", stderr);
     fputs ("  -v, --version             print linker version number and exit\n", stderr);
     fputs ("  -l, --listing             produce listings\n", stderr);
-    fputs ("  -U, --allow-unresolved    allow unresolved segments and symbols\n", stderr);
-    fputs ("  --silent                  work silently\n", stderr);
+    fputs ("  -q, --silent              work silently\n", stderr);
     fputs ("  -V                        print linker version number\n", stderr);
     fputs ("  --                        treat the next argument as a file name\n", stderr);
 }
@@ -63,7 +65,8 @@ int get_options (int argc, char *argv[], char **object,
 	    continue;
 	}
 
-	if (!strcmp (argv[i], "--version")) {
+	if (!strcmp (argv[i], "--version")
+	    || !strcmp (argv[i], "-v")) {
 	    show_version ();
 	    show_copy ();
 	    *ecode = EXIT_SUCCESS;
@@ -79,19 +82,41 @@ int get_options (int argc, char *argv[], char **object,
 
 	if (   !strcmp (argv[i], "--listing")
 	    || !strcmp (argv[i], "-l")) {
-	    listing = 1;
+	    if (silent)
+		fprintf (stderr,
+			 "%s: cannot produce listings in the silent mode; option -l ignored\n", argv[0]);
+	    else
+		listing = 1;
 	    continue;
 	}
 
 	if (   !strcmp (argv[i], "--silent")
 	    || !strcmp (argv[i], "-q")) {
-	    silent = 1;
+	    if (listing)
+		fprintf (stderr,
+			 "%s: cannot work silently and produce listings; option -q ignored\n", argv[0]);
+	    else
+		silent = 1;
 	    continue;
 	}
 
-	if (   !strcmp (argv[i], "--allow-unresolved")
-	    || !strcmp (argv[i], "-U")) {
-	    no_unresolved_segments = 0;
+	if (   !strcmp (argv[i], "--clo")
+	    || !strcmp (argv[i], "-s")) {
+	    if (module_type != CLOF_UNKNOWN) {
+		fprintf (stderr,
+			 "%s: module type cannot be redefined\n",argv[0]);
+	    } else
+		module_type = CLOF_EXE;
+	    continue;
+	}
+
+	if (   !strcmp (argv[i], "--cle")
+	    || !strcmp (argv[i], "-b")) {
+	    if (module_type != CLOF_UNKNOWN) {
+		fprintf (stderr,
+			 "%s: module type cannot be redefined\n",argv[0]);
+	    } else
+		module_type = CLOF_BIN;
 	    continue;
 	}
 
@@ -126,17 +151,26 @@ int get_options (int argc, char *argv[], char **object,
 	  }
 
 	  *source = realloc (*source, sizeof (char **) * (*nsources + 1));
-	  assert (*source);	/* BAD! */
+	  if (!*source) {
+	      perror ("realloc");
+	      longjmp (failure, 1);	      
+	  }
 	  (*source)[*nsources] = malloc (strlen (argv[i]) + 1);
-	  assert ((*source)[*nsources]); /* BAD! */
+	  if (!(*source)[*nsources]) {
+	      perror ("malloc");
+	      longjmp (failure, 1);	      
+	  }
 	  strcpy ((*source)[*nsources], argv[i]);
 	  (*nsources)++;
 	}
     }
 
+    if (module_type == CLOF_UNKNOWN)
+	module_type = CLOF_BIN;
+
     if (!*object)
-	*object = DEFAULT_OBJECT; 
-    
+	*object = (module_type == CLOF_BIN) ? DEFAULT_EXE : DEFAULT_OBJECT; 
+
     return 1;
 }
 

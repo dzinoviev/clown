@@ -12,8 +12,6 @@ int fileno (FILE *stream);	/* for Ansi C  */
 #endif
 
        Clof_Type module_type      = CLOF_UNKNOWN;
-static Bit       has_unreferenced = 0;
-static int       interface        = 0;
 jmp_buf   failure;
 
        int listing = 0;
@@ -28,7 +26,7 @@ void component_error (const char *msg, char *detail)
 
 void end_segment (int segment, Dword size)
 {
-    segments.segments[segment].file_size = size;
+    segments.segments[segment].file_size = (module_type == CLOF_BIN) ? size : (size + current_overhead);
 }
 
 static int search_segment (char *name)
@@ -98,7 +96,6 @@ int begin_segment (int type, char *name)
     /* define segment */
     segments.segments[seg].type = type;
     segments.segments[seg].defined = 1;
-    segments.segments[seg].file_offset = offset;
 
     segments.segments[seg].image = malloc (sizeof (Dword) * IMAGE_CHUNK);
     if (!segments.segments[seg].image) {
@@ -108,85 +105,9 @@ int begin_segment (int type, char *name)
     segments.segments[seg].image_size = 0;
     segments.segments[seg].image_extent = IMAGE_CHUNK;
 
+    current_overhead = 0;
+
     return seg;
-}
-
-static void list_segment (struct Segment s)
-{
-  if (s.defined) {
-    char type = 0;
-    switch (s.type) {
-    case SEG_DATA:
-      type = 'D';
-      break;
-    case SEG_CODE:
-      type = 'C';
-      break;
-    case SEG_DEFAULT:
-      type = 'M';
-      break;
-    }
-    fprintf (stderr, "$%-15s %c DEF size=%4d\n", 
-	     s.name,
-	     type,
-	     s.file_size);
-  } else
-    fprintf (stderr, "$%-15s UNDEF\n", s.name);
-}
-
-static void list_segments ()
-{
-  int i, found = 0;
-  fputs ("\nSegments:\n--------------------------\n", stderr);
-
-  for (i = 0; i < segments.size; i++)
-    if (segments.segments[i].file_size) {
-      list_segment (segments.segments[i]);
-      found = 1;
-    }
-  
-  if (!found)
-    fputs ("No named segments in this file\n", stderr);
-}
-
-static void list_label (struct Label l, struct Segment *seglist)
-{
-    fprintf (stderr, 
-	     "%-16s %c ", 
-	     l.name, 
-	     l.export ? 'G' : ' ');
-    if (l.defined) {
-	fprintf (stderr, 
-		 "DEF $%s:(0x%08lx)\n", 
-		 (l.segment != DEFAULT_SEGMENT) ? seglist[l.segment].name : "code*",
-		 l.address);
-    } else {
-	fputs ("UNDEF \n", stderr);
-    }
-}
-
-static int compare_labels (const void *l1, const void *l2)
-{
-  struct Label *label1, *label2;
-  label1 = (struct Label*)l1;
-  label2 = (struct Label*)l2;
-  return (label1->segment != label2->segment) ? 
-    label1->segment > label2->segment :
-    label1->address > label2->address;
-}
-
-static void list_labels ()
-{
-  int i;
-  fputs ("\nSymbols:\n--------------------------\n", stderr);
- 
-  if (labels.size) {
-    qsort ((void *)labels.labels, labels.size, sizeof (struct Label), compare_labels);
-    for (i = 0; i < labels.size; i++)
-      list_label (labels.labels[i], segments.segments);
-  } else {
-	fputs ("No symbols in this file\n", stderr);
-  }
 }
 
 static int lookup_label (char *label)
@@ -214,6 +135,7 @@ static int create_label (char *label)
     labels.labels[i].export = 0; /* can be exported? */
     labels.labels[i].defined = 0;
     labels.labels[i].segment = DEFAULT_SEGMENT;
+    labels.labels[i].new_index = i;
 
     labels.size++;
     return i;
@@ -295,9 +217,6 @@ static int find_undefined_labels ()
     int i;
 
     for (i = 0; i < labels.size; i++) {
-	/* count interface symbols: global and undefined */
-	interface += labels.labels[i].export + !labels.labels[i].defined;
-
 	if (labels.labels[i].defined) {
 	    if (labels.labels[i].export && module_type != CLOF_EXE) {
 	      component_error ("warning: exported symbol ignored", 
@@ -307,12 +226,26 @@ static int find_undefined_labels ()
 	  if (module_type != CLOF_EXE) {
 	    component_error ("undefined symbol", labels.labels[i].name);
 	    status = 0;
-	  } else
-	    has_unreferenced = 1;
+	  }
 	}
     }
 
     return status;
+}
+
+static void store (Dword item)
+{
+  struct Segment *s = &segments.segments[current_segment];
+
+  if (s->image_size >= s->image_extent) {
+    s->image_extent += IMAGE_CHUNK;
+    s->image = realloc (s->image, s->image_extent * sizeof (Dword));
+    if (!s->image) {
+      perror ("realloc");
+      longjmp (failure, 1);
+    }
+  }
+  s->image[s->image_size++] = item;
 }
 
 void emit (Dword instr)
@@ -343,17 +276,16 @@ static int generate (int outfile)
   int status = 1, i;
   /* The header */
   if (module_type == CLOF_EXE) {
-    write_header (outfile, has_unreferenced, 
-		  &segments, interface, &labels);
+    write_header (outfile, &segments, &labels);
   }
 
   /* The code */
   for (i = 0; i < segments.size; i++)
     if (segments.segments[i].file_size)
-      status &= save_segment (outfile, &segments.segments[i], &labels);
+	status &= save_segment (outfile, i, &segments.segments[i], &labels, FIRST_FRAGMENT | LAST_FRAGMENT);
 
   if (module_type == CLOF_EXE) {
-    secure_string (outfile, "</clof_exe>\n");
+    secure_string (outfile, "</clof>\n");
   }
 
   return status;
@@ -378,8 +310,8 @@ int parse_and_assembly (FILE *infile, int outfile)
 	return EXIT_FAILURE;
 
     if (listing) {
-      list_segments ();
-      list_labels ();
+      list_segments (segments);
+      list_labels (labels, segments);
     }
 
     return EXIT_SUCCESS;

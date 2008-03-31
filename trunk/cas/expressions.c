@@ -3,7 +3,25 @@
 #include "cas.h"
 #include "cas-yacc.tab.h"
 
-static Expression *newExpression (int operation, Expression *left, Expression *right)
+int expression_overhead (Expression *e)
+{
+    if (!e)
+	return 1;
+    switch (e->type) {
+    case CONSTANT:
+    case LABEL:
+	return 2;
+    case EXPRESSION:
+	return 2 
+	    + expression_overhead (e->detail.expression.left) 
+	    + expression_overhead (e->detail.expression.right);
+    case DUMMY:
+	assert (e->type != DUMMY);
+    }
+    return 0;
+}
+
+Expression *newExpression (int operation, Expression *left, Expression *right)
 {
     Expression *e = malloc (sizeof (Expression));
     if (!e) {
@@ -120,34 +138,15 @@ int try_to_evaluate (Expression *e, struct LabelTable *labels, Dword *value, Dwo
 		assert (labels->labels[label].defined || module_type == CLOF_EXE);
 	    return 0;
 	}
+	break;
     case EXPRESSION:
-	switch (e->detail.expression.operation) {
-	case '+':
-	case '-':
-	case '*':
-	case '/':
-	case '%':
-	case '^':
-	case '&':
-	case '|':
-	case T_LL:
-	case T_GG:
-	    lstatus = try_to_evaluate (e->detail.expression.left,  labels,  value, segment);
-	    rstatus = try_to_evaluate (e->detail.expression.right, labels, &rvalue, segment);
-	    if (min (lstatus, rstatus) <= 0)
-		return min (lstatus, rstatus);
-	    break;
-	case UNARY_MIN:
-	case '!':
-	case '~':
-	    lstatus = try_to_evaluate (e->detail.expression.left, labels, value, segment);
-	    if (lstatus <= 0)
-		return lstatus;
-	    break;
-	default:
-	    assert (0);
-	}
-
+	lstatus = try_to_evaluate (e->detail.expression.left,  labels,  value, segment);
+	rstatus = e->detail.expression.right
+	    ? try_to_evaluate (e->detail.expression.right, labels, &rvalue, segment)
+	    : 1;
+	if (min (lstatus, rstatus) <= 0)
+	    return min (lstatus, rstatus);
+	
 	switch (e->detail.expression.operation) {
 	case '+':
 	    *value += rvalue;
@@ -190,6 +189,8 @@ int try_to_evaluate (Expression *e, struct LabelTable *labels, Dword *value, Dwo
 	    return 1;
 	}
 	break;
+    case DUMMY:
+	assert (e->type != DUMMY);
     }
     return 0;
 }
