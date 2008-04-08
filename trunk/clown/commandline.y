@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "registers.h"
-int yyerror (char *s);
-int yylex ();
+int cmderror (char *s);
+int cmdlex ();
 static void do_help ();
 %}
 
@@ -158,8 +158,13 @@ static void do_help ()
   fputs ("To suspend the running simulation, press ^C\n", stderr);
 }
 
-int yyerror (char *s)
+int cmderror (char *s)
 {
     fprintf (stderr, "\t%s\n", s);
     return 0;
+}
+
+int cmdwrap ()
+{
+    return 1;
 }

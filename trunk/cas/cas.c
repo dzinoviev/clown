@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#ifdef __APPLE__
-#	include <limits.h>
-#else
+#ifdef __linux
 #	include <linux/limits.h>
+#else
+#	include <limits.h>
 #endif
 #include <errno.h>
 #include <sys/types.h>
@@ -19,41 +19,41 @@ FILE *popen(const char *command, const char *type); /* for ANSI compatibility */
 #include "cas.h"
 #define CPP "cpp"
 #define INCLUDE "/include/"
-char source[PATH_MAX] = "";
+static char *myfile = NULL;
+char **source = { &myfile };
 char *cpp_options = "";			/* should we preprocess the file? */
 FILE *debugfile;
 
 int main (int argc, char *argv[])
 {
     int ecode;
-    char *object = NULL, *dfile = NULL, *cmdline;
+    char *object = NULL, *cmdline;
+#ifndef XML_DEBUG
+    char *dfile = NULL;
+#endif
     FILE *infile;
     int outfile;
     char *clownpath;
     int cmdlen = PATH_MAX + 1;
 
+    if (setjmp (failure))
+      return EXIT_FAILURE;
+
     if (!get_options (argc, argv, &object, source, &ecode))
 	return ecode;
 
-    dfile = malloc (strlen (object) + 5);
-    if (!dfile) {
-	perror ("malloc");
-	return EXIT_FAILURE;
-    }
+#ifndef XML_DEBUG
+    dfile = safe_malloc (strlen (object) + 5);
     strcpy (dfile, object);
     strcat (dfile, ".dbg");
+#endif
 
     clownpath = getenv ("CLOWN");
     if (clownpath)
 	cmdlen += strlen (clownpath) + sizeof INCLUDE + 2;
     if (cpp_options)
 	cmdlen += sizeof CPP + strlen (cpp_options) + 3;
-    cmdline = malloc (cmdlen);
-    
-    if (!cmdline) {
-	perror ("malloc");
-	return EXIT_FAILURE;
-    }
+    cmdline = safe_malloc (cmdlen);
     
     if (cpp_options) {		/* use CPP */
       strcpy (cmdline, CPP" ");
@@ -67,9 +67,9 @@ int main (int argc, char *argv[])
     } else
 	cmdline[0] = 0;
     
-    if (source[0]) {
+    if (*source[0]) {
 	if (cpp_options) {
-	  strcat (cmdline, source);
+	  strcat (cmdline, *source);
 	  infile = popen (cmdline, "r");
 	  if (!infile) {
 	    perror (cmdline);
@@ -77,15 +77,15 @@ int main (int argc, char *argv[])
 	  } 
 	  free (cmdline);
 	} else {
-	  infile = fopen (source, "r");
+	  infile = fopen (*source, "r");
 	  
 	  if (!infile) {
-	    perror (source);
+	    perror (*source);
 	    return EXIT_FAILURE;
 	  } 
 	}
     } else {
-      strcpy (source, "<stdin>");
+      strcpy (*source, "<stdin>");
       if (cpp_options) {
 	infile = popen (cmdline, "r");
 	if (!infile) {
@@ -102,12 +102,14 @@ int main (int argc, char *argv[])
 	return EXIT_FAILURE;
     }
 
+#ifndef XML_DEBUG
     debugfile = fopen (dfile, "w");
     if (!debugfile) {
 	perror (dfile);
 	return EXIT_FAILURE;
     }
-    fprintf (debugfile, "1\n0 %s\n", source);
+    fprintf (debugfile, "1\n%s\n", *source);
+#endif
 
     ecode = parse_and_assembly (infile, outfile);
     if (ecode == EXIT_FAILURE)
@@ -115,6 +117,8 @@ int main (int argc, char *argv[])
 	    perror (object);
 
     close (outfile);
+#ifndef XML_DEBUG
     fclose (debugfile);
+#endif
     return ecode;
 }

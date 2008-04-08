@@ -176,6 +176,7 @@ static void report (int severe, int id)
 %token <i>T_DATA
 
 %type <i>segtype
+%type <i>segmod
 %type <expr>expression
 %type <i>size
 %type <i>segment
@@ -187,7 +188,7 @@ static void report (int severe, int id)
 
 %%
 
-program     : { if ((current_segment = begin_segment (SEG_DEFAULT, "code*")) == NOT_FOUND) {
+program     : { if ((current_segment = begin_segment (0, SEG_DEFAULT, "code*")) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;
 		  } 
@@ -198,9 +199,9 @@ program     : { if ((current_segment = begin_segment (SEG_DEFAULT, "code*")) == 
 lines       : line lines 
             | ;
 
-line        : segtype T_SEGMENT {    
+line        : segmod segtype T_SEGMENT {    
 		  end_segment (current_segment, offset);
-		  if ((current_segment = begin_segment ($1, $2)) == NOT_FOUND) {
+		  if ((current_segment = begin_segment ($1, $2, $3)) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;
 		  }
@@ -212,14 +213,19 @@ line        : segtype T_SEGMENT {
             | instruction
             ;
 
+segmod      : T_GLOBAL { $$ = 1; }
+            | { $$=0 }
+;
+
 segtype     : T_CODE {$$ = SEG_CODE} 
-            | T_DATA {$$ = SEG_DATA};
+            | T_DATA {$$ = SEG_DATA}
+;
 
 expression  : T_NUMBER                       { $$ = newConstant ($1); }
             | symbol                         { $$ = newLabel ($1); }
             | '(' expression ')'             { $$ = $2; }
             | expression '+' expression      { $$ = do_math ('+', $1, $3); }
-            | '-' expression %prec UNARY_MIN { $$ = do_math (UNARY_MIN, $2, NULL); }
+            | '-' expression %prec UNARY_MIN { $$ = do_math (C_UNARY_MIN, $2, NULL); }
             | expression '-' expression      { $$ = do_math ('-', $1, $3); }
             | expression '*' expression      { $$ = do_math ('*', $1, $3); }
             | expression '/' expression      { $$ = do_math ('/', $1, $3); }
@@ -229,8 +235,8 @@ expression  : T_NUMBER                       { $$ = newConstant ($1); }
             | expression '|' expression      { $$ = do_math ('|', $1, $3); }
             |            '!' expression      { $$ = do_math ('!', $2, NULL); }
             |            '~' expression      { $$ = do_math ('~', $2, NULL); }
-            | expression T_LL expression     { $$ = do_math (T_LL, $1, $3); }
-            | expression T_GG expression     { $$ = do_math (T_GG, $1, $3); }
+            | expression T_LL expression     { $$ = do_math (C_LL, $1, $3); }
+            | expression T_GG expression     { $$ = do_math (C_GG, $1, $3); }
             | '(' error ')'                  { $$ = NULL; yyerror ("malformed expression"); }  
             ;
 
@@ -291,12 +297,12 @@ size        : {$$ = 1}
 
 values      : {$$.size = 0; $$.data = NULL}
             | expression {
-		$$.data = malloc (sizeof (Dword)); 
+		$$.data = safe_malloc (sizeof (Dword)); 
 		$$.data[0] = (Dword)$1;
 		$$.size = 1;
 	    }
             | values ',' expression { 
-		$$.data = realloc ($1.data, ($1.size + 1) * sizeof (Dword)); 
+		$$.data = safe_realloc ($1.data, ($1.size + 1) * sizeof (Dword)); 
 		$$.data[$1.size] = (Dword)$3;
 		$$.size = $1.size + 1;
 	    } ;
@@ -783,12 +789,12 @@ static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative)
 
 void yywarning (char *s)
 {
-    fprintf (stderr, "warning:%s:%d: %s\n", source, line_no, s);
+    fprintf (stderr, "warning:%s:%d: %s\n", *source, line_no, s);
 }
 
 int yyerror (char *s)
 {
-    fprintf (stderr, "%s:%d: %s\n", source, line_no, s);
+    fprintf (stderr, "%s:%d: %s\n", *source, line_no, s);
     success = 0;
     return 0;
 }

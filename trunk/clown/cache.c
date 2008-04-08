@@ -1,16 +1,12 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include "registers.h"
 
 #define CACHE_LINE_BITS 4
 #define CACHE_LINE_SIZE (1<<CACHE_LINE_BITS)
 static int cache_size = 0;
 
-static Dword CLOWN_MEMORY[CLOWN_MEMORY_SIZE];
+Dword CLOWN_MEMORY[CLOWN_MEMORY_SIZE];
 
 /* 
  * Simple direct mapped cache:
@@ -141,22 +137,3 @@ cycle_t clown_write_cache (Dword phys_addr, Dword datum)
     return cycles;
 }
 
-int load_memory (char *fname, Dword offset)
-{
-  int memimage;
-  int size;
-
-  if (-1 == (memimage = open (fname, O_RDONLY))) {
-    perror (fname);
-    return 0;
-  }
-  
-  size = (CLOWN_MEMORY_SIZE - offset) * sizeof (Dword);
-  size = read (memimage, &CLOWN_MEMORY[offset], size);
-
-  close (memimage);
-
-  load_debug_info (fname, offset, size / sizeof (Dword));
-
-  return size;
-}

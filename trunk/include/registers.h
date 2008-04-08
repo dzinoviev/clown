@@ -166,6 +166,7 @@ enum {
 
 extern DDword clown_time;	/* the number of CPU cycles */
 extern struct Clown_Registers clown;
+extern Dword CLOWN_MEMORY[];
 
 #include <setjmp.h>
 extern jmp_buf begin_or_abort;

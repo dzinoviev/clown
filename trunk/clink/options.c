@@ -35,6 +35,7 @@ static void show_usage (char *name)
     fputs ("  -o FILE                   set output file name ("DEFAULT_OBJECT"/"DEFAULT_EXE")\n", stderr);
     fputs ("  -v, --version             print linker version number and exit\n", stderr);
     fputs ("  -l, --listing             produce listings\n", stderr);
+    fputs ("  -ng, --nodebug            do not generate debug info\n", stderr);
     fputs ("  -q, --silent              work silently\n", stderr);
     fputs ("  -V                        print linker version number\n", stderr);
     fputs ("  --                        treat the next argument as a file name\n", stderr);
@@ -135,6 +136,13 @@ int get_options (int argc, char *argv[], char **object,
 	    } 
 	    i++;
 	    *object = argv[i];
+	    continue;
+	}
+
+
+	if (   !strcmp (argv[i], "--nodebug")
+	    || !strcmp (argv[i], "-ng")) {
+	    debug = 0;
 	    continue;
 	}
 

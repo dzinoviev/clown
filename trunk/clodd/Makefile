@@ -1,19 +1,21 @@
 INCLUDE = ../include/
-DEVICES = ../devices/
+DEVICES = ../devlib/
 CFLAGS = -Wall -ansi  -g -I$(INCLUDE) #-O3
-LD = $(CC)
 
 all:  ../bin/clodd
 
-../bin/clodd: clodd.o options.o $(DEVICES)hddlib.o 
-	$(LD) $^ -o $@ -lc
+../bin/clodd: clodd.o options.o $(DEVICES)/libdevices.a
+	$(CC) $^ -o $@ -L$(DEVICES) -ldevices
 
-clodd.o: clodd.c $(INCLUDE)hdd.h $(INCLUDE)clown_types.h  $(INCLUDE)exceptions.h $(INCLUDE)generate.h clodd.h
+clodd.o: clodd.c clodd.h $(INCLUDE)/hdd.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h
 
-options.o: options.c clodd.h
-
-hddlib.o: $(DEVICES)hddlib.c $(INCLUDE)hdd.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h $(INCLUDE)generate.h
+options.o: options.c clodd.h $(INCLUDE)/hdd.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h
 
 clean:
-	rm -f ../bin/clodd *.o
+	rm -f *.o *~
+
+cleanall:
+	rm -f ../bin/clodd *.o *~
 

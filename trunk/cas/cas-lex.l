@@ -9,10 +9,11 @@ static char string_buf[1024];
 static char *string_buf_ptr;
 int line_no = 1;
 char *strdup(const char *s);
+ static char dummy[1024];
 
 static void lex_error (const char *message)
 {
-    fprintf (stderr, "cas:%s:%d: %s: %s\n", source, line_no, message, yytext);
+    fprintf (stderr, "cas:%s:%d: %s: %s\n", *source, line_no, message, yytext);
 }
 %}
 
@@ -26,7 +27,7 @@ HD [0-9A-Fa-f]
 %%
 
 \#(\ )*[0-9]+(\ )+\"[^\"]*\"(\ [0-9]+)? {	/* preprocessor line directives */
-sscanf (yytext, "# %d \"%[^\"]s\"", &line_no, source);
+sscanf (yytext, "# %d \"%[^\"]s\"", &line_no, dummy);
 line_no--;
 }
 

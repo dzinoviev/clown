@@ -1,15 +1,18 @@
 INCLUDE = ../include/
 CFLAGS = -Wall -ansi  -g -I$(INCLUDE) #-O3
-LD = $(CC)
 
 all:  ../bin/makedisc
 
 ../bin/makedisc: makedisc.o
-	$(LD) $^ -o $@ -lc
+	$(CC) $^ -o $@ 
 
-makedisc.o: makedisc.c $(INCLUDE)isa.h $(INCLUDE)exceptions.h $(INCLUDE)registers.h $(INCLUDE)hdd.h
+makedisc.o: makedisc.c $(INCLUDE)/hdd.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h
 
 clean:
+	rm -f *.o *~
+
+cleanall:
 	rm -f ../bin/makedisc *.o
 
 disc:

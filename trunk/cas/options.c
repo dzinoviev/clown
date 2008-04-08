@@ -37,12 +37,13 @@ static void show_usage (char *name)
     fputs ("  -o OFILE                 set output file name (default IFILE.cle/IFILE.clo)\n", stderr);
     fputs ("  -v, --version            print assembler version number and exit\n", stderr);
     fputs ("  -l, --listing            produce listings\n", stderr);
+    fputs ("  -ng, --nodebug           do not generate debug info\n", stderr);
     fputs ("  -V                       print assembler version number\n", stderr);
     fputs ("  --                       treat the next argument as a file name\n", stderr);
 }
 
 int get_options (int argc, char *argv[], char **object,
-		 char source[], int *ecode)
+		 char **source, int *ecode)
 {
     int i;
     char *suffix = NULL;
@@ -143,6 +144,12 @@ int get_options (int argc, char *argv[], char **object,
 	    continue;
 	}
 
+	if (   !strcmp (argv[i], "--nodebug")
+	    || !strcmp (argv[i], "-ng")) {
+	    debug = 0;
+	    continue;
+	}
+
 	if (!strcmp (argv[i], "-o")) {
 	    if (*object) {
 		fprintf (stderr,
@@ -166,7 +173,7 @@ int get_options (int argc, char *argv[], char **object,
 
 	if (i != argc) {
 	  struct stat buf;
-	  if (source[0]) {
+	  if (*source) {
 	    fprintf (stderr,
 		     "%s: only one source can be assembled at a time\n", 
 		     argv[0]);
@@ -174,11 +181,12 @@ int get_options (int argc, char *argv[], char **object,
 	    return 0;
 	  }
 	  
-	  strcpy (source, argv[i]);
-	  if (-1 == stat (source, &buf))
-	    strcat (source, ".s");
-	  if (-1 == stat (source, &buf)) {
-	    perror (source);
+	  *source = safe_malloc (strlen (argv[i]) + 3);
+	  strcpy (*source, argv[i]);
+	  if (-1 == stat (*source, &buf))
+	    strcat (*source, ".s");
+	  if (-1 == stat (*source, &buf)) {
+	    perror (*source);
 	    *ecode = EXIT_FAILURE;
 	    return 0;
 	  }
@@ -197,21 +205,21 @@ int get_options (int argc, char *argv[], char **object,
     }
 
     if (!*object) {
-      if (source[0]) {
+      if (*source[0]) {
 	int len;
-	char *filename = strrchr (source, '/');
+	char *filename = strrchr (*source, '/');
 	if (!filename)
-	  filename = source;
+	  filename = *source;
 	else
 	  filename ++;
 
 	len = strlen (filename);
 	if (!strncmp (filename + len - 2, ".s", 2)) {
-	  *object = malloc (len + 3);
+	  *object = safe_malloc (len + 3);
 	  strcpy (*object, filename);
 	  strcpy (*object + len - 1, suffix);
 	} else {
-	  *object = malloc (len + 5);
+	  *object = safe_malloc (len + 5);
 	  strcpy (*object, filename);
 	  strcat (*object, ".");
 	  strcat (*object, suffix);

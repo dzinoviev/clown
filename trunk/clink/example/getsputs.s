@@ -1,19 +1,19 @@
 ;; test function
-main:
+.global main:
 	mov %r1, msg
 	
 	push %r1		; push the parameter -- optional!
 	call puts
-	sub %sp, 1		; restore the stack
+	inc %sp		; restore the stack
 
 	push %r1		; push the parameter
 	call gets
-	sub %sp, 1		; restore the stack -- optional!
+	inc %sp		; restore the stack -- optional!
 	
 	push %r1		; push the parameter -- optional!
 	call puts
-	sub %sp, 1		; restore the stack
+	inc %sp		; restore the stack
 	
-	stop
+	retn	
 
 msg:	.string "Hello world! Please type something and press <enter>:"

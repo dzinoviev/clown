@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "registers.h"
 #include "version.h"
+#include "clowndev.h"
 
 static void show_version (void)
 {
@@ -40,7 +41,8 @@ static void show_usage (char *name)
 int read_options (int argc, char *argv[])
 {
     int i, interactive = 1;
-
+    modules = NULL;
+    current_module = 0;
 /*    if (argc == 1) {
 	show_usage (argv[0]);
 	return 0;

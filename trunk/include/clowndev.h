@@ -1,27 +1,57 @@
 #ifndef CLOWNDEV_H
 #define CLOWNDEV_H 1
 
+/* Uncomment the next line to enable XML-style debug info in the CLO file */
+#define XML_DEBUG
+
 #include <setjmp.h>
 #include "isa.h"
 #include "symtab.h"
 
-typedef enum {CLOF_BIN = 0, CLOF_EXE = ('X'<<24), CLOF_UNKNOWN} Clof_Type;
+typedef enum {CLOF_BIN, CLOF_EXE, CLOF_UNKNOWN} Clof_Type;
 
 #define DEFAULT_SEGMENT 0
+#define DEFAULT_SEGMENT_NAME "code*"
 #define NOT_FOUND (-1)
 #define IMAGE_CHUNK 1024
+
+#ifdef XML_DEBUG
+struct MyDebug {
+    int nfiles;
+    struct DebugFile *files;
+};
+
+struct DebugInfo {
+  Uword offset;
+  int line;
+};
+
+struct DebugFile {
+  char *file;
+  int nlines;
+  int nlines_inuse;
+  struct DebugInfo *flines;
+};
+#endif
 
 struct Segment {
     char *name;
     int  file_size;
     enum {SEG_DEFAULT, SEG_CODE, SEG_DATA} type;
     Bit   defined;
+    Bit   global;
 
     Dword *image;
     int image_size;
     int image_extent;
 
-    /* This field is only used by the linker */
+    /* Debug info */
+#ifdef XML_DEBUG
+  int nfiles;
+  struct DebugFile *files;
+#endif
+
+    /* This field is used only by the linker */
     int  id;
     int  in_use;
     int  escapes;
@@ -51,6 +81,14 @@ struct LabelTable {
     struct Label *labels;
 };
 
+struct Module {
+    char *name;
+    Clof_Type type;
+    int offset;			/* in RAM */
+    struct SegmentTable st;
+    struct LabelTable lt;
+};
+
 typedef enum {DUMMY = 0, CONSTANT, EXPRESSION, LABEL} EType;
 
 typedef struct _Expression {
@@ -72,11 +110,30 @@ typedef struct _Expression {
 
 static const char clof_header[4] = {'#', 'C', 'O', 'F'};
 extern jmp_buf   failure;
-void secure_write (int file, void *addr, int size);
-void secure_string (int file, char *string);
-void write_header (int outfile, struct SegmentTable *segments, struct LabelTable *labels);
+extern int current_overhead;
+extern int link_overhead;
+extern struct Module *modules;
+extern int current_module;
+extern int line_no;
+extern char **source;
+extern int codelimit;
+extern FILE *rdin;
+extern int escapes;
+extern int debug;
+extern int listing;
+extern Clof_Type module_type;
+
 #define FIRST_FRAGMENT 1
 #define LAST_FRAGMENT 2
+
+enum { C_LL = 'A', C_GG = 'B', C_UNARY_MIN = 'C'};
+void secure_write (int file, void *addr, int size);
+void secure_string (int file, char *string);
+void *safe_malloc (size_t size);
+void *safe_realloc (void *ptr, size_t size);
+
+void write_header (int outfile, struct SegmentTable *segments, struct LabelTable *labels);
+void write_trailer (int outfile);
 int save_segment (int outfile, int id, struct Segment *seg, struct LabelTable *labels, int fragment);
 
 Expression *newConstant (int constant);
@@ -87,4 +144,8 @@ int try_to_evaluate (Expression *e, struct LabelTable *labels, Dword *value, Dwo
 int expression_overhead (Expression *e);
 void list_segments (struct SegmentTable st);
 void list_labels (struct LabelTable syms, struct SegmentTable segs);
+Dword *build_expressions (Dword* code, int codesize, int *truesize, int *escapes);
+int rdparse (void);
+void init_module (struct Module *m, char *fname);
+void component_error (const char *name, const char *msg, char *detail);
 #endif

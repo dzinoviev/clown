@@ -6,11 +6,9 @@
 
 /* Some options */
 extern char *cpp_options;
-extern Clof_Type module_type;
 
 /* The current position */
-extern char source[];
-extern int listing;
+/*extern char source[];*/
 extern int line_no;
 extern FILE *yyin, *debugfile;
 extern Dword offset;
@@ -23,8 +21,7 @@ struct labelDef {
     int align8;
 };
 
-int begin_segment (int type, char *name);
-void component_error (const char *msg, char *detail);
+int begin_segment (Bit modifier, int type, char *name);
 void end_segment (int segment, Dword size);
 int add_label (char *label, int segment, Dword offset, int global, int align8);
 int mark_export_label (char *label);
@@ -37,7 +34,7 @@ int yylex (void);
 int insert_into_export (char *s);
 void emit (Dword i);
 void emit_escape (Dword i);
-int get_options (int argc, char *argv[], char **object, char source[], 
+int get_options (int argc, char *argv[], char **object, char **source, 
 		 int *ecode);
 int parse_and_assembly (FILE *infile, int outfile);
 int copy_code_ram (int outfile, 

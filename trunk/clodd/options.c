@@ -44,7 +44,7 @@ static void show_usage (char *me)
   fputs ("  -fromdisk\t\tread from the disk into the FILE\n", stderr);
   fputs ("  -todisk\t\twrite from the FILE to the disk\n", stderr);
   fputs ("  -q, --silent\t\twork silently\n", stderr);
-  fputs ("  -v, --version\t\tprint simulator version number and exit\n\n", stderr);
+  fputs ("  -v, --version\t\tprint program version number and exit\n\n", stderr);
   fputs ("The disk image is in the file \""DISC_IMAGE"\".\n\n", stderr);
 }
 
