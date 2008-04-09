@@ -16,6 +16,7 @@ jmp_buf   failure;
 
        int listing = 0;
 
+int global_offset = 0;
 struct SegmentTable    segments     = {0, NULL};
 struct LabelTable      labels       = {0, NULL};
 
@@ -26,6 +27,7 @@ void component_error (const char *name, const char *msg, char *detail)
 
 void end_segment (int segment, Dword size)
 {
+    size -= global_offset;
     segments.segments[segment].file_size = (module_type == CLOF_BIN) ? size : (size + current_overhead);
 }
 
@@ -302,12 +304,14 @@ int parse_and_assembly (FILE *infile, int outfile)
     yyin = infile;
 
     link_overhead = 0;
+    offset = global_offset;
     if (yyparse () || !success)
       return EXIT_FAILURE;
 
     if (!find_undefined_labels ())
 	return EXIT_FAILURE;
 
+    offset -= global_offset;
     if (!generate (outfile))
 	return EXIT_FAILURE;
 

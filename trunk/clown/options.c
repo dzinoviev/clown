@@ -43,10 +43,6 @@ int read_options (int argc, char *argv[])
     int i, interactive = 1;
     modules = NULL;
     current_module = 0;
-/*    if (argc == 1) {
-	show_usage (argv[0]);
-	return 0;
-    }*/
 
     for (i = 1; i < argc; i++) {
 	if (   ! (strcmp (argv[i], "-h"))
@@ -81,14 +77,14 @@ int read_options (int argc, char *argv[])
 	    i += 2;
 	    if (i >= argc) {
 		fprintf (stderr,
-			 "%s: option requires two arguments -- bin\n", 
+			 "--> %s: option requires two arguments -- bin\n", 
 			 argv[0]);
 		return 0;
 	    }
 	    offset = strtol (argv[i], &endptr, 0);
 	    if (*endptr) {
 		fprintf (stderr, 
-			 "%s: bad characters in entry address: %s; "
+			 "--> %s: bad characters in entry address: %s; "
 			 "assuming entry = 0\n", argv[0], endptr);
 		offset = 0;
 	    }
@@ -101,7 +97,7 @@ int read_options (int argc, char *argv[])
 	    i++;
 	    if (i >= argc) {
 		fprintf (stderr,
-			 "%s: option requires an argument -- cpl\n", 
+			 "--> %s: option requires an argument -- cpl\n", 
 			 argv[0]);
 		return 0;
 	    }
@@ -110,7 +106,7 @@ int read_options (int argc, char *argv[])
 	}	
 
 	if (argv[i][0] == '-') {
-	    fprintf (stderr, "Unknown option: <%s>. Ignored.\n", argv[i]);
+	    fprintf (stderr, "--> Unknown option: <%s>. Ignored.\n", argv[i]);
 	    continue;
 	}
 

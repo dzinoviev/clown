@@ -108,12 +108,12 @@ int get_options (int argc, char *argv[], char **object,
 		return 0;
 	    } 
 	    i++;
-	    offset = strtol (argv[i], &endptr, 0);
+	    global_offset = strtol (argv[i], &endptr, 0);
 	    if (*endptr) {
 		fprintf (stderr, 
 			 "%s: bad characters in entry address: %s; "
 			 "assuming entry = 0\n", argv[0], endptr);
-		offset = 0;
+		global_offset = 0;
 	    }
 	    continue;
 	}
@@ -191,6 +191,14 @@ int get_options (int argc, char *argv[], char **object,
 	    return 0;
 	  }
 	}
+    }
+
+    if (!*source) {
+      fprintf (stderr,
+	       "%s: no input files\n", 
+	       argv[0]);
+      *ecode = EXIT_FAILURE;
+      return 0;
     }
 
     switch (module_type) {

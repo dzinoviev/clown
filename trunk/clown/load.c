@@ -29,7 +29,7 @@ int load_memory (char *fname, Dword offset)
     rdin = fopen (fname, "r");
     if (!rdin) {
 	perror (fname);
-	return EXIT_FAILURE; 
+	return 0; 
     }
     status = rdparse ();
     fclose (rdin);
@@ -38,7 +38,7 @@ int load_memory (char *fname, Dword offset)
 	return 0;
 
     if (modules[current_module].type != CLOF_BIN) {
-	fprintf (stderr, "%s is not a CLEF file\n", fname);
+	fprintf (stderr, "--> %s is not a CLEF file\n", fname);
 	return 0;
     }
 
@@ -47,7 +47,7 @@ int load_memory (char *fname, Dword offset)
 
     if (size > CLOWN_MEMORY_SIZE - offset) {
 	size = CLOWN_MEMORY_SIZE - offset;
-	fprintf (stderr, "Warning: image file %s is large than the size of Clown memory\n", fname);
+	fprintf (stderr, "--> Warning: image file %s is large than the size of Clown memory\n", fname);
     }
     memcpy (&CLOWN_MEMORY[offset], modules[current_module].st.segments[0].image, 
 	    size * sizeof (Dword));

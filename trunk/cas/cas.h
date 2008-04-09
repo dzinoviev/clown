@@ -10,6 +10,7 @@ extern char *cpp_options;
 /* The current position */
 /*extern char source[];*/
 extern int line_no;
+extern int global_offset;
 extern FILE *yyin, *debugfile;
 extern Dword offset;
 extern int current_segment;

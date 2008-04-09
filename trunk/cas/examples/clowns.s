@@ -10,7 +10,7 @@ again:	MOV	%R0, [%R1]
 	JMP	again
 end:	STOP
 
-/*.align8	/* just for testing purposes */
+.align8	/* just for testing purposes */
 /*.global*/
 message: .string "-- Welcome to CS355! --\n"
 	 .string "- Clowns are in town! -\n$"

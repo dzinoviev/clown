@@ -199,7 +199,11 @@ program     : { if ((current_segment = begin_segment (0, SEG_DEFAULT, "code*")) 
 lines       : line lines 
             | ;
 
-line        : segmod segtype T_SEGMENT {    
+line        : segmod segtype T_SEGMENT {
+if (global_offset) {
+yyerror ("explicit segment definitions not allowed with non-zero entry point");
+YYABORT;
+}
 		  end_segment (current_segment, offset);
 		  if ((current_segment = begin_segment ($1, $2, $3)) == NOT_FOUND) {
 		      yyerror ("fatal error");
