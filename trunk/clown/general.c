@@ -1,6 +1,16 @@
 #include <stdio.h>
+#include "options.h"
 #include "registers.h"
+
+#ifdef TTY_PTHREAD
+#include <pthread.h>
+void my_lock (pthread_mutex_t *lock);
+void my_unlock (pthread_mutex_t *lock);
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 #include "exceptions.h"
+
 
 DDword clown_time;
 Bit fetch;
@@ -192,9 +202,15 @@ cycle_t raise_exception (enum Clown_Exception exc_no)
 	fprintf (stderr, "Double fault. Execution aborted.\n");
 	longjmp (begin_or_abort, 1);
     }
-
+#ifdef TTY_PTHREAD
+    my_lock (&lock);
+#endif
     exception_status |= (0x01 << exc_no);
     pending_exception |= (0x01 << exc_no);
+#ifdef TTY_PTHREAD
+    my_unlock (&lock);
+#endif
+
     if (!silent)
 	report_exception (exc_no);
 

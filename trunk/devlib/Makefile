@@ -7,7 +7,9 @@ all:	libdevices.a
 libdevices.a: $(DEVICES)
 	ar -rcs libdevices.a $(DEVICES)
 
-tty.o:   tty.c   $(INCLUDE)/clown_types.h $(INCLUDE)/generate.h $(INCLUDE)/exceptions.h 
+tty.o: tty.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h \
+  $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/options.h
 
 timer.o: timer.c  $(INCLUDE)/clown_types.h $(INCLUDE)/generate.h $(INCLUDE)/exceptions.h
 

@@ -1,22 +1,25 @@
 INCLUDE = ../include/
 CODELIB = ../codelib/
 DEVICELIB = ../devlib/
-CFLAGS = -Wall -ansi -g -I$(INCLUDE) -O3 
-LDFLAGS = -lreadline -lcurses -L$(CODELIB) -lcode -L$(DEVICELIB) -ldevices #-lefence
+CFLAGS = -Wall -ansi -g -I$(INCLUDE) -O3
+# You must link this library if TTY_PTHREAD is defined
+LIBPTHREAD = -pthread
+LDFLAGS = -lreadline -lcurses -L$(CODELIB) -lcode -L$(DEVICELIB) -ldevices $(LIBPTHREAD)
 CMD = cmd
 LEXFLAGS = -i -I -P$(CMD)
 YACCFLAGS = -d -p $(CMD)
+OBJ = clown.o decode.o paging.o segmentation.o general.o ioint.o tlb.o options.o cache.o  readln.o commandline.tab.o lex.$(CMD).o load.o
 
 all: ../bin/clown
 
-../bin/clown: clown.o decode.o paging.o segmentation.o general.o ioint.o tlb.o options.o cache.o  readln.o commandline.tab.o lex.$(CMD).o load.o $(CODELIB)/libcode.a $(DEVICELIB)/libdevices.a
-	$(CC) $^ -o $@ $(LDFLAGS)
+../bin/clown: $(OBJ) $(CODELIB)/libcode.a $(DEVICELIB)/libdevices.a
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
 clown.o: clown.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/config.h $(INCLUDE)/generate.h $(INCLUDE)/clown_types.h $(INCLUDE)/prototypes.h
 
 decode.o: decode.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/prototypes.h
 
-general.o: general.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/clown_types.h $(INCLUDE)/prototypes.h
+general.o: general.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/clown_types.h $(INCLUDE)/prototypes.h $(INCLUDE)/options.h
 
 paging.o: paging.c $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/registers.h  $(INCLUDE)/generate.h $(INCLUDE)/clown_types.h $(INCLUDE)/prototypes.h
 
@@ -50,8 +53,8 @@ commandline.tab.o: commandline.tab.c $(INCLUDE)/registers.h \
   $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h
 
 clean:
-	rm -f *.o commandline.tab.c commandline.tab.h lex.$(CMD).c *~
+	rm -f $(OBJ)  commandline.tab.c commandline.tab.h lex.$(CMD).c *~
 
 cleanall:
-	rm -f ../bin/clown *.o commandline.tab.c commandline.tab.h lex.$(CMD).c *~
+	rm -f ../bin/clown $(OBJ) commandline.tab.c commandline.tab.h lex.$(CMD).c *~
 

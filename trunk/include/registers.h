@@ -1,8 +1,6 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H 1
 
-#define DEBUG
-
 #include "isa.h"
 #include "generate.h"
 
