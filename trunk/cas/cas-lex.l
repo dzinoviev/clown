@@ -57,6 +57,7 @@ return T_ERROR;
 
 \.[cC][oO][dD][eE]         {return T_CODE;}
 \.[dD][aA][tT][aA]         {return T_DATA;}
+\.[cC][oO][nN][sS][tT]     {return T_CONST;}
 
 \${ID}          {yylval.s = strdup (yytext + 1); return T_SEGMENT;}
 
@@ -242,7 +243,7 @@ return T_ERROR;
 
 \<\<		{return T_LL;}
 \>\>		{return T_GG;}
-[,\[\]\(\)\+-:^\|&~!%-/\?]    {return yytext[0];}
+[,\[\]\(\)\+-:^\|&~!%-/\?{}]    {return yytext[0];}
 \n                 {line_no++;}
 [ \t]*
 

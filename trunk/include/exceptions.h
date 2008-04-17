@@ -21,6 +21,8 @@ enum Clown_Exception {
 	 DUMMY_EX = MAX_TRAP
 };
 
+enum {SEG2CODE, CPLVIOL, SEGVIOL, INVSEGR, SMALLISR};
+void bark (int err);
 cycle_t raise_exception (enum Clown_Exception ex);
 cycle_t handle_exception (void);
 #endif /* EXCEPTIONS_H */

@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "registers.h"
 #include "clowndev.h"
 
 int expression_overhead (Expression *e)
@@ -10,6 +11,7 @@ int expression_overhead (Expression *e)
     switch (e->type) {
     case CONSTANT:
     case LABEL:
+    case SELECTOR:
 	return 2;
     case EXPRESSION:
 	return 2 
@@ -38,6 +40,15 @@ Expression *newConstant (int constant)
 
     e->type = CONSTANT;
     e->detail.constant = constant;
+    return e;
+}
+
+Expression *newSelector (Selector s)
+{
+    Expression *e = safe_malloc (sizeof (Expression));
+
+    e->type = SELECTOR;
+    e->detail.constant = s;
     return e;
 }
 
@@ -102,14 +113,21 @@ Expression *do_math (int op, Expression *left, Expression *right)
 }
 
 #define min(x,y) ((x)<(y))?(x):(y)
-int try_to_evaluate (Expression *e, struct LabelTable *labels, Dword *value, Dword *segment)
+int try_to_evaluate (Expression *e, struct LabelTable *labels, struct SegmentTable *st,
+		     Dword *value, Dword *segment)
 {
     Dword label, rvalue;
+    Selector s;
     int lstatus, rstatus;
 
     switch (e->type) {
     case CONSTANT:
 	*value = e->detail.constant;
+	return 1;
+    case SELECTOR:
+	s = (Selector)(e->detail.constant);
+	label = st->segments[SEL_ID (s)].new_index;
+	*value = MK_SELECTOR (label, SEL_RPL (s), SEL_TABL (s));
 	return 1;
     case LABEL:
 	label = e->detail.label;
@@ -132,9 +150,9 @@ int try_to_evaluate (Expression *e, struct LabelTable *labels, Dword *value, Dwo
 	}
 	break;
     case EXPRESSION:
-	lstatus = try_to_evaluate (e->detail.expression.left,  labels,  value, segment);
+	lstatus = try_to_evaluate (e->detail.expression.left,  labels, st, value, segment);
 	rstatus = e->detail.expression.right
-	    ? try_to_evaluate (e->detail.expression.right, labels, &rvalue, segment)
+	    ? try_to_evaluate (e->detail.expression.right, labels, st, &rvalue, segment)
 	    : 1;
 	if (min (lstatus, rstatus) <= 0)
 	    return min (lstatus, rstatus);
@@ -197,6 +215,9 @@ static Expression *restore_expression (Dword* code, int *pointer)
     case CONSTANT:
 	link_overhead++;
 	return newConstant (code[(*pointer)++]);
+    case SELECTOR:
+	link_overhead++;
+	return newSelector (code[(*pointer)++]);
     case LABEL:
 	link_overhead++;
 	return newLabel (code[(*pointer)++]);
@@ -209,8 +230,6 @@ static Expression *restore_expression (Dword* code, int *pointer)
     case DUMMY:
 	link_overhead++;
 	return NULL;
-    default:
-	assert (0);
     }
     return NULL;		/* this never happens */
 }

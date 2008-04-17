@@ -81,6 +81,11 @@ show_register: T_GREGISTER optformat T_EOL {
     return 0; 
 };
 
+show_register: T_SREGISTER optformat T_EOL {
+    show_sregs ($1, $2);
+    return 0; 
+};
+
 set_register: T_GREGISTER '=' T_NUMBER T_EOL {
     set_regs ($1, $3); 
     return 0; 

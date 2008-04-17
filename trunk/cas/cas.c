@@ -28,9 +28,6 @@ int main (int argc, char *argv[])
 {
     int ecode;
     char *object = NULL, *cmdline;
-#ifndef XML_DEBUG
-    char *dfile = NULL;
-#endif
     FILE *infile;
     int outfile;
     char *clownpath;
@@ -41,12 +38,6 @@ int main (int argc, char *argv[])
 
     if (!get_options (argc, argv, &object, source, &ecode))
 	return ecode;
-
-#ifndef XML_DEBUG
-    dfile = safe_malloc (strlen (object) + 5);
-    strcpy (dfile, object);
-    strcat (dfile, ".dbg");
-#endif
 
     clownpath = getenv ("CLOWN");
     if (clownpath)
@@ -102,23 +93,12 @@ int main (int argc, char *argv[])
 	return EXIT_FAILURE;
     }
 
-#ifndef XML_DEBUG
-    debugfile = fopen (dfile, "w");
-    if (!debugfile) {
-	perror (dfile);
-	return EXIT_FAILURE;
-    }
-    fprintf (debugfile, "1\n%s\n", *source);
-#endif
-
     ecode = parse_and_assembly (infile, outfile);
     if (ecode == EXIT_FAILURE)
 	if (-1 == unlink (object))
 	    perror (object);
 
     close (outfile);
-#ifndef XML_DEBUG
-    fclose (debugfile);
-#endif
+
     return ecode;
 }

@@ -8,6 +8,7 @@ struct Clown_Registers clown;
 static cycle_t do_move_to_segment (Selector s, Bit reg)
 {
     if (reg == _CODE) {
+	bark (SEG2CODE);
 	raise_exception (PROTECTION_EX);
 	return EFAIL;
     }
@@ -22,6 +23,7 @@ static cycle_t do_move_to_regular (Dword datum, Bit reg)
     if (reg == _PAGE) {	
 	/* Only the inner ring may change the page table */
 	if (clown.flags.bitwise.cpl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	} 
@@ -128,8 +130,8 @@ cycle_t do_pop (Dword *datum, Dword offset)
     if (offset != PUSHPOP)
 	addr += offset;
     /* Do we have enough items on the stack? */
-    if (addr >= clown.STACK.limit 
-	|| !READABLE (clown.STACK)) {
+    if (addr >= clown.STACK.limit || !READABLE (clown.STACK)) {
+	bark (SEGVIOL);
 	raise_exception (PROTECTION_EX);
 	return EFAIL;
     } else {
@@ -138,6 +140,7 @@ cycle_t do_pop (Dword *datum, Dword offset)
 	if (cycles != EFAIL && offset == PUSHPOP)
 	    clown.SP++;
     }
+    /*    printf ("<< %d\n", *datum);*/
     return cycles;
 }
 
@@ -154,8 +157,8 @@ cycle_t do_push (Dword datum, Dword offset)
     } else {
 	addr--; /* new head of stack */
 	/* Check segment boundaries here! */
-	if (addr >= clown.STACK.limit 
-	    || !WRITABLE (clown.STACK)) {
+	if (addr >= clown.STACK.limit || !WRITABLE (clown.STACK)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	} else
@@ -164,6 +167,7 @@ cycle_t do_push (Dword datum, Dword offset)
 		!= EFAIL && offset == PUSHPOP)
 		clown.SP = addr;
     }
+    /*    printf (">> %d\n", datum);*/
     return cycles;
 }
 
@@ -179,8 +183,9 @@ static cycle_t jumpOnCondition (Bit condition, Bit absolute, Dword addr)
     
     /* Check segment boundaries here! */
     if (dest >= clown.CODE.limit) {
-      raise_exception (PROTECTION_EX);
-      return EFAIL;
+	bark (SEGVIOL);
+	raise_exception (PROTECTION_EX);
+	return EFAIL;
     }
     clown.pc = dest;
   }
@@ -302,6 +307,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	if (op2 == _PAGE) {	
 	    /* Only the inner ring may change the page table */
 	    if (clown.flags.bitwise.cpl) {
+		bark (CPLVIOL);
 		raise_exception (PROTECTION_EX);
 		return EFAIL;
 	    } 
@@ -319,8 +325,8 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 
     case xLD: 
 	op1 = I_OP1 (i);	/* where to load? */
-	if (op3 >= clown.DATA.limit 
-	    || !READABLE (clown.DATA)) {
+	if (op3 >= clown.DATA.limit || !READABLE (clown.DATA)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -338,9 +344,14 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
     case xLDS: 
 	op1 = I_OP1 (i);	/* where to load? */
 	op2 = I_OP2 (i); /* data segment to use */
-	if (op2 >= CLOWN_NSEGR 
-	    || op3 >= clown.segr[op2].descriptor.limit
+	if (op2 >= CLOWN_NSEGR) {
+	    bark (INVSEGR);
+	    raise_exception (PROTECTION_EX);
+	    return EFAIL;
+	}
+	if (   op3 >= clown.segr[op2].descriptor.limit
 	    || !READABLE (clown.segr[op2].descriptor)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -354,14 +365,14 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	    else
 		return EFAIL;
 	}
-        break;
+        break;			/* WORKS */
 
     case LDX: 
 	op1  = I_OP1 (i);	/* where to load? */
 	op2  = I_OP2 (i); /* index register */
 	addr = clown.gpr[op2];	/* memory address */
-	if (addr >= clown.DATA.limit 
-	    || !READABLE (clown.DATA)) {
+	if (addr >= clown.DATA.limit || !READABLE (clown.DATA)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -378,8 +389,8 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 
     case xST: 
 	op1 = I_OP1 (i);	/* what to store? */
-	if (op3 >= clown.DATA.limit 
-	    || !WRITABLE (clown.DATA)) {
+	if (op3 >= clown.DATA.limit || !WRITABLE (clown.DATA)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -391,9 +402,14 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
     case xSTS: 
 	op1 = I_OP1 (i);	/* data segment to use */	
 	op2 = I_OP2 (i);	/* what to store? */
-	if (op1 >= CLOWN_NSEGR 
-	    || op3 >= clown.segr[op1].descriptor.limit
+	if (op1 >= CLOWN_NSEGR) {
+	    bark (INVSEGR);
+	    raise_exception (PROTECTION_EX);
+	    return EFAIL;
+	}
+	if (   op3 >= clown.segr[op1].descriptor.limit
 	    || !WRITABLE (clown.segr[op1].descriptor)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -408,6 +424,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	addr = clown.gpr[op1];	/* memory address */
 	if (addr >= clown.DATA.limit 
 	    || !WRITABLE (clown.DATA)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -434,7 +451,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	addr = I_OP1 (i) & ~((~(Bit)0) << CLOWN_SEGR_BITS);
 	seg2 = I_SEG (i);
 	cycles_all = do_move_to_segment (seg2, addr);
-	break;
+	break;			/* WORKS */
 
     case MOVTS:			/* move to segment register  */
 	/* Trim the register # */
@@ -448,6 +465,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	if (op3 >= clown.DATA.limit 
 	    || !READABLE (clown.DATA) 
 	    || !WRITABLE (clown.DATA)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -693,6 +711,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
     case CLI: 
 	/* Only the inner ring may do this */
 	if (clown.flags.bitwise.cpl > clown.flags.bitwise.iopl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else 
@@ -702,6 +721,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
     case STI: 
 	/* Only the inner ring may do this */
 	if (clown.flags.bitwise.cpl > clown.flags.bitwise.iopl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else 
@@ -712,6 +732,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	op1 = I_DSPL (i);
 	/* Only the inner ring may do this */
 	if (clown.flags.bitwise.cpl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else 
@@ -852,6 +873,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	op2 = I_DSPL (i);
 	/* Only the inner rings may do this */
 	if (clown.flags.bitwise.cpl > clown.flags.bitwise.iopl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else {
@@ -870,6 +892,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	op2 = I_DSPL (i);
 	/* Only the inner rings may do this */
 	if (clown.flags.bitwise.cpl > clown.flags.bitwise.iopl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else {
@@ -882,6 +905,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	op2 = I_DSPL (i);
 	/* Only the inner rings may do this */
 	if (clown.flags.bitwise.cpl > clown.flags.bitwise.iopl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else {
@@ -892,6 +916,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 
     case HLT:			/* tell the fetch unit to stop  */
 	if (clown.flags.bitwise.cpl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else {
@@ -904,6 +929,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 
     case STOP: 			/* stop */
 	if (clown.flags.bitwise.cpl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    cycles_all = EFAIL;
 	} else {

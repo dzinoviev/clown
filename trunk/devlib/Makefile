@@ -17,7 +17,7 @@ hdd.o:   hdd.c   $(INCLUDE)/clown_types.h $(INCLUDE)/generate.h $(INCLUDE)/excep
 
 hddlib.o:  hddlib.c $(INCLUDE)/hdd.h $(INCLUDE)/clown_types.h $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/prototypes.h
 
-dma.o:   dma.c   $(INCLUDE)/clown_types.h $(INCLUDE)/generate.h $(INCLUDE)/exceptions.h $(INCLUDE)/hdd.h $(INCLUDE)/config.h $(INCLUDE)/prototypes.h $(INCLUDE)/ucvm.h 
+dma.o:   dma.c   $(INCLUDE)/clown_types.h $(INCLUDE)/generate.h $(INCLUDE)/exceptions.h $(INCLUDE)/hdd.h $(INCLUDE)/clown/config.h $(INCLUDE)/prototypes.h $(INCLUDE)/ucvm.h 
 
 ucvm.o: ucvm.c $(INCLUDE)/ucvm.h $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h 
 

@@ -1,0 +1,268 @@
+#include <stdio.h>
+#include <assert.h>
+#include <ctype.h>
+#include "registers.h"
+
+static void show_val (Dword val, int format)
+{
+    unsigned uval;
+    int j;
+    switch (format) {
+    case 'b':
+    case 'B':
+	uval = (unsigned)val;
+	for (j = sizeof (Dword) * 8 - 1; j >= 0; j--)
+	    fprintf (stderr, "%c", (val & (0x01 << j)) ? '1' : '0');
+	fprintf (stderr, "b");
+	break;
+    case 'c':
+    case 'C':
+	fprintf (stderr, "'");
+	for (j = sizeof (Dword) - 1; j >= 0; j--) {
+	    unsigned char c = ((char*)&val)[j];
+	    fprintf (stderr, "%c", isprint (c) ? c : ' ');
+	}
+	fprintf (stderr, "'");
+	break;
+    case 'd':
+    case 'D':
+	fprintf (stderr, "%+011ld", val);
+	break;
+    case 'h':
+    case 'H':
+	fprintf (stderr, "%08lXh", val);
+	break;
+    case 'o':
+    case 'O':
+	fprintf (stderr, "%012loo", val);
+	break;
+    case 'a':			/* linear address */
+    case 'A':
+	fprintf (stderr, "DIR=%08lXh", L_DIR(val));
+	fprintf (stderr, " PAGE=%08lXh", L_PAGE(val));
+	fprintf (stderr, " OFFSET=%08lXh", L_OFFSET(val));
+	break;
+    case 'p':			/* page descriptor */
+    case 'P':
+	fprintf (stderr, "FRAME=%08lXh", PD_FRAME(val));
+	fprintf (stderr, " D=%d", PD_DIRTY(val) != 0);
+	fprintf (stderr, " U=%d", PD_USED(val) != 0);
+	fprintf (stderr, " W=%d", PD_WRITE(val) != 0);
+	fprintf (stderr, " S=%d", PD_SUPER(val) != 0);
+	fprintf (stderr, " V=%d", PD_VALID(val) != 0);
+	fprintf (stderr, " P=%d", PD_PRESENT(val) != 0);
+	break;
+    default:
+	assert (0);
+	break;
+    }
+}
+
+void show_nmb (Dword value, int format)
+{
+    show_val (value, format);
+    fprintf (stderr, "\n");
+}
+
+void show_flags (int format)
+{
+    fprintf (stderr, "%%FLAGS:");
+    fprintf (stderr, " CPL=%1d",  clown.flags.bitwise.cpl  );
+    fprintf (stderr, " IOPL=%1d", clown.flags.bitwise.iopl );
+    fprintf (stderr, " I=%1d",    clown.flags.bitwise.inter);
+    fprintf (stderr, " O=%1d",    clown.flags.bitwise.over );
+    fprintf (stderr, " S=%1d",    clown.flags.bitwise.sign );
+    fprintf (stderr, " Z=%1d",    clown.flags.bitwise.zero );
+    fprintf (stderr, " C=%1d",    clown.flags.bitwise.carry);
+    fprintf (stderr, "\n");
+}
+
+void show_ir (int format)
+{
+    fprintf (stderr, "%%IR = ");
+    show_val (clown.ir, format);
+    fprintf (stderr, " %%OP3 = ");
+    show_val (clown.op3, format);
+    fprintf (stderr, "\n");
+}
+
+void show_pc (int format)
+{
+    fprintf (stderr, "%%PC = ");
+    show_val (clown.pc, format);
+    print_debug_info (clown.pc);
+    fprintf (stderr, "\n");
+}
+
+void set_pc (Dword val)
+{
+    if (val < 0)
+	fprintf (stderr, "The value of %%PC cannot be negative\n");
+    else
+	clown.pc = val;
+}
+
+void show_regs (Dword nmb, int format)
+{
+  int i;
+  for (i = ((nmb < 0) ? 0 : nmb); 
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+       i++) {
+      fprintf (stderr, "%%R%-2u = ", i);
+      show_val (clown.gpr[i], format);
+      if (i % 2 || nmb >= 0 || format == 'a' || format == 'p')
+	  fprintf (stderr, "\n");
+      else
+	  fprintf (stderr, "\t");
+  }
+}
+
+static const char *sregs[] = {
+    "GDT",
+    "LDT",
+    "ISR",
+    "CS",
+    "SS",
+    "DS",
+    "ES",
+    "FS",
+};
+
+static void show_selector (Selector s, int format)
+{
+    fprintf (stderr, "ID=%lu RPL=%lu %s", 
+	     SEL_ID (s), SEL_RPL (s), SEL_TABL(s) ? "GDT" : "LDT");
+}
+
+static void show_sflags (struct Clown_Segment_Descriptor sd)
+{
+    fprintf (stderr, "P=%d ", SF_PRESENT (sd) != 0);
+    fputs ("PERM=", stderr);
+    if (READABLE (sd))
+	fputs ("R", stderr);
+    else
+	fputs ("-", stderr);
+    if (WRITABLE (sd))
+	fputs ("W", stderr);
+    else
+	fputs ("-", stderr);
+    if (EXECUTABLE (sd))
+	fputs ("X", stderr);
+    else
+	fputs ("-", stderr);
+    fprintf (stderr, " DPL=%lu", SF_DPL (sd));
+}
+
+static void show_sreg (struct Clown_Segment_Register sreg, int format)
+{
+    fputs ("  Selector  : ", stderr);
+    show_selector (sreg.selector, format);
+    fputs ("\n  Descriptor: [", stderr);
+    show_val (sreg.descriptor.base, format);
+    fputs ("]:[", stderr);
+    show_val (sreg.descriptor.base + sreg.descriptor.limit, format);
+    fputs ("] ", stderr);
+    show_sflags (sreg.descriptor);
+}
+
+void show_sregs (Dword nmb, int format)
+{
+    fprintf (stderr, "%%%s\n", sregs[nmb]);
+    show_sreg (clown.segr[nmb], format);
+    fprintf (stderr, "\n");
+}
+
+void set_regs (Dword nmb, Dword value)
+{
+  int i;
+  for (i = ((nmb < 0) ? 0 : nmb); 
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+       i++) {
+      clown.gpr[i] = value;
+  }
+}
+
+void set_mem (Dword address, Dword value)
+{
+    if (address < CLOWN_MEMORY_SIZE && address >= 0) {
+	clown_write_mem (address, value);
+    } else {
+	fprintf (stderr, "Address out of range: ");
+	show_val (address, 'h');
+	fprintf (stderr, "\n");
+    }
+}
+
+void set_refregs (Dword nmb, Dword value)
+{
+  int i;
+  for (i = ((nmb < 0) ? 0 : nmb); 
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+       i++) {
+      Dword address;
+      address = clown.gpr[i];
+      set_mem (address, value);
+  }
+}
+
+static void show_mem (Dword address, int format)
+{
+    if (address < CLOWN_MEMORY_SIZE && address >= 0) {
+	Dword datum;
+	clown_read_mem (address, &datum);
+	fprintf (stderr, "RAM[0x%08X] = ", (unsigned int)address);
+	show_val (datum, format);
+    } else {
+	fprintf (stderr, "Address out of range: 0x%08X", (unsigned int)address);
+    }
+    print_debug_info (address);
+    fprintf (stderr, "\n");
+}
+
+void show_range (Dword address, Dword range, int format) 
+{
+    int i;
+    if (range >= 0) {
+	for (i = 0; i < range; i++)
+	    show_mem (address + i, format);
+    } else {
+	for (i = range; i < 0; i++)
+	    show_mem (address + i, format);
+    }
+}
+
+void show_refrange (Dword nmb, Dword range, int format)
+{
+  int i;
+  if (range != 1 && nmb < 0) {
+      fprintf (stderr, "Cannot combine [%%all] and 'range\n");
+      return;
+  }
+
+  for (i = ((nmb < 0) ? 0 : nmb); 
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+       i++) {
+      Dword address;
+      address = clown.gpr[i];
+      if (range == 1)
+	  fprintf (stderr, "[%%R%-2u]: ", i);
+      show_range (address, range, format);
+  }
+}
+
+void show_cmd_stats (cycle_t cycles)
+{
+  fprintf (stderr, "FETCH UNIT %s. ", fetch ? "on" : "off");
+  fprintf (stderr, "BUS CYCLES: %u. ", cycles);
+  fprintf (stderr, "TIME = %lld. ", clown_time);
+  show_pc ('d');
+  if (pending_exception) {
+    int i;
+    fprintf (stderr, "PENDING EXCEPTIONS: ");
+    for (i = 0; i < 16; i++)
+      if (exception_status & (0x01 << i)) {
+	fprintf (stderr, "[%s #%XH] ", exception_code (i), i);
+      }
+    fprintf (stderr, "\n");
+  }
+}

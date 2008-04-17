@@ -1,6 +1,22 @@
 #include <assert.h>
 #include "registers.h"
 #include "exceptions.h"
+#include <stdio.h>		/* FIXME */
+
+static const char *_errors[] = {
+    "%cs access or usage violation.",
+    "CPL violation.",
+    "Segmentation violation.",
+    "Invalid segment register.",
+    "ISR segment too small.",
+};
+
+void bark (int err)
+{
+    if (!silent)
+	fprintf (stderr, "--> %s\n", _errors[err]);
+}
+
 
 cycle_t clown_load_seg_descr (Selector seg_sel, 
 			      struct Clown_Segment_Descriptor *seg_descr) 
@@ -20,15 +36,18 @@ cycle_t clown_load_seg_descr (Selector seg_sel,
        because its validity was checked at the 
        time of table loading */
     table  = clown.segr[SEL_TABL (seg_sel)].descriptor;
-    offset = SEL_ID (seg_sel) * sizeof (seg_descr) / sizeof (Dword);
+    offset = SEL_ID (seg_sel) * LGDT_ENTRY_SIZE;
 
     if (offset >= table.limit) {
+	bark (SEGVIOL);
 	raise_exception (PROTECTION_EX);
 	return EFAIL;
     }
 
+    /*    fprintf (stderr, "Table.base=%d Table.limit=%d Offset=%d\n", table.base, table.limit, offset);*/
+
     /* Load the body of the descriptor from the respective table */
-    cycles = clown_read_linear (table.base + offset + 0, (Dword*)&seg_descr->limit);
+    cycles = clown_read_linear (table.base + offset + 2, (Dword*)&seg_descr->limit);
     if (cycles == EFAIL) 
 	return EFAIL;
     cycles_all += cycles;
@@ -36,12 +55,13 @@ cycle_t clown_load_seg_descr (Selector seg_sel,
     if (cycles == EFAIL) 
 	return EFAIL;
     cycles_all += cycles;
-    cycles = clown_read_linear (table.base + offset + 2, (Dword*)&datum);
+    cycles = clown_read_linear (table.base + offset + 0, (Dword*)&datum);
     if (cycles == EFAIL) 
 	return EFAIL;
     cycles_all += cycles;
     seg_descr->flags = datum;
 
+    /*fprintf (stderr, "Limit=%d base=%d flags=%d\n", seg_descr->limit, seg_descr->base, datum);*/
     /* Is this segment present or not? If not, 
        signal an exception to the the VMS */
     if (!SF_PRESENT (*seg_descr)) {
@@ -56,10 +76,9 @@ cycle_t clown_load_seg_descr (Selector seg_sel,
 #define MAX(x,y) ((x)>(y)?(x):(y))
 cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
 {
-    Bit rpl, dpl, is_door = 0;
+    Bit rpl, dpl;
     struct Clown_Segment_Descriptor seg_descr;
     cycle_t cycles_all = 0, cycles;
-    Dword offset = 0;
 
     /* Load the target descriptor */
     if ((cycles = clown_load_seg_descr (seg_sel, &seg_descr)) == EFAIL)
@@ -69,37 +88,10 @@ cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
     rpl = SEL_RPL (seg_sel);
     dpl =  SF_DPL (seg_descr);
 
-    /* Now, what kind of segment is this? Is it a DOOR? */
-    if (SF_DOOR (seg_descr)) {
-	Selector door;
-	/* Only code segments are allowed to use doors */
-	if (reg != _CODE) {
-	    raise_exception (PROTECTION_EX);
-	    return EFAIL;
-	}
-
-	door   = seg_descr.DOOR_SELECTOR;
-	offset = seg_descr.DOOR_OFFSET;
-
-	/* Go and load yet another segment! It's selector is the base 
-	   of the door */
-	if ((cycles = clown_load_seg_descr (door, &seg_descr)) == EFAIL)
-	    return EFAIL;
-	cycles_all += cycles;
-
-	/* Too many doors! */
-	if (SF_DOOR (seg_descr)) {
-	    raise_exception (PROTECTION_EX);
-	    return EFAIL;
-	}
-
-	is_door = 1;
-    }
-
-
     /* Check protections; they are different for different segments */
     /* _ISR limit must be large enough */
     if (reg == _ISR && seg_descr.limit < MAX_TRAP) {
+	bark (SMALLISR);
 	raise_exception (PROTECTION_EX);
 	return EFAIL;
     }
@@ -110,12 +102,14 @@ cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
     case _LDT:			/* Local descriptors */
 	/* Only the inner ring is allowed to change these tables */
 	if (clown.flags.bitwise.cpl) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
 
 	/* These tables must be readable */
 	if (!READABLE (seg_descr)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -124,13 +118,7 @@ cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
     case _CODE:			/* Code */
 	/* Code must be executable */
 	if (!EXECUTABLE (seg_descr)) {
-	    raise_exception (PROTECTION_EX);
-	    return EFAIL;
-	}
-
-	/* one cannot execute segments from the inner rings */
-	if (   (!is_door && (dpl <  MAX (rpl, clown.flags.bitwise.cpl))) 
-	    || ( is_door && (dpl !=           clown.flags.bitwise.cpl ))) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -142,11 +130,13 @@ cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
     case _STACK:		/* Stack */
 	/* Stacks must be writable */
 	if (!WRITABLE (seg_descr)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
 	/* one cannot access protected segments */
 	if (dpl < MAX (clown.flags.bitwise.cpl, rpl)) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
@@ -154,33 +144,33 @@ cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
 	break;
 
     case _DATA:			/* Data */
+    case _ES:			/* Data */
+    case _FS:			/* Data */
 	/* Data must be either readable or writable */
 	if (!WRITABLE (seg_descr) && !READABLE (seg_descr)) {
+	    bark (SEGVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
 
 	/* one cannot access protected segments */
 	if (dpl < MAX (clown.flags.bitwise.cpl, rpl)) {
+	    bark (CPLVIOL);
 	    raise_exception (PROTECTION_EX);
 	    return EFAIL;
 	}
 	break;
 
     default:
+	bark (INVSEGR);
 	raise_exception (PROTECTION_EX);
 	return EFAIL;
     }
 
-    /* We are clean and all sat */
+    /* We are clean and ready to go */
     clown.segr[reg].selector   = seg_sel;
     clown.segr[reg].descriptor = seg_descr;
-
-    /* If it was a door descriptor, we have to report the adjusted PC */
-    if (is_door) {
-	assert (new_pc);
-	*new_pc = offset;
-    }
+    /* printf ("New selector in [%d; %d?]: %d\n", reg, _CODE, clown.segr[reg].selector);*/
 
     return cycles;
 }

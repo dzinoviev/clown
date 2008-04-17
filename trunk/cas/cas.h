@@ -22,7 +22,7 @@ struct labelDef {
     int align8;
 };
 
-int begin_segment (Bit modifier, int type, char *name);
+int begin_segment (int type, char *name);
 void end_segment (int segment, Dword size);
 int add_label (char *label, int segment, Dword offset, int global, int align8);
 int mark_export_label (char *label);

@@ -65,7 +65,7 @@ int line_no = 1;
 "<" { return T_L; }
 ">" { return T_G; }
 "type" { return T_TYPE; }
-[_a-zA-Z/\.][_a-zA-Z0-9/\.]* { 
+[-_a-zA-Z/\.][-_a-zA-Z0-9/\.]* { 
     rdlval.s = safe_malloc (strlen (rdtext) + 1); 
     strcpy (rdlval.s, rdtext); 
     return T_STRING; 

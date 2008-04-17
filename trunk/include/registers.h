@@ -76,17 +76,15 @@ enum {
 /* P - is it present in memory? */
 /* PERM - permissions */	     
 /* PRIV - priviledge level */	     
-/* B - busy (for task state segments) */
-/* D - door (is it a door?) */
 
-/* [15..8 7 6..4 3..2 1 0] */
-/*  PAD   P PERM PRIV B D */
+/* [15..8 7 6..4 3..2 1..0] */
+/*  PAD   P PERM PRIV PAD   */
 
 #define SF_PRESENT(x) (((x).flags) & 0x0080)
+#define SF_SET_PRESENT(x) (((x).flags) |= 0x0080)
 #define SF_PERM(x)   ((((x).flags) & 0x0070) >> 4) 
+#define SF_SET_PERM(x,perm) (((x).flags) |= (((perm)&0x0007)<<4))
 #define SF_DPL(x)    ((((x).flags) & 0x000C) >> 2) /* decsriptor priv. level */
-#define SF_BUSY(x)    (((x).flags) & 0x0002)
-#define SF_DOOR(x)    (((x).flags) & 0x0001)
 
 struct Clown_Segment_Descriptor {
     SegFlags flags;		/* what kind of segment is this?  */
@@ -94,8 +92,7 @@ struct Clown_Segment_Descriptor {
     Uword    limit;		/* how big is the segment? */
 };
 
-#define DOOR_SELECTOR base	/* for door descriptors, base is selector */
-#define DOOR_OFFSET   limit	/* and limit is offset */
+#define LGDT_ENTRY_SIZE (sizeof (struct Clown_Segment_Descriptor) / sizeof (Dword))
 
 struct Clown_Segment_Register  {
     /* The heap of the iceberg */
@@ -174,5 +171,6 @@ extern Bit initial_cpl;
 extern Uword exception_status;
 extern Uword pending_exception;
 extern char dev_path[];
+extern struct Clown_Segment_Descriptor init_ldt_descr;
 
 #endif /* REGISTERS_H */

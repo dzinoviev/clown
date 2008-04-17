@@ -39,16 +39,16 @@ static void list_segment (struct Segment s)
     case SEG_CODE:
       type = 'C';
       break;
+    case SEG_CONST:
+      type = 'R';
+      break;
     case SEG_DEFAULT:
       type = 'M';
       break;
     }
-    fprintf (stderr, "$%-15s %c DEF size=%4d\n", 
-	     s.name,
-	     type,
-	     s.file_size);
+    fprintf (stderr, "$%-15s %c DEF size=%4d\n", s.name, type, s.file_size);
   } else
-    fprintf (stderr, "$%-15s UNDEF\n", s.name);
+    fprintf (stderr, "$%-17s UNDEF\n", s.name);
 }
 
 void list_segments (struct SegmentTable st)
@@ -57,7 +57,7 @@ void list_segments (struct SegmentTable st)
   fputs ("\nSegments:\n--------------------------\n", stderr);
 
   for (i = 0; i < st.size; i++)
-    if (st.segments[i].file_size) {
+    if (i != DEFAULT_SEGMENT || st.segments[i].defined) {
       list_segment (st.segments[i]);
       found = 1;
     }
@@ -144,6 +144,7 @@ static void write_expression (int outfile, Expression *e, struct LabelTable *lab
     list_word (e->type, 0);
     switch (e->type) {
     case CONSTANT:
+    case SELECTOR:
 	secure_write (outfile, &e->detail.constant, sizeof (Dword));
 	list_word (e->detail.constant, 1);
 	break;
@@ -159,9 +160,6 @@ static void write_expression (int outfile, Expression *e, struct LabelTable *lab
 	break;
     case DUMMY:
 	assert (e->type!=DUMMY);
-	break;
-    default:
-	assert (0);
 	break;
     }
 }
@@ -186,21 +184,21 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
   /* Segment table */
   secure_string (outfile, "  <segments>\n");
   for (i = 0; i < segments->size; i++) {
-    if (segments->segments[i].file_size) {
+    if (segments->segments[i].file_size || segments->segments[i].id != DEFAULT_SEGMENT) {
       int j;
       struct Segment s  = segments->segments[i];
       secure_string (outfile, "    <segment");
-      sprintf (params, " name=\"%s\" id=\"%d\"", s.name, i);
+      sprintf (params, " name=\"%s\" id=\"%d\" defined=\"%d\"", s.name, i, s.defined);
       secure_string (outfile, params);
       if (s.defined) {
 	  int size = (module_type == CLOF_BIN) ? (s.file_size - link_overhead) : s.file_size;
-	sprintf (params, " defined=\"1\" type=\"%d\" size=\"%d\"", s.type, size);
+	sprintf (params, " type=\"%d\" size=\"%d\"", s.type, size);
 	secure_string (outfile, params);
       }
       secure_string (outfile, ">\n");
 
       /* DEBUG INFO */
-      if (debug)
+      if (debug && segments->segments[i].defined)
 	  for (j = 0; j < s.nfiles; j++) {
 	      int k;
 	      if (s.files[j].file[0] == '/')
@@ -252,120 +250,122 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
 }
 
 static int save_escape (int pointer, Dword state, Dword instr, int outfile,
-			     struct Segment *seg,
-			     struct LabelTable *labels)
+			struct SegmentTable *st, 
+			struct Segment *seg,
+			struct LabelTable *labels)
 {
-  Expression *e;
-  Dword my_offset, target_offset, segment = NOT_FOUND;
+    Expression *e;
+    Dword my_offset, target_offset, segment = NOT_FOUND;
 
-  switch (state) {
-  case FIX_SEGMENT:
-    /*
-     * emit_escape (instr); -- this is "instr"
-     */
-    segment = SEL_ID (I_SEG (instr));
-    if (seg->defined && seg->new_index != DEFAULT_SEGMENT) {
-      Dword newseg = I_SEG (instr);
-      SET_NEWID (newseg, seg->new_index);
-      UPDATE_SEGMENT (instr, newseg);
-    } else {
-      /* do nothing -- let the linker take care of this */
-      secure_write (outfile, &state, sizeof (Dword));
-      list_word (state, 0);
+    switch (state) {
+    case FIX_SEGMENT:
+	/*
+	 * emit_escape (instr); -- this is "instr"
+	 */
+	segment = SEL_ID (I_SEG (instr));
+	if (seg->defined && seg->new_index != DEFAULT_SEGMENT) {
+	    Dword newseg = I_SEG (instr);
+	    SET_NEWID (newseg, seg->new_index);
+	    UPDATE_SEGMENT (instr, newseg);
+	} else {
+	    /* do nothing -- let the linker take care of this */
+	    secure_write (outfile, &state, sizeof (Dword));
+	    list_word (state, 0);
+	}
+	secure_write (outfile, &instr, sizeof (Dword));
+	list_word (instr, 1);
+	break;
+
+    case FIX_RDISPLACEMENT:
+	/*
+	 * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
+	 * emit_escape (target); 
+	 * emit_escape (offset);
+	 */
+	e = (Expression*)(seg->image[pointer++]);
+	assert (e);
+
+	my_offset = seg->image[pointer++];
+
+	if (0 >= try_to_evaluate (e, labels, st, &target_offset, &segment)) {
+	    component_error (seg->name, "relative jump", "undefined displacement");
+	    return -1;
+	}
+	my_offset = target_offset - my_offset;
+	if (abs (my_offset) >= MAX_OFFSET) {
+	    component_error (seg->name, "too long jump", "suppressed");
+	    return -1;
+	}
+	instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), my_offset);
+	secure_write (outfile, &instr, sizeof (Dword));
+	list_word (instr, 1);
+	break;
+
+    case FIX_ADISPLACEMENT:
+	/*
+	 * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
+	 * emit_escape (expression); 
+	 */
+	e = (Expression*)(seg->image[pointer++]);
+	assert (e);
+
+	if (module_type == CLOF_EXE) {
+	    /* do nothing -- let the linker take care of this */
+	    secure_write (outfile, &state, sizeof (Dword));
+	    list_word (state, 0);
+	    secure_write (outfile, &instr, sizeof (Dword));
+	    list_word (instr, 0);
+	    write_expression (outfile, e, labels);
+	} else {
+	    if (0 >= try_to_evaluate (e, labels, st, &target_offset, &segment)) {
+		component_error (seg->name, "immediate parameter", "cannot be computed");
+		return -1;
+	    }
+	    instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), target_offset);
+	    secure_write (outfile, &instr, sizeof (Dword));
+	    list_word (instr, 1);
+	}
+	break;
+
+    case FIX_EXPRESSION:
+	/*
+	 * emit_escape (0); -- this is "instr"
+	 * emit_escape (expression); 
+	 */
+	e = (Expression*)(seg->image[pointer++]);
+	assert (instr == 0 && e);
+
+	if (module_type == CLOF_EXE) {
+	    /* do nothing -- let the linker take care of this */
+	    secure_write (outfile, &state, sizeof (Dword));
+	    list_word (state, 0);
+	    secure_write (outfile, &instr, sizeof (Dword));
+	    list_word (instr, 0);
+	    write_expression (outfile, e, labels);
+	} else {
+	    if (0 >= try_to_evaluate (e, labels, st, &target_offset, &segment)) {
+		component_error (seg->name, "undefined symbols", "suppressed");
+		return -1;
+	    }
+	    instr = target_offset;
+	    secure_write (outfile, &instr, sizeof (Dword));
+	    list_word (instr, 1);
+	}
+	break;
+
+    default:
+	assert (0);
     }
-    secure_write (outfile, &instr, sizeof (Dword));
-    list_word (instr, 1);
-    break;
 
-  case FIX_RDISPLACEMENT:
-    /*
-     * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
-     * emit_escape (target); 
-     * emit_escape (offset);
-     */
-    e = (Expression*)(seg->image[pointer++]);
-    assert (e);
-
-    my_offset = seg->image[pointer++];
-
-    if (0 >= try_to_evaluate (e, labels, &target_offset, &segment)) {
-      component_error (seg->name, "relative jump", "undefined displacement");
-      return -1;
-    }
-    my_offset = target_offset - my_offset;
-    if (abs (my_offset) >= MAX_OFFSET) {
-      component_error (seg->name, "too long jump", "suppressed");
-      return -1;
-    }
-    instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), my_offset);
-    secure_write (outfile, &instr, sizeof (Dword));
-    list_word (instr, 1);
-    break;
-
-  case FIX_ADISPLACEMENT:
-    /*
-     * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
-     * emit_escape (expression); 
-     */
-    e = (Expression*)(seg->image[pointer++]);
-    assert (e);
-
-    if (module_type == CLOF_EXE) {
-      /* do nothing -- let the linker take care of this */
-      secure_write (outfile, &state, sizeof (Dword));
-      list_word (state, 0);
-      secure_write (outfile, &instr, sizeof (Dword));
-      list_word (instr, 0);
-      write_expression (outfile, e, labels);
-    } else {
-      if (0 >= try_to_evaluate (e, labels, &target_offset, &segment)) {
-	component_error (seg->name, "immediate parameter", "cannot be computed");
-	return -1;
-      }
-      instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), target_offset);
-      secure_write (outfile, &instr, sizeof (Dword));
-      list_word (instr, 1);
-    }
-    break;
-
-  case FIX_EXPRESSION:
-    /*
-     * emit_escape (0); -- this is "instr"
-     * emit_escape (expression); 
-     */
-    e = (Expression*)(seg->image[pointer++]);
-    assert (instr == 0 && e);
-
-    if (module_type == CLOF_EXE) {
-      /* do nothing -- let the linker take care of this */
-      secure_write (outfile, &state, sizeof (Dword));
-      list_word (state, 0);
-      secure_write (outfile, &instr, sizeof (Dword));
-      list_word (instr, 0);
-      write_expression (outfile, e, labels);
-    } else {
-      if (0 >= try_to_evaluate (e, labels, &target_offset, &segment)) {
-	component_error (seg->name, "undefined symbols", "suppressed");
-	return -1;
-      }
-      instr = target_offset;
-      secure_write (outfile, &instr, sizeof (Dword));
-      list_word (instr, 1);
-    }
-    break;
-
-  default:
-    assert (0);
-  }
-
-  return pointer;
+    return pointer;
 }
 
-int save_segment (int outfile, int id, struct Segment *seg, struct LabelTable *labels, int fragment)
+int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTable *labels, int fragment)
 {
   Dword instr, escape = ~FIX_SEGMENT;
   int pointer = 0; 
   int status = 1, newpointer;
+  struct Segment *seg = &st->segments[id];
   static char tmp[1000];
 
   if (fragment & FIRST_FRAGMENT) {
@@ -396,7 +396,7 @@ int save_segment (int outfile, int id, struct Segment *seg, struct LabelTable *l
       } else if (escape == ~FIX_SEGMENT) /* escape prefix */
 	escape = instr;
       else {		/* special symbol */
-	newpointer = save_escape (pointer, escape, instr, outfile, seg, labels);
+	  newpointer = save_escape (pointer, escape, instr, outfile, st, seg, labels);
 	escape = ~FIX_SEGMENT;
 	if (newpointer == -1)
 	  status = 0;
@@ -409,7 +409,7 @@ int save_segment (int outfile, int id, struct Segment *seg, struct LabelTable *l
 	secure_write (outfile, &instr, sizeof (Dword));
 	list_word (instr, 1);
       } else {		/* special symbol */
-	newpointer = save_escape (pointer, escape, instr, outfile, seg, labels);
+	newpointer = save_escape (pointer, escape, instr, outfile, st, seg, labels);
 	escape = ~FIX_SEGMENT;
 	if (newpointer == -1)
 	  status = 0;
@@ -427,7 +427,9 @@ int save_segment (int outfile, int id, struct Segment *seg, struct LabelTable *l
   if (fragment & LAST_FRAGMENT) {
     secure_string (outfile, "]]></bin>\n");
   }
+  /*
   assert ((module_type == CLOF_BIN) || (offset==0) || (output_offset == offset + current_overhead));
+  */
   return status;
 }
 

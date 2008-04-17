@@ -269,8 +269,10 @@ static int save_segments (int outfile, int n_modules)
     write_header (outfile, &all_seg, &all_sym);
 
     for (i = 0; i < n_modules; i++) {
-	for (j = 0; j < modules[i].st.size; j++) {
+	for (j = 0; j < modules[i].st.size; j++) {	    
 	    int fragment = 0; 
+	    if (!modules[i].st.segments[j].defined)
+		continue;
 	    if (j == DEFAULT_SEGMENT) {
 		if (!i)
 		    fragment |= FIRST_FRAGMENT;
@@ -279,8 +281,7 @@ static int save_segments (int outfile, int n_modules)
 	    } else {
 		fragment = (FIRST_FRAGMENT | LAST_FRAGMENT);
 	    }
-	    status &= save_segment (outfile, i, &modules[i].st.segments[j], 
-				    &modules[i].lt, fragment);
+	    status &= save_segment (outfile, j, &modules[i].st, &modules[i].lt, fragment);
 	}
     }
 

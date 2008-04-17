@@ -1,21 +1,25 @@
 INCLUDE = ../include/
 CODELIB = ../codelib/
 DEVICELIB = ../devlib/
-CFLAGS = -Wall -ansi -g -I$(INCLUDE) -O3
+CFLAGS = -Wall -ansi -g -I$(INCLUDE) #-O3
 # You must link this library if TTY_PTHREAD is defined
 LIBPTHREAD = -pthread
 LDFLAGS = -lreadline -lcurses -L$(CODELIB) -lcode -L$(DEVICELIB) -ldevices $(LIBPTHREAD)
 CMD = cmd
 LEXFLAGS = -i -I -P$(CMD)
 YACCFLAGS = -d -p $(CMD)
-OBJ = clown.o decode.o paging.o segmentation.o general.o ioint.o tlb.o options.o cache.o  readln.o commandline.tab.o lex.$(CMD).o load.o
+OBJ = clown.o decode.o paging.o segmentation.o general.o ioint.o tlb.o options.o cache.o  readln.o commandline.tab.o lex.$(CMD).o load.o ui.o
 
 all: ../bin/clown
 
 ../bin/clown: $(OBJ) $(CODELIB)/libcode.a $(DEVICELIB)/libdevices.a
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
-clown.o: clown.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/config.h $(INCLUDE)/generate.h $(INCLUDE)/clown_types.h $(INCLUDE)/prototypes.h
+clown.o: clown.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/clown/config.h $(INCLUDE)/generate.h $(INCLUDE)/clown_types.h $(INCLUDE)/prototypes.h
+
+ui.o: ui.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h \
+  $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h
 
 decode.o: decode.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/prototypes.h
 

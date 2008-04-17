@@ -10,9 +10,10 @@ all:	libcode.a
 libcode.a: $(OBJS)
 	ar -rcs libcode.a $(OBJS)
 
-expressions.o: expressions.c $(INCLUDE)/clowndev.h $(INCLUDE)/isa.h \
-  $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \
-  $(INCLUDE)/exceptions.h $(INCLUDE)/symtab.h
+expressions.o: expressions.c $(INCLUDE)/registers.h \
+  $(INCLUDE)/isa.h $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h $(INCLUDE)/clowndev.h \
+  $(INCLUDE)/symtab.h
 
 writecode.o: writecode.c $(INCLUDE)/registers.h $(INCLUDE)/isa.h \
   $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \

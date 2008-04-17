@@ -43,12 +43,12 @@ static int search_segment (char *name)
 static int create_segment (char *name)
 {
     int seg = segments.size;
-
+    /*
     if (seg == 1 && module_type == CLOF_BIN) {
 	component_error (*source, "too many segments in a BIN file", name);
 	return NOT_FOUND;
     }
-
+    */
     segments.segments = safe_realloc (segments.segments, 
 				      sizeof (struct Segment) 
 				      * (segments.size + 1));
@@ -60,15 +60,21 @@ static int create_segment (char *name)
     segments.segments[seg].new_index = NOT_FOUND;
 
     /* Support for debugging */
-#ifdef XML_DEBUG
     segments.segments[seg].nfiles = 1;
     segments.segments[seg].files = safe_malloc (sizeof (struct DebugFile));
     segments.segments[seg].files[0].file = source[0];
     segments.segments[seg].files[0].nlines = 0;
     segments.segments[seg].files[0].nlines_inuse = 0;
-#endif
+    segments.segments[seg].files[0].flines = NULL;
+
+    segments.segments[seg].id = seg;
+    segments.segments[seg].new_index = seg;
 
     segments.size++;
+ 
+    if (seg)
+	segments.segments[DEFAULT_SEGMENT].defined = 0;
+
     return seg;
 }
 
@@ -81,7 +87,7 @@ int lookup_segment (char *name)
 	return seg;
 }
 
-int begin_segment (Bit modifier, int type, char *name)
+int begin_segment (int type, char *name)
 {
     int seg = search_segment (name);
 
@@ -99,7 +105,6 @@ int begin_segment (Bit modifier, int type, char *name)
     /* define segment */
     segments.segments[seg].type = type;
     segments.segments[seg].defined = 1;
-    segments.segments[seg].global = modifier;
 
     segments.segments[seg].image = safe_malloc (sizeof (Dword) * IMAGE_CHUNK);
 
@@ -209,6 +214,21 @@ int use_label (char *label, int segment)
   return i;    
 }
 
+static int find_undefined_segments ()
+{
+    int status = 1;
+    int i;
+
+    for (i = 0; i < segments.size; i++) {
+	if (!segments.segments[i].defined && i != DEFAULT_SEGMENT && module_type != CLOF_EXE) {
+	    component_error (*source, "undefined segment", segments.segments[i].name);
+	    status = 0;
+	}
+    }
+    
+    return status;
+}
+
 static int find_undefined_labels ()
 {
     int status = 1;
@@ -245,12 +265,9 @@ static void store (Dword item)
 void emit (Dword instr)
 {
   static int prev_line_no = -100;
-#ifdef XML_DEBUG
   struct DebugFile *dbg_info = segments.segments[current_segment].files;
-#endif
   if (line_no != prev_line_no) {
     prev_line_no = line_no;
-#ifdef XML_DEBUG
     if (dbg_info->nlines_inuse >= dbg_info->nlines) {
       dbg_info->nlines += IMAGE_CHUNK;
       dbg_info->flines = safe_realloc (dbg_info->flines, dbg_info->nlines * sizeof (struct DebugInfo));
@@ -258,9 +275,6 @@ void emit (Dword instr)
     dbg_info->flines[dbg_info->nlines_inuse].offset = offset;
     dbg_info->flines[dbg_info->nlines_inuse].line = line_no - 1;
     dbg_info->nlines_inuse++;
-#else
-    fprintf (debugfile, "%d %ld 0 %d\n", current_segment - 1, offset, line_no - 1);
-#endif
   }
 
   if (   instr == FIX_SEGMENT 
@@ -287,9 +301,8 @@ static int generate (int outfile)
 
   /* The code */
   for (i = 0; i < segments.size; i++)
-    if (segments.segments[i].file_size)
-	status &= save_segment (outfile, i, &segments.segments[i], &labels, 
-				FIRST_FRAGMENT | LAST_FRAGMENT);
+    if (segments.segments[i].file_size && segments.segments[i].defined)
+	status &= save_segment (outfile, i, &segments, &labels, FIRST_FRAGMENT | LAST_FRAGMENT);
 
   write_trailer (outfile);
   return status;
@@ -308,7 +321,7 @@ int parse_and_assembly (FILE *infile, int outfile)
     if (yyparse () || !success)
       return EXIT_FAILURE;
 
-    if (!find_undefined_labels ())
+    if (!find_undefined_labels () || !find_undefined_segments ())
 	return EXIT_FAILURE;
 
     offset -= global_offset;

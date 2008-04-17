@@ -9,7 +9,7 @@ void yywarning (char *s);
 static void emit_expression (Expression *target);
 static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative);
 
-enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX};
+enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS};
  static struct {
      char *concise;
      char *full;
@@ -45,9 +45,9 @@ enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX};
      },
 
      {
-	 "named segment in s BIN module...",
-	 "\n\ta BIN module consists of one implicit anonymous segment;"
-	 "\n\tnamed segments are allowed only in EXE modules",
+	 "named segment in s CLE module...",
+	 "\n\ta CLE module consists of one implicit anonymous segment;"
+	 "\n\tnamed segments are allowed only in CLO modules",
 	 0
      },
 
@@ -55,6 +55,13 @@ enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX};
 	 "byte access index must be a positive constant...",
 	 "\n\tbyte access index must be an expression that evaluates to a positive "
 	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
+	 0
+     },
+
+     {
+	 "%cs can be initialized only through CALL or JMP...",
+	 "\n\tit is not allowed to load a value into %cs with a MOV command:"
+	 "\n\tyou must use CALL or JMP instead",
 	 0
      },
 
@@ -174,10 +181,11 @@ static void report (int severe, int id)
 %token T_PAGE
 %token <i>T_CODE
 %token <i>T_DATA
+%token <i>T_CONST
 
 %type <i>segtype
-%type <i>segmod
 %type <expr>expression
+%type <expr>expression_or_selector
 %type <i>size
 %type <i>segment
 %type <v>values
@@ -188,7 +196,7 @@ static void report (int severe, int id)
 
 %%
 
-program     : { if ((current_segment = begin_segment (0, SEG_DEFAULT, "code*")) == NOT_FOUND) {
+program     : { if ((current_segment = begin_segment (SEG_DEFAULT, "code*")) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;
 		  } 
@@ -199,13 +207,13 @@ program     : { if ((current_segment = begin_segment (0, SEG_DEFAULT, "code*")) 
 lines       : line lines 
             | ;
 
-line        : segmod segtype T_SEGMENT {
-if (global_offset) {
-yyerror ("explicit segment definitions not allowed with non-zero entry point");
-YYABORT;
-}
+line        : segtype T_SEGMENT {
+              if (global_offset) {
+                  yyerror ("explicit segment definitions not allowed with non-zero entry point");
+                  YYABORT;
+              }
 		  end_segment (current_segment, offset);
-		  if ((current_segment = begin_segment ($1, $2, $3)) == NOT_FOUND) {
+		  if ((current_segment = begin_segment ($1, $2)) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;
 		  }
@@ -217,12 +225,9 @@ YYABORT;
             | instruction
             ;
 
-segmod      : T_GLOBAL { $$ = 1; }
-            | { $$=0 }
-;
-
 segtype     : T_CODE {$$ = SEG_CODE} 
             | T_DATA {$$ = SEG_DATA}
+            | T_CONST {$$ = SEG_CONST}
 ;
 
 expression  : T_NUMBER                       { $$ = newConstant ($1); }
@@ -274,20 +279,24 @@ datadef     : T_DEFSTRING T_STRING {
 		}
                 emit (0);
 	    }
-            | T_DEFWORD  size values {
+            | T_DEFWORD size opt_oparen values opt_cparen {
 		int i;
-		if ($2 < $3.size) {
+		if ($2 < $4.size) {
 		    sprintf (error_buffer, "%d initializers given, %ld expected",
-			     $3.size, $2);
+			     $4.size, $2);
 		    yywarning (error_buffer);
-		    $3.size = $2;
+		    $4.size = $2;
 		}
-		for (i = 0; i < $3.size; i++) {		    
-		    emit_expression ((Expression*)$3.data[i]);
+		for (i = 0; i < $4.size; i++) {		   
+		    emit_expression ((Expression*)$4.data[i]);
 		}
 		for (     ; i < $2     ; i++)
 		    emit (0);
 	    };
+
+opt_oparen: '{' | ;
+
+opt_cparen: '}' | ;
 
 size        : {$$ = 1}
             | '[' expression ']' {
@@ -299,16 +308,24 @@ size        : {$$ = 1}
 	    }
             | '[' error ']' { $$ = -1;  yyerror ("malformed array size")};
 
+expression_or_selector: expression {
+		$$ = $1;
+		}
+	    | segment {
+		$$ = newSelector (MK_SELECTOR ($1, 0, _LDT));
+	    }
+;
+
 values      : {$$.size = 0; $$.data = NULL}
-            | expression {
+            | expression_or_selector {
 		$$.data = safe_malloc (sizeof (Dword)); 
 		$$.data[0] = (Dword)$1;
 		$$.size = 1;
 	    }
-            | values ',' expression { 
-		$$.data = safe_realloc ($1.data, ($1.size + 1) * sizeof (Dword)); 
-		$$.data[$1.size] = (Dword)$3;
-		$$.size = $1.size + 1;
+            | values ',' expression_or_selector { 
+		$$.data = safe_realloc ($$.data, ($$.size + 1) * sizeof (Dword)); 
+		$$.data[$$.size] = (Dword)$3;
+		$$.size = $$.size + 1;
 	    } ;
 
 symbol     : T_ADDRESS {
@@ -363,12 +380,11 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); current_overhead++;
-		      emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
-		      emit_expression ($4);
-		  } else {
-		      report (1, SEGMENTINBIN);
-		  }
+		      emit_escape (FIX_SEGMENT); 
+                      current_overhead++; /* NOT TESTED */
+                  }
+		  emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
+		  emit_expression ($4);
 	      } /* xFCALL */
 
             | T_CALL segment	/* for doors */
@@ -378,12 +394,11 @@ instruction : error instruction
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); current_overhead++; 
-		      emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
-		      emit_expression (NULL);
-		  } else {
-		      report (1, SEGMENTINBIN);
-		  }
+		      emit_escape (FIX_SEGMENT); 
+                      current_overhead++; /*NOT TESTED*/
+                  }
+		  emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
+		  emit_expression (NULL);
 	      } /* xFCALL */
 
             | T_CHIO expression
@@ -467,13 +482,12 @@ instruction : error instruction
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); current_overhead++; 
-		      emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
-		      emit_expression ($4);
-		  } else {
-		      report (1, SEGMENTINBIN);
-		  }
+		  if (module_type == CLOF_EXE) { /*NOT TESTED */
+		      emit_escape (FIX_SEGMENT);
+                      current_overhead++; 
+                  }
+		  emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
+		  emit_expression ($4);
 	      } /* xFJMP */
 
             | T_JMP segment
@@ -482,13 +496,12 @@ instruction : error instruction
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
-		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); current_overhead++; 
-		      emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
-		      emit_expression (NULL);
-		  } else {
-		      report (1, SEGMENTINBIN);
-		  }
+		  if (module_type == CLOF_EXE) { /*NOT TESTED */
+		      emit_escape (FIX_SEGMENT); 
+                      current_overhead++; 
+                  }
+		  emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
+		  emit_expression (NULL);
 	      } /* xFJMP */
 
             | T_JNZ expression
@@ -534,7 +547,10 @@ instruction : error instruction
               { report (1, INDIRECTION); }
 
             | T_MOV T_SREGISTER ',' T_GREGISTER
-              {emit (BUILD_INSTRUCTION_A (MOVTS, $2, $4))} /* MOVTS */
+              {
+                  if ($2==_CODE) { report (1, BADUSEOFCS); YYABORT; }
+                  emit (BUILD_INSTRUCTION_A (MOVTS, $2, $4));
+              } /* MOVTS */
 
             | T_MOV T_GREGISTER ',' T_SREGISTER
               {emit (BUILD_INSTRUCTION_A (MOVFS, $2, $4))} /* MOVFS */
@@ -544,16 +560,16 @@ instruction : error instruction
 
             | T_MOV T_SREGISTER ',' segment 
               {
+                  if ($2==_CODE) { report (1, BADUSEOFCS); YYABORT; }
 		  Selector s = MK_SELECTOR ($4, 0, _LDT); 
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */
 		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); current_overhead++; 
-		      emit (BUILD_INSTRUCTION_C (MOVSI, $2, s));
-		  } else {
-		      report (1, SEGMENTINBIN);
-		  }
+		      emit_escape (FIX_SEGMENT); /*NOT TESTED*/
+                      current_overhead++; 
+                  }
+		  emit (BUILD_INSTRUCTION_C (MOVSI, $2, s)); /*WORKS*/
 	      } /* MOVSI */
 
             | T_MOV T_GREGISTER ',' '[' T_GREGISTER ']'
@@ -562,16 +578,17 @@ instruction : error instruction
             | T_MOV '[' T_GREGISTER ']' ','  T_GREGISTER
               {emit (BUILD_INSTRUCTION_A (STX, $3, $6))} /* STX */
 
-            | T_MOV T_GREGISTER ',' T_SREGISTER ':' expression
+            | T_MOV T_GREGISTER ',' '[' T_SREGISTER ':' expression ']'
               {
-		  emit (BUILD_INSTRUCTION_A (xLDS, $2, $4));
-                  emit_expression ($6);
+		  emit (BUILD_INSTRUCTION_A (xLDS, $2, $5));
+                  emit_expression ($7);
 	      } /* xLDS */
 
-            | T_MOV T_SREGISTER ':' expression ',' T_GREGISTER 
+            | T_MOV '[' T_SREGISTER ':' expression ']' ',' T_GREGISTER 
               {
-		  emit (BUILD_INSTRUCTION_A (xSTS, $2, $6));
-                  emit_expression ($4);
+                  if ($3==_CODE) { report (1, BADUSEOFCS); YYABORT; }
+		  emit (BUILD_INSTRUCTION_A (xSTS, $3, $8));
+                  emit_expression ($5);
 	      } /* xSTS */
 
             | T_MOV T_GREGISTER '(' expression ')' ',' T_GREGISTER
@@ -769,6 +786,7 @@ static void emit_expression (Expression *e)
 	break;
     case EXPRESSION:
     case LABEL:
+    case SELECTOR:
 	emit_escape (FIX_EXPRESSION);
 	emit (0);		/* fake instruction */
 	emit_escape ((Dword)e);

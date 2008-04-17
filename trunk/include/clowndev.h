@@ -1,8 +1,6 @@
 #ifndef CLOWNDEV_H
 #define CLOWNDEV_H 1
 
-/* Uncomment the next line to enable XML-style debug info in the CLO file */
-#define XML_DEBUG
 
 #include <setjmp.h>
 #include "isa.h"
@@ -15,7 +13,6 @@ typedef enum {CLOF_BIN, CLOF_EXE, CLOF_UNKNOWN} Clof_Type;
 #define NOT_FOUND (-1)
 #define IMAGE_CHUNK 1024
 
-#ifdef XML_DEBUG
 struct MyDebug {
     int nfiles;
     struct DebugFile *files;
@@ -32,12 +29,11 @@ struct DebugFile {
   int nlines_inuse;
   struct DebugInfo *flines;
 };
-#endif
 
 struct Segment {
     char *name;
     int  file_size;
-    enum {SEG_DEFAULT, SEG_CODE, SEG_DATA} type;
+    enum {SEG_DEFAULT, SEG_CODE, SEG_DATA, SEG_CONST} type;
     Bit   defined;
     Bit   global;
 
@@ -46,10 +42,8 @@ struct Segment {
     int image_extent;
 
     /* Debug info */
-#ifdef XML_DEBUG
   int nfiles;
   struct DebugFile *files;
-#endif
 
     /* This field is used only by the linker */
     int  id;
@@ -89,7 +83,7 @@ struct Module {
     struct LabelTable lt;
 };
 
-typedef enum {DUMMY = 0, CONSTANT, EXPRESSION, LABEL} EType;
+typedef enum {DUMMY = 0, CONSTANT, EXPRESSION, LABEL, SELECTOR} EType;
 
 typedef struct _Expression {
     EType type;
@@ -108,7 +102,6 @@ typedef struct _Expression {
 #define FIX_RDISPLACEMENT ((Dword)0xFF000004)
 #define FIX_EXPRESSION   ((Dword)0xFF000008)
 
-static const char clof_header[4] = {'#', 'C', 'O', 'F'};
 extern jmp_buf   failure;
 extern int current_overhead;
 extern int link_overhead;
@@ -134,13 +127,15 @@ void *safe_realloc (void *ptr, size_t size);
 
 void write_header (int outfile, struct SegmentTable *segments, struct LabelTable *labels);
 void write_trailer (int outfile);
-int save_segment (int outfile, int id, struct Segment *seg, struct LabelTable *labels, int fragment);
+int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTable *labels, int fragment);
 
 Expression *newConstant (int constant);
 Expression *newLabel (int label);
+Expression *newSelector (Selector s);
 Expression *newExpression (int op, Expression *left, Expression *right);
 Expression *do_math (int op, Expression *left, Expression *right);
-int try_to_evaluate (Expression *e, struct LabelTable *labels, Dword *value, Dword *segment);
+int try_to_evaluate (Expression *e, struct LabelTable *labels,
+		     struct SegmentTable *st, Dword *value, Dword *segment);
 int expression_overhead (Expression *e);
 void list_segments (struct SegmentTable st);
 void list_labels (struct LabelTable syms, struct SegmentTable segs);

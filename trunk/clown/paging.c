@@ -50,6 +50,7 @@ static cycle_t translate_validate (Dword lin_addr, Dword *phys_addr,
     /* do we have enought authority to use this page? */
     if (   (clown.flags.bitwise.cpl && !PD_SUPER (page_desc))
 	|| (update && !PD_WRITE (page_desc))) {
+	bark (CPLVIOL);
 	raise_exception (PROTECTION_EX); 
 	return EFAIL;
     }

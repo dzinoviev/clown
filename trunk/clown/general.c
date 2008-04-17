@@ -66,18 +66,22 @@ void clown_reset (void)
 	clown.segr[i].descriptor.base = 0;
 	clown.segr[i].descriptor.limit = CLOWN_MEMORY_SIZE - 1;
 	clown.segr[i].descriptor.flags = 0;
+	SF_SET_PRESENT (clown.segr[i].descriptor);
     }
+
+    if (SF_PRESENT (init_ldt_descr))
+	clown.segr[_LDT].descriptor = init_ldt_descr;
+
     clown.flags.raw = 0;
     clown.flags.bitwise.traplevel = MAX_TRAP; /* not in an ISR */
     clown.flags.bitwise.inter = 1; /* enable interrupts */
     clown.pc = 0;
 
     /* enable the stack, code, and data segments */
-    /* IS THIS PART REALLY USEFUL? */
     clown.SP = CLOWN_MEMORY_SIZE - 1;
-    clown.STACK.flags |= (CAN_READ | CAN_WRITE) << 4;
-    clown.DATA.flags  |= (CAN_READ | CAN_WRITE) << 4;
-    clown.CODE.flags  |= (CAN_READ | CAN_EXEC ) << 4;
+    SF_SET_PERM (clown.STACK, (CAN_READ | CAN_WRITE));
+    SF_SET_PERM (clown.DATA, (CAN_READ | CAN_WRITE));
+    SF_SET_PERM (clown.CODE, (CAN_READ | CAN_EXEC));
 
     /* Clear the TLB and the cache */
     clown_clear_TLB ();
