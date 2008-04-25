@@ -6,7 +6,7 @@
 cycle_t     clown_decode_execute (Dword i, Dword op3);
 cycle_t     clown_write_linear (Dword addr, Dword data);
 cycle_t     clown_read_linear (Dword addr, Dword *data);
-cycle_t     clown_load_seg (Selector seg, int reg, Dword *new_pc);
+cycle_t     clown_load_seg (Selector seg, int reg);
 void        clown_init (void);
 void        clown_reset (void);
 int         clown_init_cache (unsigned nbits);

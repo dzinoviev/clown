@@ -30,6 +30,7 @@ void init_module (struct Module *m, char *fname)
   
 static void list_segment (struct Segment s)
 {
+  int size = (module_type == CLOF_BIN) ? (s.file_size - s.link_overhead) : s.file_size;
   if (s.defined) {
     char type = 0;
     switch (s.type) {
@@ -46,9 +47,9 @@ static void list_segment (struct Segment s)
       type = 'M';
       break;
     }
-    fprintf (stderr, "$%-15s %c DEF size=%4d\n", s.name, type, s.file_size);
+    fprintf (stderr, "%3d. $%-15s %c DEF size=%4d\n", s.new_index, s.name, type, size);
   } else
-    fprintf (stderr, "$%-17s UNDEF\n", s.name);
+    fprintf (stderr, "%3d. $%-17s UNDEF\n", s.new_index, s.name);
 }
 
 void list_segments (struct SegmentTable st)
@@ -57,7 +58,7 @@ void list_segments (struct SegmentTable st)
   fputs ("\nSegments:\n--------------------------\n", stderr);
 
   for (i = 0; i < st.size; i++)
-    if (i != DEFAULT_SEGMENT || st.segments[i].defined) {
+    if (st.segments[i].in_use || st.segments[i].defined) {
       list_segment (st.segments[i]);
       found = 1;
     }
@@ -191,7 +192,7 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
       sprintf (params, " name=\"%s\" id=\"%d\" defined=\"%d\"", s.name, i, s.defined);
       secure_string (outfile, params);
       if (s.defined) {
-	  int size = (module_type == CLOF_BIN) ? (s.file_size - link_overhead) : s.file_size;
+	int size = (module_type == CLOF_BIN) ? (s.file_size - s.link_overhead) : s.file_size;
 	sprintf (params, " type=\"%d\" size=\"%d\"", s.type, size);
 	secure_string (outfile, params);
       }
@@ -263,9 +264,9 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 	 * emit_escape (instr); -- this is "instr"
 	 */
 	segment = SEL_ID (I_SEG (instr));
-	if (seg->defined && seg->new_index != DEFAULT_SEGMENT) {
+	if (seg->defined && seg->new_index != DEFAULT_SEGMENT && module_type == CLOF_BIN) {
 	    Dword newseg = I_SEG (instr);
-	    SET_NEWID (newseg, seg->new_index);
+	    SET_NEWID (newseg, st->segments[segment].new_index);
 	    UPDATE_SEGMENT (instr, newseg);
 	} else {
 	    /* do nothing -- let the linker take care of this */
@@ -369,7 +370,7 @@ int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTabl
   static char tmp[1000];
 
   if (fragment & FIRST_FRAGMENT) {
-    sprintf (tmp, "  <bin segment=\"%d\"><![cdata[",  id);
+    sprintf (tmp, "  <bin segment=\"%d\"><![cdata[",  st->segments[id].new_index);
     secure_string (outfile, tmp);
   }
 

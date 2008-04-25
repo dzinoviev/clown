@@ -15,7 +15,7 @@ int line_no = 1;
 %x CDATA
 %%
 
-"<![cdata[" { BEGIN(CDATA); chararraysize = 0; charcodesize = 0; charcode = NULL; }
+"<![cdata[" { BEGIN(CDATA); chararraysize = 0; charcodesize = 0; charcode = NULL; link_overhead = 0;}
 <CDATA>(.|\n) { 
     if (charcodesize == chararraysize) {
 	chararraysize += 1024;

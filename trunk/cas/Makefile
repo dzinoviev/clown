@@ -5,7 +5,7 @@ LD = $(CC)
 LEXFLAGS = -CF -8
 YACCFLAGS = -d
 CODELIB = ../codelib
-LDFLAGS = -L$(CODELIB) -lcode
+LDFLAGS = -L$(CODELIB) -lcode #-lefence
 
 all: ../bin/cas
 

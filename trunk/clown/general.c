@@ -71,6 +71,8 @@ void clown_reset (void)
 
     if (SF_PRESENT (init_ldt_descr))
 	clown.segr[_LDT].descriptor = init_ldt_descr;
+    if (-1 != firstcode)
+	clown_load_seg (MK_SELECTOR (firstcode, 0, _LDT), _CODE);
 
     clown.flags.raw = 0;
     clown.flags.bitwise.traplevel = MAX_TRAP; /* not in an ISR */
@@ -121,15 +123,17 @@ const char *exception_code (enum Clown_Exception exc_no)
 
 static void report_exception (enum Clown_Exception exc_no)
 {
-    fprintf (stderr, "Interrupt #%2d [%-24s]\n", exc_no, 
+    Dword new_pc = clown.pc;
+    fprintf (stderr, "\n:::::: INTERRUPT #%d {%s}\n", exc_no, 
 	     exception_names[exc_no].name);
-    fprintf (stderr, "\tCS:PC = %012ld:%012ld.\n", 
-	     clown.CODE.base, clown.old_pc); 
-    fprintf (stderr, "\tIR    = 0x%08lx.\n", 
-	     clown.ir); 
+    clown.pc = clown.old_pc;
+    show_pc ('d');
+    clown.pc = new_pc;
+    show_ir ('H');
     if (exc_no == PAGEFAULT_EX)
 	fprintf (stderr, "\tFAR   = 0x%08lx.\n", 
 		 clown.FAR); 
+    fprintf (stderr, "\n"); 
 }
 
 /* Handle the highest-priority interrupt */

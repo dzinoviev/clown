@@ -4,9 +4,11 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <unistd.h>
+/*#define REALLY_VERBOSE*/
 #include "registers.h"
 #include "clowndev.h"
 
+int firstcode = -1;
 int link_overhead = 0;/* not really needed */
 int listing = 0;/* not really needed */
 Clof_Type module_type = CLOF_UNKNOWN;/* not really needed */
@@ -17,7 +19,6 @@ void component_error (const char *name, const char *msg, char *detail)
     /* not really needed */
 }
 
-/* We are not ready to load more than one segment yet */
 int load_memory (char *fname, Dword offset)
 {
     int i, j;
@@ -51,7 +52,6 @@ int load_memory (char *fname, Dword offset)
     SF_SET_PRESENT (my_ldt[0]);
     SF_SET_PERM (my_ldt[0], (CAN_READ | CAN_WRITE | CAN_EXEC));
 
-    /*    assert (modules[current_module].st.size == 1);*/
     if (modules[current_module].st.size > 1) {
 	jstart++;
     }
@@ -104,6 +104,8 @@ int load_memory (char *fname, Dword offset)
 		break;
 	    case SEG_CODE:
 		SF_SET_PERM (my_ldt[j], (CAN_READ | CAN_EXEC));
+		if (-1 == firstcode)
+		    firstcode = j;
 		break;
 	    case SEG_DATA:
 		SF_SET_PERM (my_ldt[j], (CAN_READ | CAN_WRITE));
@@ -115,8 +117,12 @@ int load_memory (char *fname, Dword offset)
 	    /* Other descriptor flags can be set up here */
 	    my_ldt[j].base = offset + module_offset;
 	    my_ldt[j].limit = size;
-	    /*	    printf ("Descriptor created: sbase=%d, ssize=%d sflags=%d\n",
-	      my_ldt[j].base, my_ldt[j].limit, my_ldt[j].flags);	    */
+	    /* Record the actuall segment base */
+	    modules[current_module].st.segments[j].base = my_ldt[j].base;
+#ifdef REALLY_VERBOSE
+	    printf ("Descriptor created: sbase=%d, ssize=%d sflags=%d\n",
+		    my_ldt[j].base, my_ldt[j].limit, my_ldt[j].flags);	    
+#endif
 	}
 
 	module_offset += size;
@@ -135,8 +141,10 @@ int load_memory (char *fname, Dword offset)
 	}
 	memcpy (&CLOWN_MEMORY[new_ldt_address], my_ldt, ldt_size);
 	size += ldt_size;
-	/*	printf ("LDT with %d entries loaded at address %d\n", modules[current_module].st.size,
-	  new_ldt_address);*/
+#ifdef REALLY_VERBOSE
+	printf ("LDT with %d entries loaded at address %d\n", modules[current_module].st.size,
+		new_ldt_address);
+#endif
 
 	ldt_descr.flags = 0;
 	SF_SET_PRESENT (ldt_descr);
@@ -147,8 +155,10 @@ int load_memory (char *fname, Dword offset)
 	    fprintf (stderr, "--> Warning: more than one LDT has been loaded.\n"
 		     "--> Warning: only the most recent is saved.");
 	init_ldt_descr = ldt_descr;
-	/*	printf ("Descriptor created and loaded into %%LDT: sbase=%d, ssize=%d sflags=%d\n",
-	  new_ldt_address, ldt_descr.limit, ldt_descr.flags);*/
+#ifdef REALLY_VERBOSE
+	printf ("Descriptor created and loaded into %%LDT: sbase=%d, ssize=%d sflags=%d\n",
+		new_ldt_address, ldt_descr.limit, ldt_descr.flags);
+#endif
     }
 
     current_module++;
@@ -156,7 +166,7 @@ int load_memory (char *fname, Dword offset)
 }
 
 /*
-So far, this function does not work for multisegment files.
+So far, this function does not seem to work for multisegment files.
 */
 static struct DebugFile *lookup_debug_info (Dword address, int *record)
 {
@@ -169,15 +179,15 @@ static struct DebugFile *lookup_debug_info (Dword address, int *record)
     for (i = modules[j].st.size - 1; i >= 0; i--) {
 	struct Segment s;
 	int k;
-	if (address >= modules[j].offset + modules[j].st.segments[i].image_size)
+	Dword adjusted_address = address - modules[j].st.segments[i].base;
+	if ((adjusted_address >= modules[j].st.segments[i].image_size) || (adjusted_address < 0))
 	    continue;
 	s = modules[j].st.segments[i];
-	address -= modules[j].offset;
 	for (k = s.nfiles - 1; k >= 0; k--) {
 	    int l;
 	    struct DebugFile *df = &(s.files[k]);
 	    for (l = df->nlines_inuse - 1; l >= 0; l--) {
-		if (address >= df->flines[l].offset) {
+		if (adjusted_address >= df->flines[l].offset) {
 		    *record = l;
 		    return df;
 		}
@@ -192,7 +202,9 @@ static struct DebugFile *lookup_debug_info (Dword address, int *record)
 void print_debug_info (Dword address)
 { 
     int location;
-    struct DebugFile *df = lookup_debug_info (address, &location);
-    if (df)
-	fprintf (stderr, " [%s:%d]", df->file, df->flines[location].line);
+    struct DebugFile *df;
+    if (PD_PRESENT (clown.PAGE))
+      fprintf (stderr, " [paging is on: no debug info]");
+    if ((df = lookup_debug_info (address, &location)))
+      fprintf (stderr, " [%s:%d]", df->file, df->flines[location].line);
 }

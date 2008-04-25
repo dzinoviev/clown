@@ -266,25 +266,28 @@ void emit (Dword instr)
 {
   static int prev_line_no = -100;
   struct DebugFile *dbg_info = segments.segments[current_segment].files;
-  if (line_no != prev_line_no) {
-    prev_line_no = line_no;
-    if (dbg_info->nlines_inuse >= dbg_info->nlines) {
-      dbg_info->nlines += IMAGE_CHUNK;
-      dbg_info->flines = safe_realloc (dbg_info->flines, dbg_info->nlines * sizeof (struct DebugInfo));
-    }
-    dbg_info->flines[dbg_info->nlines_inuse].offset = offset;
-    dbg_info->flines[dbg_info->nlines_inuse].line = line_no - 1;
-    dbg_info->nlines_inuse++;
-  }
 
+  if (line_no != prev_line_no) {
+      prev_line_no = line_no;
+      if (dbg_info->nlines_inuse >= dbg_info->nlines) {
+	  dbg_info->nlines += IMAGE_CHUNK;
+	  dbg_info->flines = safe_realloc (dbg_info->flines, dbg_info->nlines * sizeof (struct DebugInfo));
+      }
+      dbg_info->flines[dbg_info->nlines_inuse].offset = offset;
+      dbg_info->flines[dbg_info->nlines_inuse].line = line_no;
+      dbg_info->nlines_inuse++;
+  }
+  
   if (   instr == FIX_SEGMENT 
       || instr == FIX_ADISPLACEMENT
       || instr == FIX_RDISPLACEMENT
       || instr == FIX_EXPRESSION ) {
     store (instr);
-  } else
-    offset++;
+  } else {
+      offset++;
+  }
   store (instr);
+
 }
 
 void emit_escape (Dword escape)

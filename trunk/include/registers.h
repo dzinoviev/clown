@@ -172,5 +172,6 @@ extern Uword exception_status;
 extern Uword pending_exception;
 extern char dev_path[];
 extern struct Clown_Segment_Descriptor init_ldt_descr;
+extern int firstcode;
 
 #endif /* REGISTERS_H */

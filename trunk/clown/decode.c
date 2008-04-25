@@ -14,7 +14,7 @@ static cycle_t do_move_to_segment (Selector s, Bit reg)
     }
     
     /* Try to load the target segment */
-    return clown_load_seg (s, reg, NULL);
+    return clown_load_seg (s, reg);
 }
 
 
@@ -64,7 +64,7 @@ static cycle_t do_return (Bit interrupt)
     cs = (Selector)tmp;
     old_cpl = clown.flags.bitwise.cpl; /* old CPL */
 
-    if ((cycles = clown_load_seg (cs, _CODE, NULL)) == EFAIL) {
+    if ((cycles = clown_load_seg (cs, _CODE)) == EFAIL) {
 	/* restore the stack */
 	cycles_all += do_push (flags, PUSHPOP);
 	cycles_all += do_push (tmp, PUSHPOP);
@@ -97,7 +97,7 @@ cycle_t do_call (Selector new_seg, Dword new_pc, Dword save_pc)
 	cycles = do_push (save_pc, PUSHPOP);
 	if (cycles != EFAIL) {
 	    cycles_all += cycles;
-	    cycles = clown_load_seg (new_seg, _CODE, &new_pc);
+	    cycles = clown_load_seg (new_seg, _CODE);
 	    if (cycles != EFAIL) {
 		cycles_all += cycles;
 		clown.pc = new_pc;
@@ -800,7 +800,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	seg2 = I_SEG (i);
 
 	/* Try to load the target segment */
-	cycles_all = clown_load_seg (seg2, _CODE, &op3);
+	cycles_all = clown_load_seg (seg2, _CODE);
 	if (cycles_all != EFAIL) {
 	    /* If success, try to jump */
 	    cycles = jumpOnCondition (1, ABSOLUTE, op3);
@@ -810,7 +810,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 		return EFAIL;
 	} else
 	    /* If not, restore the original code segment (must be VALID!) */
-	    cycles_all += clown_load_seg (seg1, _CODE, &datum);
+	    cycles_all += clown_load_seg (seg1, _CODE);
 	break;
 
     case NCALLX:
@@ -934,6 +934,7 @@ cycle_t clown_decode_execute (Dword i, Dword op3)
 	    cycles_all = EFAIL;
 	} else {
 	    fetch = 0;
+	    clown.pc--;
 	    longjmp (begin_or_abort, 1);
 	}
 	break;

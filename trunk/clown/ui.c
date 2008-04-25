@@ -81,8 +81,208 @@ void show_ir (int format)
 {
     fprintf (stderr, "%%IR = ");
     show_val (clown.ir, format);
-    fprintf (stderr, " %%OP3 = ");
-    show_val (clown.op3, format);
+
+    switch (I_OPC (clown.ir)) {
+    case ROR:
+    case RORI:
+	fprintf (stderr, " {ROR}");
+	break;
+    case ROL:
+    case ROLI:
+	fprintf (stderr, " {ROL}");
+	break;
+    case SAR:
+    case SARI:
+	fprintf (stderr, " {SAR}");
+	break;
+    case SAL:
+    case SALI:
+	fprintf (stderr, " {SAL}");
+	break;
+    case GETB:
+    case GETBI:
+	fprintf (stderr, " {GETB}");
+	break;
+    case SETB:
+    case SETBI:
+	fprintf (stderr, " {SETB}");
+	break;
+    case CLRB:
+	fprintf (stderr, " {CLRB}");
+	break;
+    case xLDI:
+    case xLD:
+    case xLDS:
+    case LDX:
+    case xST:
+    case xSTS:
+    case STX:
+    case MOV:
+    case MOVSI:
+    case MOVTS:
+    case MOVFS:
+    case GETBY:
+    case SETBY:
+	fprintf (stderr, " {MOV}");
+	break;
+    case xXCHG:
+	fprintf (stderr, " {XCHG}");
+	break;
+    case POP:
+	fprintf (stderr, " {POP}");
+	break;
+    case PUSH:
+    case xPUSHI:
+	fprintf (stderr, " {PUSH}");
+	break;
+    case ADD:
+    case xADDI:
+	fprintf (stderr, " {ADD}");
+	break;
+    case SUB:
+    case xSUBI:
+	fprintf (stderr, " {SUB}");
+	break;
+    case MUL:
+    case xMULI:
+	fprintf (stderr, " {MUL}");
+	break;
+    case DIV:
+    case xDIVI:
+    case xDIVJ:
+	fprintf (stderr, " {DIV}");
+	break;
+    case CMP:
+    case xCMPI:
+	fprintf (stderr, " {CMP}");
+	break;
+    case NEG:
+	fprintf (stderr, " {NEG}");
+	break;
+    case INC:
+	fprintf (stderr, " {INC}");
+	break;
+    case DEC:
+	fprintf (stderr, " {DEC}");
+	break;
+    case AND:
+    case xANDI:
+	fprintf (stderr, " {AND}");
+	break;
+    case OR:
+    case xORI:
+	fprintf (stderr, " {OR}");
+	break;
+    case XOR:
+    case xXORI:
+	fprintf (stderr, " {XOR}");
+	break;
+    case TST:
+    case xTSTI:
+	fprintf (stderr, " {TST}");
+	break;
+    case NOT:
+	fprintf (stderr, " {NOT}");
+	break;
+    case CLI:
+	fprintf (stderr, " {CLI}");
+	break;
+    case STI:
+	fprintf (stderr, " {STI}");
+	break;
+    case CLC:
+	fprintf (stderr, " {CLC}");
+	break;
+    case STC:
+	fprintf (stderr, " {STC}");
+	break;
+    case PUSHF:
+	fprintf (stderr, " {PUSHF}");
+	break;
+    case POPF:
+	fprintf (stderr, " {POPF}");
+	break;
+    case CHIO:
+	fprintf (stderr, " {CHIO}");
+	break;
+    case xNCALL:
+    case xFCALL:
+    case NCALLX:
+	fprintf (stderr, " {CALL}");
+	break;
+    case NRET:
+    case FRET:
+    case IFRET:
+    case INRET:
+	fprintf (stderr, " {RET}");
+	break;
+    case TRAP:
+	fprintf (stderr, " {TRAP}");
+	break;
+    case JC:
+	fprintf (stderr, " {JC}");
+	break;
+    case JNC:
+	fprintf (stderr, " {JNC}");
+	break;
+    case JO:
+	fprintf (stderr, " {JO}");
+	break;
+    case JNO:
+	fprintf (stderr, " {JNO}");
+	break;
+    case JZ:
+	fprintf (stderr, " {JZ}");
+	break;
+    case JNZ:
+	fprintf (stderr, " {JNZ}");
+	break;
+    case JS:
+	fprintf (stderr, " {JS}");
+	break;
+    case JNS:
+	fprintf (stderr, " {JNS}");
+	break;
+    case xNJMP:
+    case xFJMP:
+	fprintf (stderr, " {JMP}");
+	break;
+    case IN:
+	fprintf (stderr, " {IN}");
+	break;
+    case OUT:
+    case xOUTI:
+	fprintf (stderr, " {OUT}");
+	break;
+    case HLT:
+	fprintf (stderr, " {HLT}");
+	break;
+    case NOP:
+	fprintf (stderr, " {NOP}");
+	break;
+    case STOP:
+	fprintf (stderr, " {STOP}");
+	break;
+    case CLRBI:
+	fprintf (stderr, " {CLRB}");
+	break;
+    case PEEK:
+	fprintf (stderr, " {PEEK}");
+	break;
+    case POKE:
+	fprintf (stderr, " {POKE}");
+	break;
+    case REM:
+    case xREMI:
+    case xREMJ:
+	fprintf (stderr, " {REM}");
+	break;
+    }
+
+    if ((I_OPC (clown.ir)) & EXTENSION_BIT) {
+	fprintf (stderr, " %%OP3 = ");
+	show_val (clown.op3, format);
+    }
     fprintf (stderr, "\n");
 }
 
@@ -105,8 +305,8 @@ void set_pc (Dword val)
 void show_regs (Dword nmb, int format)
 {
   int i;
-  for (i = ((nmb < 0) ? 0 : nmb); 
-       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+  for (i = ((nmb < 0) ? 0 : nmb);
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1);
        i++) {
       fprintf (stderr, "%%R%-2u = ", i);
       show_val (clown.gpr[i], format);
@@ -130,7 +330,7 @@ static const char *sregs[] = {
 
 static void show_selector (Selector s, int format)
 {
-    fprintf (stderr, "ID=%lu RPL=%lu %s", 
+    fprintf (stderr, "ID=%lu RPL=%lu %s",
 	     SEL_ID (s), SEL_RPL (s), SEL_TABL(s) ? "GDT" : "LDT");
 }
 
@@ -175,8 +375,8 @@ void show_sregs (Dword nmb, int format)
 void set_regs (Dword nmb, Dword value)
 {
   int i;
-  for (i = ((nmb < 0) ? 0 : nmb); 
-       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+  for (i = ((nmb < 0) ? 0 : nmb);
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1);
        i++) {
       clown.gpr[i] = value;
   }
@@ -196,8 +396,8 @@ void set_mem (Dword address, Dword value)
 void set_refregs (Dword nmb, Dword value)
 {
   int i;
-  for (i = ((nmb < 0) ? 0 : nmb); 
-       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+  for (i = ((nmb < 0) ? 0 : nmb);
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1);
        i++) {
       Dword address;
       address = clown.gpr[i];
@@ -219,7 +419,7 @@ static void show_mem (Dword address, int format)
     fprintf (stderr, "\n");
 }
 
-void show_range (Dword address, Dword range, int format) 
+void show_range (Dword address, Dword range, int format)
 {
     int i;
     if (range >= 0) {
@@ -239,8 +439,8 @@ void show_refrange (Dword nmb, Dword range, int format)
       return;
   }
 
-  for (i = ((nmb < 0) ? 0 : nmb); 
-       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1); 
+  for (i = ((nmb < 0) ? 0 : nmb);
+       i < ((nmb < 0) ? CLOWN_NGPR : nmb + 1);
        i++) {
       Dword address;
       address = clown.gpr[i];
@@ -252,10 +452,11 @@ void show_refrange (Dword nmb, Dword range, int format)
 
 void show_cmd_stats (cycle_t cycles)
 {
-  fprintf (stderr, "FETCH UNIT %s. ", fetch ? "on" : "off");
-  fprintf (stderr, "BUS CYCLES: %u. ", cycles);
-  fprintf (stderr, "TIME = %lld. ", clown_time);
+  fprintf (stderr, "Fetch unit %s. ", fetch ? "on" : "off");
+  fprintf (stderr, "Bus cycles: %u. ", cycles);
+  fprintf (stderr, "Time = %lld.\n", clown_time);
   show_pc ('d');
+  show_ir ('H');
   if (pending_exception) {
     int i;
     fprintf (stderr, "PENDING EXCEPTIONS: ");

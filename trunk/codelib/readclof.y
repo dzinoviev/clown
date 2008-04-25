@@ -131,6 +131,7 @@ bin:	T_L T_BIN bin_attribs {
 		    modules[current_module].st.segments[$3].image_size = $6.size; 
 		    modules[current_module].st.segments[$3].escapes = $6.escapes; 
 		    modules[current_module].st.segments[$3].image = $6.bin; 
+		    modules[current_module].st.segments[$3].link_overhead = link_overhead; 
 		}
 	;
 

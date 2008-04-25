@@ -4,7 +4,7 @@ DEVICELIB = ../devlib/
 CFLAGS = -Wall -ansi -g -I$(INCLUDE) #-O3
 # You must link this library if TTY_PTHREAD is defined
 LIBPTHREAD = -pthread
-LDFLAGS = -lreadline -lcurses -L$(CODELIB) -lcode -L$(DEVICELIB) -ldevices $(LIBPTHREAD)
+LDFLAGS = -lreadline -lcurses -L$(CODELIB) -lcode -L$(DEVICELIB) -ldevices $(LIBPTHREAD) #-lefence
 CMD = cmd
 LEXFLAGS = -i -I -P$(CMD)
 YACCFLAGS = -d -p $(CMD)

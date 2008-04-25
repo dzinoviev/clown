@@ -74,7 +74,7 @@ cycle_t clown_load_seg_descr (Selector seg_sel,
 }
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
-cycle_t clown_load_seg (Selector seg_sel, int reg, Dword *new_pc)
+cycle_t clown_load_seg (Selector seg_sel, int reg)
 {
     Bit rpl, dpl;
     struct Clown_Segment_Descriptor seg_descr;

@@ -6,7 +6,7 @@ OBJS = clink.o options.o
 LEXFLAGS = -i -I -8 -P$(PFX)
 YACCFLAGS = -d -p $(PFX)
 CODELIB = ../codelib
-LDFLAGS = -L$(CODELIB) -lcode
+LDFLAGS = -L$(CODELIB) -lcode #-lefence
 
 all: ../bin/clink
 

@@ -256,6 +256,9 @@ Dword *build_expressions (Dword* code, int wordcodesize, int *truesize, int *esc
 	    link_overhead+=2;
 	    break;
 	case FIX_SEGMENT:
+	    (*escapes)++;
+	    link_overhead++;
+	    break;
 	case FIX_RDISPLACEMENT:
 	    (*escapes)++;
 	    link_overhead++;

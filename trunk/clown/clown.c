@@ -214,8 +214,10 @@ static void go_interactive ()
 		clown_done = 1;
 	    }
 	} else {
-	    fprintf (stderr, "STOPPED\n");
-	    show_cmd_stats (0);
+	    if (!silent) {
+		fprintf (stderr, ":::::: STOPPED\n");
+		show_cmd_stats (0);
+	    }
 	}
     }
 }
@@ -245,7 +247,7 @@ int main (int argc, char *argv[])
 	    go_interactive ();
 	} else {
 	    if (!silent) {
-		fprintf (stderr, "STOPPED\n");
+		fprintf (stderr, ":::::: STOPPED\n");
 		show_cmd_stats (0);
 	    }
 	}

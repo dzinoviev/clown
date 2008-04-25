@@ -9,7 +9,7 @@ void yywarning (char *s);
 static void emit_expression (Expression *target);
 static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative);
 
-enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS};
+ enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS, ALIGNSEGMENT};
  static struct {
      char *concise;
      char *full;
@@ -62,6 +62,13 @@ enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, B
 	 "%cs can be initialized only through CALL or JMP...",
 	 "\n\tit is not allowed to load a value into %cs with a MOV command:"
 	 "\n\tyou must use CALL or JMP instead",
+	 0
+     },
+
+     {
+	 ".page or .align8 in the explicit segmentation mode...",
+	 "\n\tthe symbol will not be aligned to a page or 8-word boundary"
+	 "\n\tsegment bases are in general are not aligned:",
 	 0
      },
 
@@ -262,14 +269,35 @@ label       : symdef T_LABEL {
             }
             ;
 
-symdef      : T_GLOBAL {$$.align8 = 0; $$.global = 1 }
-            | T_ALIGN8 {$$.align8 = 1; $$.global = 0 }
-            | T_PAGE   {$$.align8 = 2; $$.global = 0 }
-            | T_ALIGN8 T_GLOBAL {$$.align8 = 1; $$.global = 1 }
-            | T_GLOBAL T_ALIGN8 {$$.align8 = 1; $$.global = 1 }
-            | T_PAGE T_GLOBAL {$$.align8 = 2; $$.global = 1 }
-            | T_GLOBAL T_PAGE {$$.align8 = 2; $$.global = 1 }
-            | {$$.global = $$.align8 = 0 };
+symdef      : 
+T_GLOBAL { 
+    $$.align8 = 0; $$.global = 1;
+}
+| T_ALIGN8 {
+    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
+    $$.align8 = 1; $$.global = 0;
+}
+| T_PAGE   {
+    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
+    $$.align8 = 2; $$.global = 0; 
+}
+| T_ALIGN8 T_GLOBAL {
+    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
+    $$.align8 = 1; $$.global = 1;
+}
+| T_GLOBAL T_ALIGN8 {
+    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
+    $$.align8 = 1; $$.global = 1;
+}
+| T_PAGE T_GLOBAL {
+    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
+    $$.align8 = 2; $$.global = 1;
+}
+| T_GLOBAL T_PAGE {
+    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
+    $$.align8 = 2; $$.global = 1;
+}
+| {$$.global = $$.align8 = 0 };
 
 datadef     : T_DEFSTRING T_STRING {
                 char *s;

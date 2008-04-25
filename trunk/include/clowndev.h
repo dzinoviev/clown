@@ -32,6 +32,7 @@ struct DebugFile {
 
 struct Segment {
     char *name;
+    int  base;			/* used by the loader/clown only */
     int  file_size;
     enum {SEG_DEFAULT, SEG_CODE, SEG_DATA, SEG_CONST} type;
     Bit   defined;
@@ -49,6 +50,7 @@ struct Segment {
     int  id;
     int  in_use;
     int  escapes;
+    int  link_overhead;
     int  new_index;
     int  module;
 }; 

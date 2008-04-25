@@ -37,10 +37,122 @@ static int newModules (int n_modules, char **name)
   return 1;
 }
 
+static int unify_exe_segments (int n_modules)
+{
+    int i, j, k, index;
+
+    index = DEFAULT_SEGMENT + 1;
+
+    /* Assemble explicitly defined segments */
+    for (i = 0; i < n_modules; i++) {
+	modules[i].st.segments[DEFAULT_SEGMENT].in_use = 0;
+	for (j = DEFAULT_SEGMENT + 1; j < modules[i].st.size; j++) {
+	    if (   !modules[i].st.segments[j].in_use 
+		|| !modules[i].st.segments[j].defined)
+		continue;
+	    /* Weed out duplicates */
+	    for (k = DEFAULT_SEGMENT + 1; k < index; k++) {
+		if (!strcmp (modules[i].st.segments[j].name, all_seg.segments[k].name)) {
+		    component_error (modules[i].name, "duplicate segment", 
+				     modules[i].st.segments[j].name);
+		    return -1;
+		}
+	    }
+	    /* Insert a segment into the compound table */
+	    modules[i].st.segments[j].new_index = index;
+	    all_seg.segments[index++] = modules[i].st.segments[j];
+	}
+    }
+
+    /* Identify undefined segments */
+    for (i = 0; i < n_modules; i++) {
+	for (j = DEFAULT_SEGMENT + 1; j < modules[i].st.size; j++) {
+	    if (    modules[i].st.segments[j].in_use 
+		&& !modules[i].st.segments[j].defined) {
+		for (k = DEFAULT_SEGMENT + 1; k < index; k++) {
+		    if (! strcmp (all_seg.segments[k].name, modules[i].st.segments[j].name)) {
+			modules[i].st.segments[j].new_index = k;
+			break;
+		    }
+		}
+		if (k == index) { /* not found! */
+		    if (module_type == CLOF_BIN) {
+			component_error (modules[i].name, "unresolved segment in a CLE file", 
+					 modules[i].st.segments[j].name);
+			return -1;
+		    } else {
+			if (!silent)
+			    component_error (modules[i].name, "warning: unresolved segment", 
+					     modules[i].st.segments[j].name);
+			modules[i].st.segments[j].new_index = index;
+			all_seg.segments[index++] = modules[i].st.segments[j];
+		    }
+		}
+	    }
+	}
+    }
+
+    return index;
+}
+
+static int unify_bin_segments (int n_modules)
+{
+    int i, j, index;
+    int offset;
+    struct Segment *dest_seg = &all_seg.segments[DEFAULT_SEGMENT];
+    struct Segment *src_seg = &modules[0].st.segments[DEFAULT_SEGMENT];
+
+    assert (src_seg->defined);
+    assert (!src_seg->name);
+    assert (src_seg->new_index == DEFAULT_SEGMENT);
+
+    src_seg->name = DEFAULT_SEGMENT_NAME;
+    *dest_seg = *src_seg;
+
+    index = DEFAULT_SEGMENT + 1;
+    
+    offset = src_seg->image_size - src_seg->escapes;
+
+    /* collect the pieces */
+    for (i = 1; i < n_modules; i++) {
+	struct Segment *this_seg = &modules[i].st.segments[DEFAULT_SEGMENT];
+	int new_nfiles, k;
+	assert (modules[i].st.size == 1);
+
+	this_seg->name = DEFAULT_SEGMENT_NAME;
+	dest_seg->file_size += this_seg->file_size;
+	dest_seg->image_size += this_seg->image_size;
+	    
+	for (k = 0; k < modules[i].lt.size; k++) {
+	    assert (modules[i].lt.labels[k].segment == DEFAULT_SEGMENT);
+	    if (modules[i].lt.labels[k].in_use && modules[i].lt.labels[k].defined)
+		modules[i].lt.labels[k].address += offset;
+	}
+	    
+	new_nfiles = src_seg->nfiles + this_seg->nfiles;
+	src_seg->files = safe_realloc (src_seg->files, sizeof (struct DebugFile) * new_nfiles);
+	for (k = 0, j = src_seg->nfiles; k < this_seg->nfiles; k++, j++) {
+	    int l;
+	    src_seg->files[j] = this_seg->files[k];
+	    for (l = 0; l < this_seg->files[k].nlines_inuse; l++)
+		this_seg->files[k].flines[l].offset += offset;
+	}
+	src_seg->nfiles = new_nfiles;
+	offset += this_seg->image_size - this_seg->escapes;
+	src_seg->link_overhead += this_seg->link_overhead;
+    }
+    dest_seg->files = src_seg->files;
+    dest_seg->nfiles = src_seg->nfiles;
+    dest_seg->link_overhead = src_seg->link_overhead;
+
+    return index;
+}
+
+static Clof_Type mix_type = CLOF_UNKNOWN;
 static int unify_segments (int n_modules)
 {
-    int i, j, k, index = 0, anon_segment = -1;
-    Clof_Type mix_type = CLOF_UNKNOWN, module_mix_type = CLOF_UNKNOWN;
+    int i, j, index = 0;
+    Clof_Type module_mix_type = CLOF_UNKNOWN;
 
     all_seg.segments = safe_malloc (all_seg.size * sizeof (struct Segment));
 
@@ -66,8 +178,6 @@ static int unify_segments (int n_modules)
 		} else {
 		    if (mix_type != CLOF_EXE) {
 			mix_type = CLOF_BIN;
-			if (anon_segment == -1)
-			    anon_segment = i;
 		    } else {
 			component_error (modules[i].name, "named and anonymous segments mixed",
 					 DEFAULT_SEGMENT_NAME);
@@ -79,103 +189,10 @@ static int unify_segments (int n_modules)
     }
 
     if (mix_type == CLOF_BIN) {
-	int offset;
-	struct Segment *dest_seg = &all_seg.segments[DEFAULT_SEGMENT];
-	struct Segment *src_seg = &modules[anon_segment].st.segments[DEFAULT_SEGMENT];
-
-	assert (src_seg->defined);
-	assert (!src_seg->name);
-	assert (src_seg->new_index == DEFAULT_SEGMENT);
-
-	src_seg->name = DEFAULT_SEGMENT_NAME;
-	*dest_seg = *src_seg;
-
-	index = DEFAULT_SEGMENT + 1;
-    
-	offset = src_seg->image_size - src_seg->escapes;
-
-	/* collect the pieces */
-	for (i = anon_segment + 1; i < n_modules; i++) {
-	    struct Segment *this_seg = &modules[i].st.segments[DEFAULT_SEGMENT];
-	    int new_nfiles, k;
-	    assert (modules[i].st.size == 1);
-
-	    this_seg->name = DEFAULT_SEGMENT_NAME;
-	    dest_seg->file_size += this_seg->file_size;
-	    dest_seg->image_size += this_seg->image_size;
-	    
-	    for (k = 0; k < modules[i].lt.size; k++) {
-		assert (modules[i].lt.labels[k].segment == DEFAULT_SEGMENT);
-		if (modules[i].lt.labels[k].in_use && modules[i].lt.labels[k].defined)
-		    modules[i].lt.labels[k].address += offset;
-	    }
-	    
-	    new_nfiles = src_seg->nfiles + this_seg->nfiles;
-	    src_seg->files = safe_realloc (src_seg->files, sizeof (struct DebugFile) * new_nfiles);
-	    for (k = 0, j = src_seg->nfiles; k < this_seg->nfiles; k++, j++) {
-		int l;
-		src_seg->files[j] = this_seg->files[k];
-		for (l = 0; l < this_seg->files[k].nlines_inuse; l++)
-		    this_seg->files[k].flines[l].offset += offset;
-	    }
-	    src_seg->nfiles = new_nfiles;
-	    offset += this_seg->image_size - this_seg->escapes;
-	}
-	dest_seg->files = src_seg->files;
-	dest_seg->nfiles = src_seg->nfiles;
+	index = unify_bin_segments (n_modules);
     } else {
-	/* Assemble explicitly defined segments */
-	for (i = 0; i < n_modules; i++)
-	    for (j = 0; j < modules[i].st.size; j++) {
-		if (   !modules[i].st.segments[j].in_use 
-		       || !modules[i].st.segments[j].defined)
-		    continue;
-		/* Weed out duplicates */
-		for (k = 0; k < index; k++) {
-		    if (!strcmp (modules[i].st.segments[j].name, all_seg.segments[k].name)) {
-			component_error (modules[i].name, "duplicate segment", modules[i].st.segments[j].name);
-			return EXIT_FAILURE;
-		    }
-		}
-		/* Insert a segment into the compound table */
-		modules[i].st.segments[j].new_index = index;
-		all_seg.segments[index] = modules[i].st.segments[j];
-      
-		index++;
-	    }
-
-	/* Identify undefined segments */
-	for (i = 0; i < n_modules; i++)
-	    for (j = 0; j < modules[i].st.size; j++) {
-		if (   modules[i].st.segments[j].in_use 
-		       && !modules[i].st.segments[j].defined) {
-		    for (k = 0; k < index; k++) {
-			if (! strcmp (all_seg.segments[k].name, modules[i].st.segments[j].name)) {
-			    modules[i].st.segments[j].new_index = k;
-			    modules[i].st.segments[j].defined = 1;
-			    break;
-			}
-		    }
-		}
-	    }
-
-	/* Locate unresolved segments */
-	for (i = 0; i < n_modules; i++)
-	    for (j = 0; j < modules[i].st.size; j++) {
-		if     (modules[i].st.segments[j].in_use 
-			&& !modules[i].st.segments[j].defined) {
-		    if (module_type == CLOF_BIN) {
-			component_error (modules[i].name, "unresolved segment in a CLE file", modules[i].st.segments[j].name);
-			return EXIT_FAILURE;
-		    } else {
-			if (!silent)
-			    component_error (modules[i].name, "warning: unresolved segment", modules[i].st.segments[j].name);
-			modules[i].st.segments[j].new_index = index;
-			all_seg.segments[index] = modules[i].st.segments[j];
-			index++;
-		    }
-		}
-	    }
+	if (-1 == (index = unify_exe_segments (n_modules)))
+	    return EXIT_FAILURE;
     }
 
     all_seg.size = index;
@@ -183,6 +200,34 @@ static int unify_segments (int n_modules)
 				all_seg.size * sizeof (struct Segment));
     
     return EXIT_SUCCESS;
+}
+
+static int save_segments (int outfile, int n_modules) 
+{
+    int status = 1, i, j;
+    /* The header */
+    write_header (outfile, &all_seg, &all_sym);
+
+    for (i = 0; i < n_modules; i++) {
+	for (j = 0; j < modules[i].st.size; j++) { 
+	    int fragment = 0; 
+	    if (!modules[i].st.segments[j].defined || !modules[i].st.segments[j].in_use)
+		continue;
+	    if (j == DEFAULT_SEGMENT) {
+		if (!i)
+		    fragment |= FIRST_FRAGMENT;
+		if (i == n_modules - 1)
+		    fragment |= LAST_FRAGMENT;
+	    } else {
+		fragment = (FIRST_FRAGMENT | LAST_FRAGMENT);
+	    }
+	    status &= save_segment (outfile, j, &modules[i].st, &modules[i].lt, fragment);
+	}
+    }
+
+    /* The trailer */
+    write_trailer (outfile);
+    return !status;
 }
 
 static int unify_symbols (int n_modules)
@@ -260,34 +305,6 @@ static int unify_symbols (int n_modules)
 			    all_sym.size * sizeof (struct Label));
 
   return EXIT_SUCCESS;
-}
-
-static int save_segments (int outfile, int n_modules) 
-{
-    int status = 1, i, j;
-    /* The header */
-    write_header (outfile, &all_seg, &all_sym);
-
-    for (i = 0; i < n_modules; i++) {
-	for (j = 0; j < modules[i].st.size; j++) {	    
-	    int fragment = 0; 
-	    if (!modules[i].st.segments[j].defined)
-		continue;
-	    if (j == DEFAULT_SEGMENT) {
-		if (!i)
-		    fragment |= FIRST_FRAGMENT;
-		if (i == n_modules - 1)
-		    fragment |= LAST_FRAGMENT;
-	    } else {
-		fragment = (FIRST_FRAGMENT | LAST_FRAGMENT);
-	    }
-	    status &= save_segment (outfile, j, &modules[i].st, &modules[i].lt, fragment);
-	}
-    }
-
-    /* The trailer */
-    write_trailer (outfile);
-    return !status;
 }
 
 int main (int argc, char *argv[])
