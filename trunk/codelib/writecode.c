@@ -173,7 +173,7 @@ void write_trailer (int outfile)
 void write_header (int outfile, struct SegmentTable *segments, struct LabelTable *labels)
 {
   int i;
-  static char params[PATH_MAX+64];
+  static char params[PATH_MAX+128];
   char cwd[PATH_MAX];
   if (!getcwd (cwd, PATH_MAX)) {
     perror ("getcwd");

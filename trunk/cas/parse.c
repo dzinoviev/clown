@@ -62,7 +62,7 @@ static int create_segment (char *name)
     /* Support for debugging */
     segments.segments[seg].nfiles = 1;
     segments.segments[seg].files = safe_malloc (sizeof (struct DebugFile));
-    segments.segments[seg].files[0].file = source[0];
+    segments.segments[seg].files[0].file = *source;
     segments.segments[seg].files[0].nlines = 0;
     segments.segments[seg].files[0].nlines_inuse = 0;
     segments.segments[seg].files[0].flines = NULL;
@@ -110,6 +110,7 @@ int begin_segment (int type, char *name)
 
     segments.segments[seg].image_size = 0;
     segments.segments[seg].image_extent = IMAGE_CHUNK;
+    segments.segments[seg].link_overhead = 0;
 
     current_overhead = 0;
 
