@@ -120,7 +120,6 @@ static int unify_bin_segments (int n_modules)
 	assert (modules[i].st.size == 1);
 
 	this_seg->name = DEFAULT_SEGMENT_NAME;
-	dest_seg->file_size += this_seg->file_size;
 	dest_seg->image_size += this_seg->image_size;
 	    
 	for (k = 0; k < modules[i].lt.size; k++) {
@@ -326,12 +325,14 @@ int main (int argc, char *argv[])
     
     link_overhead = 0;
     for (current_module = 0; current_module < n_modules; current_module++) {
-      rdin = fopen (source[current_module], "r");
+	rdin = fopen (source[current_module], "r");
       if (!rdin) {
 	perror (source[current_module]);
 	return EXIT_FAILURE; 
       }
-      status |= rdparse ();
+      rdrestart (rdin);
+      line_no = 1;
+      status |= rdparse ();          
       fclose (rdin);
       all_sym.size += modules[current_module].lt.size;
       all_seg.size += modules[current_module].st.size;

@@ -30,7 +30,7 @@ void init_module (struct Module *m, char *fname)
   
 static void list_segment (struct Segment s)
 {
-  int size = (module_type == CLOF_BIN) ? (s.file_size - s.link_overhead) : s.file_size;
+  int size = (module_type == CLOF_BIN) ? (s.image_size - s.link_overhead) : s.image_size;
   if (s.defined) {
     char type = 0;
     switch (s.type) {
@@ -137,24 +137,24 @@ static void list_word (Dword instr, int withaddress)
 static void write_expression (int outfile, Expression *e, struct LabelTable *labels)
 {
     if (!e) {
-	secure_write (outfile, &e, sizeof (Dword));
+	safe_base64 (outfile, (Dword)e);
 	list_word ((Dword)e, 0);
 	return;
     }
-    secure_write (outfile, &e->type, sizeof (Dword));
+    safe_base64 (outfile, e->type);
     list_word (e->type, 0);
     switch (e->type) {
     case CONSTANT:
     case SELECTOR:
-	secure_write (outfile, &e->detail.constant, sizeof (Dword));
+	safe_base64 (outfile, e->detail.constant);
 	list_word (e->detail.constant, 1);
 	break;
     case LABEL:
-	secure_write (outfile, &(labels->labels[e->detail.label].new_index), sizeof (Dword));
+	safe_base64 (outfile, labels->labels[e->detail.label].new_index);
 	list_word (e->detail.label, 1);
 	break;
     case EXPRESSION:
-	secure_write (outfile, &e->detail.expression.operation, sizeof (Dword));
+	safe_base64 (outfile, e->detail.expression.operation);
 	list_word (e->detail.expression.operation, 0);
 	write_expression (outfile, e->detail.expression.left, labels);
 	write_expression (outfile, e->detail.expression.right, labels);
@@ -167,7 +167,7 @@ static void write_expression (int outfile, Expression *e, struct LabelTable *lab
 
 void write_trailer (int outfile)
 {
-    secure_string (outfile, module_type == CLOF_EXE ? "</clof>\n" : "</clef>\n");
+    safe_string (outfile, module_type == CLOF_EXE ? "</clof>\n" : "</clef>\n");
 }
 
 void write_header (int outfile, struct SegmentTable *segments, struct LabelTable *labels)
@@ -180,23 +180,22 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
     longjmp (failure, 1);
   }
 
-  secure_string (outfile, module_type == CLOF_EXE ? "<clof>\n" : "<clef>\n");
+  safe_string (outfile, module_type == CLOF_EXE ? "<clof>\n" : "<clef>\n");
 
   /* Segment table */
-  secure_string (outfile, "  <segments>\n");
+  safe_string (outfile, "  <segments>\n");
   for (i = 0; i < segments->size; i++) {
-    if (segments->segments[i].file_size || segments->segments[i].id != DEFAULT_SEGMENT) {
+      if (segments->segments[i].image_size || segments->segments[i].id != DEFAULT_SEGMENT) {
       int j;
       struct Segment s  = segments->segments[i];
-      secure_string (outfile, "    <segment");
+      safe_string (outfile, "    <segment");
       sprintf (params, " name=\"%s\" id=\"%d\" defined=\"%d\"", s.name, i, s.defined);
-      secure_string (outfile, params);
+      safe_string (outfile, params);
       if (s.defined) {
-	int size = (module_type == CLOF_BIN) ? (s.file_size - s.link_overhead) : s.file_size;
-	sprintf (params, " type=\"%d\" size=\"%d\"", s.type, size);
-	secure_string (outfile, params);
+	  sprintf (params, " type=\"%d\"", s.type);
+	safe_string (outfile, params);
       }
-      secure_string (outfile, ">\n");
+      safe_string (outfile, ">\n");
 
       /* DEBUG INFO */
       if (debug && segments->segments[i].defined)
@@ -206,47 +205,47 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
 		  sprintf (params, "      <file name=\"%s\">\n", s.files[j].file);
 	      else
 		  sprintf (params, "      <file name=\"%s/%s\">\n", cwd, s.files[j].file);
-	      secure_string (outfile, params);
+	      safe_string (outfile, params);
 	      for (k = 0; k < s.files[j].nlines_inuse; k++) {
 		  sprintf (params, "        <line offset=\"%lu\" lineno=\"%d\" />\n", 
 			   s.files[j].flines[k].offset,
 			   s.files[j].flines[k].line);
-		  secure_string (outfile, params);
+		  safe_string (outfile, params);
 	      }
-	      secure_string (outfile, "      </file>\n");		
+	      safe_string (outfile, "      </file>\n");		
 	  }
 
-      secure_string (outfile, "    </segment>\n");
+      safe_string (outfile, "    </segment>\n");
     }
   }
-  secure_string (outfile, "  </segments>\n");
+  safe_string (outfile, "  </segments>\n");
 
   if (module_type == CLOF_EXE) {
-      secure_string (outfile, "  <symbols>\n");
+      safe_string (outfile, "  <symbols>\n");
       /* Symbol table */
       for (i = 0; i < labels->size; i++) {
 	  struct Label l = labels->labels[i];
 	  
 	  sprintf (params, "    <symbol name=\"%s\" id=\"%d\"", l.name, i);
-	  secure_string (outfile, params);
+	  safe_string (outfile, params);
 	  
 	  if (l.export) {
 	      assert (l.defined);
-	      secure_string (outfile, " global=\"1\"");
+	      safe_string (outfile, " global=\"1\"");
 	  } else {
-	      secure_string (outfile, " global=\"0\"");
+	      safe_string (outfile, " global=\"0\"");
 	  }
 	  
 	  if (l.defined) {
 	      sprintf (params, " defined=\"1\" segment=\"%d\" offset=\"%ld\"", l.segment, l.address);
-	      secure_string (outfile, params);
+	      safe_string (outfile, params);
 	  } else {
-	      secure_string (outfile, " defined=\"0\"");
+	      safe_string (outfile, " defined=\"0\"");
 	  }
 	  
-	  secure_string (outfile, " />\n");
+	  safe_string (outfile, " />\n");
       }
-      secure_string (outfile, "  </symbols>\n");
+      safe_string (outfile, "  </symbols>\n");
   }
 }
 
@@ -270,10 +269,10 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 	    UPDATE_SEGMENT (instr, newseg);
 	} else {
 	    /* do nothing -- let the linker take care of this */
-	    secure_write (outfile, &state, sizeof (Dword));
+	    safe_base64 (outfile, state);
 	    list_word (state, 0);
 	}
-	secure_write (outfile, &instr, sizeof (Dword));
+	safe_base64 (outfile, instr);
 	list_word (instr, 1);
 	break;
 
@@ -298,7 +297,7 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 	    return -1;
 	}
 	instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), my_offset);
-	secure_write (outfile, &instr, sizeof (Dword));
+	safe_base64 (outfile, instr);
 	list_word (instr, 1);
 	break;
 
@@ -312,9 +311,9 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 
 	if (module_type == CLOF_EXE) {
 	    /* do nothing -- let the linker take care of this */
-	    secure_write (outfile, &state, sizeof (Dword));
+	    safe_base64 (outfile, state);
 	    list_word (state, 0);
-	    secure_write (outfile, &instr, sizeof (Dword));
+	    safe_base64 (outfile, instr);
 	    list_word (instr, 0);
 	    write_expression (outfile, e, labels);
 	} else {
@@ -323,7 +322,7 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 		return -1;
 	    }
 	    instr = BUILD_INSTRUCTION_B (I_OPC (instr), I_OP1 (instr), target_offset);
-	    secure_write (outfile, &instr, sizeof (Dword));
+	    safe_base64 (outfile, instr);
 	    list_word (instr, 1);
 	}
 	break;
@@ -338,9 +337,9 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 
 	if (module_type == CLOF_EXE) {
 	    /* do nothing -- let the linker take care of this */
-	    secure_write (outfile, &state, sizeof (Dword));
+	    safe_base64 (outfile, state);
 	    list_word (state, 0);
-	    secure_write (outfile, &instr, sizeof (Dword));
+	    safe_base64 (outfile, instr);
 	    list_word (instr, 0);
 	    write_expression (outfile, e, labels);
 	} else {
@@ -349,7 +348,7 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 		return -1;
 	    }
 	    instr = target_offset;
-	    secure_write (outfile, &instr, sizeof (Dword));
+	    safe_base64 (outfile, instr);
 	    list_word (instr, 1);
 	}
 	break;
@@ -370,8 +369,8 @@ int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTabl
   static char tmp[1000];
 
   if (fragment & FIRST_FRAGMENT) {
-    sprintf (tmp, "  <bin segment=\"%d\"><![cdata[",  st->segments[id].new_index);
-    secure_string (outfile, tmp);
+    sprintf (tmp, "  <bin segment=\"%d\"><![CDATA[",  st->segments[id].new_index);
+    safe_string (outfile, tmp);
   }
 
   if (listing)
@@ -391,7 +390,7 @@ int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTabl
     case FIX_RDISPLACEMENT:
     case FIX_EXPRESSION:
       if        (escape == instr) {/* real escape! */
-	secure_write (outfile, &instr, sizeof (Dword));
+	safe_base64 (outfile, instr);
 	list_word (instr, 1);
 	escape = ~FIX_SEGMENT;
       } else if (escape == ~FIX_SEGMENT) /* escape prefix */
@@ -407,7 +406,7 @@ int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTabl
       break;
     default:
       if (escape == ~FIX_SEGMENT) {	/* normal copy */
-	secure_write (outfile, &instr, sizeof (Dword));
+	safe_base64 (outfile, instr);
 	list_word (instr, 1);
       } else {		/* special symbol */
 	newpointer = save_escape (pointer, escape, instr, outfile, st, seg, labels);
@@ -426,7 +425,7 @@ int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTabl
 		     "ESC");
   /*  free (seg->image);*/
   if (fragment & LAST_FRAGMENT) {
-    secure_string (outfile, "]]></bin>\n");
+    safe_string (outfile, "]]></bin>\n");
   }
   /*
   assert ((module_type == CLOF_BIN) || (offset==0) || (output_offset == offset + current_overhead));

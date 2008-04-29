@@ -134,7 +134,7 @@ typedef enum {
     INRET = 0x75,
     REM = 0x76,
     xREMI = 0x77 | EXTENSION_BIT,
-    xREMJ = 0x78 | EXTENSION_BIT,
+    xREMJ = 0x78 | EXTENSION_BIT
 } Clown_Opcode;
 
 #endif /* ISA_H */

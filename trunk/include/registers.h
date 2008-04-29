@@ -146,7 +146,7 @@ enum {
     _STACK = 4,
     _DATA  = 5,
     _ES    = 6,
-    _FS    = 7,
+    _FS    = 7
 };
 
 #define ISR   segr[_ISR].descriptor	/* interrupt table pointer */

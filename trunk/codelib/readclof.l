@@ -7,34 +7,38 @@ int fileno(FILE *stream);	/* for ANSI compatibility */
 #include "readclof.tab.h"
  int rderror (char *s);
 
-static int chararraysize, charcodesize;
-static char *charcode;
 int line_no = 1;
+#define CDATA_BEGIN (sizeof("<![CDATA[")-1) /* 9 */
+#define CDATA_END (sizeof("]]>")-1) /* 3 */
 %}
 
-%x CDATA
 %%
 
-"<![cdata[" { BEGIN(CDATA); chararraysize = 0; charcodesize = 0; charcode = NULL; link_overhead = 0;}
-<CDATA>(.|\n) { 
-    if (charcodesize == chararraysize) {
-	chararraysize += 1024;
-	charcode = safe_realloc (charcode, chararraysize * sizeof (Dword));
-    }
-    charcode[charcodesize++] = rdtext[0]; 
-    if (rdtext[0]=='\n') line_no++;
-    if (charcodesize == codelimit) { 
-	BEGIN(INITIAL);
-    }
-}
-"]]>" {BEGIN(INITIAL);
-    assert (!(charcodesize % sizeof (Dword)));
-    rdlval.code.size = 0;
-    rdlval.code.escapes = 0;
-    rdlval.code.bin = build_expressions ((Dword*)charcode, charcodesize / sizeof (Dword), 
-					 &rdlval.code.size, &rdlval.code.escapes);
-    free (charcode);
-    return T_CODE; 
+"<![CDATA["(.*)"]]>" { 
+  int charcodesize;
+  int wordcodesize;
+  Dword *wordcode;
+
+  link_overhead = 0;
+  
+  charcodesize = strlen (rdtext) - CDATA_BEGIN - CDATA_END;
+  rdtext[charcodesize + CDATA_BEGIN] = 0;
+
+  wordcodesize = charcodesize / sizeof (Dword) + 1; 
+  wordcode = safe_malloc (wordcodesize * sizeof (Dword));
+
+  if (-1 == (wordcodesize = base64_decode (rdtext + CDATA_BEGIN, wordcode))) {
+    free (wordcode);
+    return '.';
+  }
+  wordcode = safe_realloc (wordcode, wordcodesize * sizeof (Dword));
+
+  rdlval.code.size = 0;
+  rdlval.code.escapes = 0;
+  rdlval.code.bin = build_expressions (wordcode, wordcodesize, &rdlval.code.size, &rdlval.code.escapes);
+  free (wordcode);
+
+  return T_CODE; 
 }
 
 [=\"] { return rdtext[0]; }
@@ -56,7 +60,6 @@ int line_no = 1;
 "offset" { return T_OFFSET; }
 "segment" { return T_SEGMENT; }
 "segments" { return T_SEGMENTS; }
-"size" { return T_SIZE; }
 "<symbols" { return T_SYMBOLS; }
 "</symbols" { return T_ESYMBOLS; }
 "symbol" { return T_SYMBOL; }

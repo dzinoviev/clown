@@ -42,7 +42,7 @@ static enum {
     DSCOP_WRITE_START = 6,
     PREP_DSCOP_READ_START = 7, 
     PREP_DSCOP_SEEK_START = 8, 
-    PREP_DSCOP_WRITE_START = 9,
+    PREP_DSCOP_WRITE_START = 9
 } operation = DSCOP_NONE;
 
 struct Clown_IODevice hdd_device;

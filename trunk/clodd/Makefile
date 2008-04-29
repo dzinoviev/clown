@@ -1,6 +1,6 @@
 INCLUDE = ../include/
 DEVICES = ../devlib/
-CFLAGS = -Wall -ansi  -g -I$(INCLUDE) #-O3
+CFLAGS = -Wall -g -I$(INCLUDE) -O3 -ansi #-pedantic
 
 all:  ../bin/clodd
 

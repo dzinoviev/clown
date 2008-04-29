@@ -1,5 +1,5 @@
-INCLUDE = ../include/
-CFLAGS = -Wall -ansi  -g -I$(INCLUDE) #-O3
+INCLUDE = ../include
+CFLAGS = -Wall -g -I$(INCLUDE) -O3 -ansi# -pedantic
 
 all:  ../bin/makedisc
 

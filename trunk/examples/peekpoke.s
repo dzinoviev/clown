@@ -1,5 +1,5 @@
 #include "config.h"
-#define PUT(x) out x, (IOBASE_TTY + 0)
+#define PUT(x) out x, ?(IOBASE_TTY + 0)
 ;; CALLER
 ;; It is the responsibility of the caller to push the parameters onto the stack
 ;; and to clean up the stack after the call, if necessary.

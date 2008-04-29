@@ -588,8 +588,9 @@ instruction : error instruction
 
             | T_MOV T_SREGISTER ',' segment 
               {
+		  Selector s;
                   if ($2==_CODE) { report (1, BADUSEOFCS); YYABORT; }
-		  Selector s = MK_SELECTOR ($4, 0, _LDT); 
+		  s = MK_SELECTOR ($4, 0, _LDT); 
 		  /* the next instruction contains a segment selector 
 		     that must be adjusted if there is more than one module
 		     in the program */

@@ -28,7 +28,6 @@ void component_error (const char *name, const char *msg, char *detail)
 void end_segment (int segment, Dword size)
 {
     size -= global_offset;
-    segments.segments[segment].file_size = (module_type == CLOF_BIN) ? size : (size + current_overhead);
 }
 
 static int search_segment (char *name)
@@ -43,12 +42,6 @@ static int search_segment (char *name)
 static int create_segment (char *name)
 {
     int seg = segments.size;
-    /*
-    if (seg == 1 && module_type == CLOF_BIN) {
-	component_error (*source, "too many segments in a BIN file", name);
-	return NOT_FOUND;
-    }
-    */
     segments.segments = safe_realloc (segments.segments, 
 				      sizeof (struct Segment) 
 				      * (segments.size + 1));
@@ -305,7 +298,7 @@ static int generate (int outfile)
 
   /* The code */
   for (i = 0; i < segments.size; i++)
-    if (segments.segments[i].file_size && segments.segments[i].defined)
+    if (segments.segments[i].image_size && segments.segments[i].defined)
 	status &= save_segment (outfile, i, &segments, &labels, FIRST_FRAGMENT | LAST_FRAGMENT);
 
   write_trailer (outfile);

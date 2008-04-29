@@ -9,7 +9,7 @@
 #include "prototypes.h"
 #include "ucvm.h"
 
-void new_ucvm (struct UCVM *ucvm, const short *memory)
+void new_ucvm (struct UCVM *ucvm, const unsigned short *memory)
 {
     int i;
 
@@ -23,7 +23,7 @@ void new_ucvm (struct UCVM *ucvm, const short *memory)
 	ucvm->r[i] = 0;
 }
 
-static Dword loadDword (const short *memory, short pc)
+static Dword loadDword (const unsigned short *memory, short pc)
 {
     return memory[pc + 1] + ((Uword)memory[pc] * USHRT_MAX);
 }

@@ -1,6 +1,6 @@
 OBJS = expressions.o writecode.o utils.o readclof.tab.o lex.$(PFX).o
 INCLUDE = ../include/
-CFLAGS = -I$(INCLUDE) -Wall -g #-O3
+CFLAGS = -I$(INCLUDE) -Wall -g -O3 -ansi #-pedantic
 PFX = rd
 LEXFLAGS = -i -I -8 -P$(PFX)
 YACCFLAGS = -d -p $(PFX)

@@ -200,11 +200,11 @@ static void go_interactive ()
 {
     while (!clown_done) {
 	if (!setjmp (begin_or_abort)) {
+	    char *line;
 	    normal_terminal ();
 	    signal (SIGINT, SIG_IGN);
 	    
-	    char *line = rl_gets ();
-	    if (line) {
+	    if ((line = rl_gets ())) {
 		struct cmd_buffer_state *my_string_buffer = cmd_scan_string (line);
 		cmdparse ();
 		cmd_delete_buffer (my_string_buffer);

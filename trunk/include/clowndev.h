@@ -32,8 +32,6 @@ struct DebugFile {
 
 struct Segment {
     char *name;
-    int  base;			/* used by the loader/clown only */
-    int  file_size;
     enum {SEG_DEFAULT, SEG_CODE, SEG_DATA, SEG_CONST} type;
     Bit   defined;
     Bit   global;
@@ -43,16 +41,19 @@ struct Segment {
     int image_extent;
 
     /* Debug info */
-  int nfiles;
-  struct DebugFile *files;
+    int nfiles;
+    struct DebugFile *files;
 
-    /* This field is used only by the linker */
+    /* These fields are used only by the linker */
     int  id;
     int  in_use;
     int  escapes;
     int  link_overhead;
     int  new_index;
     int  module;
+
+    /* This field is used only by the loader/clown */
+    int  base;		
 }; 
 
 struct SegmentTable {
@@ -122,8 +123,8 @@ extern Clof_Type module_type;
 #define LAST_FRAGMENT 2
 
 enum { C_LL = 'A', C_GG = 'B', C_UNARY_MIN = 'C'};
-void secure_write (int file, void *addr, int size);
-void secure_string (int file, char *string);
+void safe_base64 (int file, Dword word);
+void safe_string (int file, char *string);
 void *safe_malloc (size_t size);
 void *safe_realloc (void *ptr, size_t size);
 
@@ -143,6 +144,8 @@ void list_segments (struct SegmentTable st);
 void list_labels (struct LabelTable syms, struct SegmentTable segs);
 Dword *build_expressions (Dword* code, int codesize, int *truesize, int *escapes);
 int rdparse (void);
+void rdrestart (FILE*);
+int base64_decode (char *orig, Dword *decoded);
 void init_module (struct Module *m, char *fname);
 void component_error (const char *name, const char *msg, char *detail);
 #endif

@@ -86,8 +86,8 @@ return T_ERROR;
 
 %[a-zA-Z0-9]+   {lex_error ("illegal register"); return T_ERROR;}
 
-0[xX]{HD}+ {sscanf (yytext, "%lx", &yylval.i); return T_NUMBER;}
-{HD}+[hH]  {sscanf (yytext, "%lx", &yylval.i); return T_NUMBER;}
+0[xX]{HD}+ {sscanf (yytext, "%lx", (long unsigned int *)&yylval.i); return T_NUMBER;}
+{HD}+[hH]  {sscanf (yytext, "%lx", (long unsigned int *)&yylval.i); return T_NUMBER;}
 {D}+       {sscanf (yytext, "%ld", &yylval.i); return T_NUMBER;}
 [01]+[bB]       {int i = 0;
 		 yylval.i = 0;
@@ -124,7 +124,7 @@ return T_ERROR;
 }
 
 \'\\[0-7]{1,3}\' {/* octal escape sequence */
-    int result;
+    unsigned result;
     sscanf (yytext + 2, "%o", &result);
     if (result > 0xff) {/* error, constant is out-of-bounds */
 	lex_error ("character constant out of bounds");
@@ -155,7 +155,7 @@ return T_ERROR;
 }
 
 <STRING>\\[0-7]{1,3} {/* octal escape sequence */
-    int result;
+    unsigned result;
     sscanf (yytext + 1, "%o", &result);
     if (result > 0xff) {/* error, constant is out-of-bounds */
 	lex_error ("character constant out of bounds");

@@ -6,12 +6,12 @@ typedef signed char cycle_t;
 
 #include "exceptions.h"
 
-typedef unsigned long       Uword;
-typedef   signed long       Dword;
+typedef long unsigned       Uword;
+typedef   long signed       Dword;
+typedef long long signed    DDword;
 typedef         Uword       Selector;
 typedef         Uword       SegFlags;
-typedef   signed long long DDword;
-typedef unsigned char      Bit;
+typedef      unsigned       Bit;
 
 struct Clown_IODevice {
     Bit n_registers;

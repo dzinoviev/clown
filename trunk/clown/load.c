@@ -34,6 +34,9 @@ int load_memory (char *fname, Dword offset)
 	perror (fname);
 	return 0; 
     }
+    rdrestart (rdin);
+    line_no = 1;
+    source = &fname;
     status = rdparse ();
     fclose (rdin);
   
@@ -60,7 +63,7 @@ int load_memory (char *fname, Dword offset)
 	if (!modules[current_module].st.segments[j].in_use)
 	    continue;
 
-	size = modules[current_module].st.segments[j].file_size;
+	size = modules[current_module].st.segments[j].image_size;
 
 	if (size > CLOWN_MEMORY_SIZE - offset - module_offset) {
 	    size = CLOWN_MEMORY_SIZE - offset - module_offset;

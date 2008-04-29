@@ -20,7 +20,7 @@ static struct UCVM dma_ucvm;
 #define R4            4
 #define R5            5
 
-static const short ucvm_program[] = {
+static const unsigned short ucvm_program[] = {
     /*       write_to_port (IOBASE_HDD + 0, 3); --  reset disk buffer */
              UCVM_A (UCVM_xOUTI, IOBASE_HDD + 0, 0), 
     /* 01 */         0, 

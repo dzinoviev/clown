@@ -1,5 +1,5 @@
-INCLUDE = ../include/
-CFLAGS = -Wall -g -ansi -I$(INCLUDE) #-O3
+INCLUDE = ../include
+CFLAGS = -Wall -g -I$(INCLUDE) -O3 -ansi #-pedantic
 CAS = ../cas/
 PFX = rd
 OBJS = clink.o options.o 
@@ -13,22 +13,16 @@ all: ../bin/clink
 ../bin/clink: $(OBJS) $(CODELIB)/libcode.a
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-clink.o: clink.c clink.h $(INCLUDE)clowndev.h $(INCLUDE)isa.h $(INCLUDE)prototypes.h $(INCLUDE)clown_types.h  $(INCLUDE)exceptions.h $(INCLUDE)symtab.h
+clink.o: clink.c clink.h $(INCLUDE)/clowndev.h $(INCLUDE)/isa.h \
+  $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/symtab.h
 
-options.o: options.c clink.h $(INCLUDE)clowndev.h $(INCLUDE)isa.h  $(INCLUDE)prototypes.h $(INCLUDE)clown_types.h  $(INCLUDE)exceptions.h $(INCLUDE)symtab.h
-
-lex.$(PFX).o:  lex.$(PFX).c $(INCLUDE)clowndev.h $(INCLUDE)isa.h $(INCLUDE)prototypes.h $(INCLUDE)clown_types.h $(INCLUDE)exceptions.h $(INCLUDE)symtab.h readclof.tab.h
-
-lex.$(PFX).c: readclof.l
-	flex $(LEXFLAGS) readclof.l
-
-readclof.tab.c readclof.tab.h: readclof.y 
-	bison $(YACCFLAGS) readclof.y
-
-readclof.tab.o: readclof.tab.c $(INCLUDE)clowndev.h $(INCLUDE)isa.h  $(INCLUDE)prototypes.h $(INCLUDE)clown_types.h  $(INCLUDE)exceptions.h $(INCLUDE)symtab.h clink.h
+options.o: options.c clink.h $(INCLUDE)/clowndev.h $(INCLUDE)/isa.h \
+  $(INCLUDE)/prototypes.h $(INCLUDE)/clown_types.h \
+  $(INCLUDE)/exceptions.h $(INCLUDE)/symtab.h
 
 clean:
-	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c readclof.tab.* readclof.output
+	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c
 
 cleanall:
-	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c readclof.tab.* readclof.output ../bin/clink 
+	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c ../bin/clink 

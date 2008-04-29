@@ -35,18 +35,18 @@
 #define OFF(x)  (((x) & 0x0FFF) >>  0)
 /*#define OFF(x)  (((x)     << 4) >>  4)*/
 
-#define UCVM_A(opc,port,reg) ((opc) << 12 | (port) << 4 | (reg))
-#define UCVM_B(opc,off)      ((opc) << 12 | (off)              )
+#define UCVM_A(opc,port,reg) (((opc) << 12) | ((port) << 4) | (reg))
+#define UCVM_B(opc,off)      (((opc) << 12) | (off)              )
 
 #define UCVM_NREGISTERS 8
 struct UCVM {
     Bit equal;			/* equal flag */
     short pc;			/* program counter */
     Dword r[UCVM_NREGISTERS];	/* registers */
-    const short *memory;	/* memory */
+    const unsigned short *memory;	/* memory */
 };
 
-void new_ucvm (struct UCVM *ucvm, const short *memory);
+void new_ucvm (struct UCVM *ucvm, const unsigned short *memory);
 int ucvm_dostep (struct UCVM *ucvm, Bit iorestr);
 
 #endif
