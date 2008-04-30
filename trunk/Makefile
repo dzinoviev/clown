@@ -1,3 +1,7 @@
+ifndef DESTDIR
+DESTDIR = ..
+endif
+
 all:
 	make -C codelib
 	make -C devlib
@@ -15,12 +19,15 @@ clean:
 	make -C clown clean
 	make -C makedisc clean
 	make -C clodd clean
+	rm -rf bin
+	rm -rf include/clown/config.h
 
-cleanall:
-	make -C codelib cleanall
-	make -C devlib cleanall
-	make -C cas cleanall
-	make -C clink cleanall
-	make -C clown cleanall
-	make -C makedisc cleanall
-	make -C clodd cleanall
+install:
+	make -C cas install DESTDIR=$(DESTDIR)
+	make -C clink install DESTDIR=$(DESTDIR)
+	make -C clown install DESTDIR=$(DESTDIR)
+	make -C makedisc install DESTDIR=$(DESTDIR)
+	make -C clodd install DESTDIR=$(DESTDIR)
+
+dist:
+	(cd ..; tar cvf clown-1.0.1.tar clown-1.0.1 --exclude '*.svn*'; gzip clown-1.0.1.tar)

@@ -1,16 +1,14 @@
-INCLUDE = ../include
-CFLAGS = -Wall -g -I$(INCLUDE) -O3 -ansi #-pedantic
-CAS = ../cas/
+include ../Makefile.conf
+
 PFX = rd
 OBJS = clink.o options.o 
 LEXFLAGS = -i -I -8 -P$(PFX)
 YACCFLAGS = -d -p $(PFX)
-CODELIB = ../codelib
-LDFLAGS = -L$(CODELIB) -lcode #-lefence
+LDFLAGS = -L$(libdir) -lcode #-lefence
 
-all: ../bin/clink
+all: clink
 
-../bin/clink: $(OBJS) $(CODELIB)/libcode.a
+clink: $(OBJS) $(libdir)/libcode.a
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 clink.o: clink.c clink.h $(INCLUDE)/clowndev.h $(INCLUDE)/isa.h \
@@ -22,7 +20,8 @@ options.o: options.c clink.h $(INCLUDE)/clowndev.h $(INCLUDE)/isa.h \
   $(INCLUDE)/exceptions.h $(INCLUDE)/symtab.h
 
 clean:
-	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c
+	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c clink
 
-cleanall:
-	rm -f *~ $(OBJS) y.tab.* lex.$(PFX).c ../bin/clink 
+install: clink
+	mkdir -p $(DESTDIR)/bin
+	install -s -m 755 clink $(DESTDIR)/bin

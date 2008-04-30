@@ -1,15 +1,13 @@
-INCLUDE = ../include
-CFLAGS = -Wall -g -I$(INCLUDE) -O3 -ansi #-pedantic
+include ../Makefile.conf
+
 OBJS = cas.o options.o parse.o cas-yacc.tab.o lex.yy.o
-LD = $(CC)
+LDFLAGS = -L$(libdir) -lcode #-lefence
 LEXFLAGS = -CF -8
 YACCFLAGS = -d
-CODELIB = ../codelib
-LDFLAGS = -L$(CODELIB) -lcode #-lefence
 
-all: ../bin/cas
+all: cas
 
-../bin/cas: $(OBJS) $(CODELIB)/libcode.a
+cas: $(OBJS) $(libdir)/libcode.a
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 cas.o: cas.c cas.h $(INCLUDE)/clowndev.h $(INCLUDE)/isa.h \
@@ -41,7 +39,8 @@ cas-yacc.tab.c cas-yacc.tab.h: cas-yacc.y
 	bison $(YACCFLAGS) cas-yacc.y
 
 clean:
-	rm -f $(OBJS) y.tab.* lex.yy.c cas-yacc.tab.* cas-yacc.output *~
+	rm -f $(OBJS) y.tab.* lex.yy.c cas-yacc.tab.* cas-yacc.output *~ cas
 
-cleanall:
-	rm -f $(OBJS) y.tab.* lex.yy.c cas-yacc.tab.* cas-yacc.output ../bin/cas *~
+install: cas
+	mkdir -p $(DESTDIR)/bin
+	install -s -m 755 cas $(DESTDIR)/bin

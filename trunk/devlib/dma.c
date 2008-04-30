@@ -3,7 +3,7 @@
 #include "ucvm.h"
 #include "prototypes.h"
 #include "hdd.h"
-#include "clown/config.h"
+#include "config.h"
 
 enum {DMA_IDLE, DMA_DSC2MEM, DMA_MEM2DSC, DMA_PREP1, DMA_PREP2};
 struct Clown_IODevice dma_device;

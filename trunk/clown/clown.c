@@ -14,7 +14,7 @@
 #endif
 #include <readln.h>
 
-#include "clown/config.h"
+#include "config.h"
 #include "registers.h"
 #include "clowndev.h"
 

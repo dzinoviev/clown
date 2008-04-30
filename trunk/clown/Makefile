@@ -1,21 +1,19 @@
-INCLUDE = ../include
-CODELIB = ../codelib/
-DEVICELIB = ../devlib/
-CFLAGS = -Wall -g -I$(INCLUDE) -O3 -ansi# -pedantic
+include ../Makefile.conf
+
 # You must link this library if TTY_PTHREAD is defined
 LIBPTHREAD = -pthread
-LDFLAGS = -lreadline -lcurses -L$(CODELIB) -lcode -L$(DEVICELIB) -ldevices $(LIBPTHREAD) #-lefence
+LDFLAGS = -lreadline -lcurses -L$(libdir) -lcode -ldevices $(LIBPTHREAD) #-lefence
 CMD = cmd
 LEXFLAGS = -i -I -P$(CMD)
 YACCFLAGS = -d -p $(CMD)
 OBJ = clown.o decode.o paging.o segmentation.o general.o ioint.o tlb.o options.o cache.o  readln.o commandline.tab.o lex.$(CMD).o load.o ui.o
 
-all: ../bin/clown
+all: clown
 
-../bin/clown: $(OBJ) $(CODELIB)/libcode.a $(DEVICELIB)/libdevices.a
+clown: $(OBJ) $(libdir)/libcode.a $(libdir)/libdevices.a
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
-clown.o:clown.c $(INCLUDE)/readln.h $(INCLUDE)/clown/config.h \
+clown.o: clown.c $(INCLUDE)/readln.h $(INCLUDE)/config.h \
   $(INCLUDE)/registers.h $(INCLUDE)/isa.h $(INCLUDE)/prototypes.h \
   $(INCLUDE)/clown_types.h $(INCLUDE)/exceptions.h $(INCLUDE)/generate.h \
   $(INCLUDE)/clowndev.h $(INCLUDE)/symtab.h
@@ -79,8 +77,12 @@ lex.$(CMD).c: commandline.l
 	flex $(LEXFLAGS) $<
 
 clean:
-	rm -f $(OBJ)  commandline.tab.c commandline.tab.h lex.$(CMD).c *~
+	rm -f $(OBJ)  commandline.tab.c commandline.tab.h lex.$(CMD).c *~ $(INCLUDE)/clown/config.h clown
 
-cleanall:
-	rm -f ../bin/clown $(OBJ) commandline.tab.c commandline.tab.h lex.$(CMD).c *~
+install: clown
+	mkdir -p $(DESTDIR)/bin
+	mkdir -p $(DESTDIR)/include/clown
+	install -s -m 755 clown $(DESTDIR)/bin
+	install -m 644 $(INCLUDE)/config.h $(DESTDIR)/include/clown/config.h
+
 
