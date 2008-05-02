@@ -41,7 +41,8 @@ Make sure that the readline library is accessible to the linker
 terminal prompt:
 	
 	cd <src-root>
-	make all
+	make 
+	make install
 
 Where <src-root> is the path to the directory containing the source
 distribution. Binaries will be built in the <src-root>/bin/ directory.

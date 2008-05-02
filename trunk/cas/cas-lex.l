@@ -26,7 +26,7 @@ HD [0-9A-Fa-f]
 
 %%
 
-\#(\ )*[0-9]+(\ )+\"[^\"]*\"(\ [0-9]+)? {	/* preprocessor line directives */
+\#(\ )*[0-9]+(\ )+\"[^\"]*\"(\ [0-9]+)* {	/* preprocessor line directives */
 sscanf (yytext, "# %d \"%[^\"]s\"", &line_no, dummy);
 line_no--;
 }

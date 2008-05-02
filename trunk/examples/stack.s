@@ -1,4 +1,4 @@
-#include "config.h"
+#include <clown/config.h>
 #define DEC 10
 	mov %r1, 1234
 	stop

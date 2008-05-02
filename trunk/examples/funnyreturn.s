@@ -1,4 +1,4 @@
-#include "config.h"
+#include <clown/config.h>
 
 	jmp end
 

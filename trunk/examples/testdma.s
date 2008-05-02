@@ -1,4 +1,4 @@
-#include "config.h"
+#include <clown/config.h>
 
 	out 4  , IOBASE_HDD + 0 ; interrupt mode
 	mov %r1, oscode		; initialize the pointer to  the array

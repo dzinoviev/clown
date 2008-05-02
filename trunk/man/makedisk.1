@@ -1,0 +1,54 @@
+.TH MAKEDISK 1 "MAY 2008" "version 1.0" "USER COMMANDS"
+
+.SH NAME 
+
+makedisk \- Clown disk formatting utility
+
+.SH SYNOPSIS
+.B makedisk 
+tracks sectors t2t-seek-latency max-seek-latency speed
+
+.SH DESCRIPTION
+.B makedisk
+is the Clown disk formatting utility. All parameters must be positive
+integer numbers. The new disk must have at least three tracks. The
+track-to-track seek latency must be less than the maximum seek
+latency. The new disk image is written into the file 
+.IR clown.dsk .
+
+.SH OPTIONS
+.TP
+tracks
+The number of disk tracks.
+.TP 
+sectors
+The number of sectors per track.
+.TP 
+t2t-seek-latency
+Track-to-track seek latency (in  Clown
+.SM CPU 
+cycles)
+.TP
+max-seek-latency
+Maximum seek latency across the disk (in Clown
+.SM CPU 
+cycles)
+.TP
+speed
+Disk rotation speed (in Clown
+.SM CPU 
+cycles per revolution)
+
+.SH FILES
+The new disk image is written into the file 
+.IR clown.dsk .
+
+.SH NOTES
+.B makedisc 
+is the oldest component of the Clown system.
+
+.SH AUTHOR
+Dmitry Zinoviev <dmitry at mcs dot suffolk dot edu>
+.SH "SEE ALSO"
+.BR clown (1),
+.BR clodd (1)

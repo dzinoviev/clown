@@ -1,0 +1,90 @@
+.TH CLOWN 1 "MAY 2008" "version 1.0" "USER COMMANDS"
+
+.SH NAME 
+
+clown \- simulate the operation of an Intel 30386-style personal
+computer with a keyboard, text-based monitor, and a hard drive
+
+.SH SYNOPSIS
+.B clown 
+[-h|--help] [-q|--silent] [-v|--version] [-r|--run] [--cpl
+.IR cpl ]
+[-b|--bin
+.I cle-file 
+.IR address ]
+.RI [ more-cle-file(s) ]
+...
+
+.SH DESCRIPTION
+.B clown
+is an instruction-level simulator of Intel 30386-style personal
+computer with a keyboard, text-based monitor, and a hard drive. The simulator also has a
+.SM CPU
+with a level one cache and a memory management unit, an interval timer, and a 
+.SM DMA
+controller. The purpose of
+.B clown
+is to study the lower-level organization of operating systems, as well as the foundations of computer architectures and assembly language programming - all without mastering the overwhelming complexity of a real Intel 30386 (or higher)
+.SM CPU.
+.P
+.B clown
+simulates more than 90 instructions. It has one data type - unsigned 32-bit integer. The 
+.SM CPU
+has 16 general-purpose registers (of which three are also used as the stack pointer, the page table pointer, and the fault address register) and 8 segment registers. The
+.SM CPU
+has four levels of protection. It supports hardware interrupts (internal and external), paging, and segmentation through global and local descriptor tables. 
+
+
+.SH OPTIONS
+.TP
+\-h, \-\-help
+Show the help message and exit
+.TP 
+\-q|\-\-silent
+Work silently (do not show any diagnostics  messages)
+.TP
+\-v|\-\-version
+Print the  version number and exit
+.TP
+\-r|\-\-run
+Run simulator in the batch mode
+.TP
+\-\-cpl cpl
+Set the initial current privilege level (CPL) of the Clown 
+.SM CPU 
+to 
+.I cpl
+.TP 
+\-b|\-\-bin cle-file address
+Load an executable or data image from file 
+.I cle-file 
+into the 
+.SM RAM 
+at address 
+.IR addr . 
+This option can be repeated as needed to load more than one image file
+.P
+Executable or data image(s) from 
+.I more-cle-file(s)
+are loaded into the 
+.SM RAM 
+at address 0 in the order they appear on the command line. This should normally not be a concern, unless the images overlap in the 
+.SM RAM.
+
+.SH FILES
+The disk image is assumed to be in the file 
+.IR clown.dsk .
+
+.SH ENVIRONMENT
+.TP 
+CLOWN_DISC
+If set, the disk image file is searched in directory
+.IR CLOWN_DISC .
+
+.SH AUTHOR
+Dmitry Zinoviev <dmitry at mcs dot suffolk dot edu>
+.SH "SEE ALSO"
+.BR cas (1),
+.BR clink (1),
+.BR makedisc (1),
+.BR clodd (1)

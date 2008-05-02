@@ -1,4 +1,4 @@
-#include "config.h"
+#include <clown/config.h>
 
 		MOV	%R1, 1
 		OUT	%R1, (IOBASE_TIMER + 0)
