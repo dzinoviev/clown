@@ -20,9 +20,16 @@ Bit hdd_init (char disc_path[], struct Clown_Hdd *params, Uword *track_len)
     clown_disk = open (disc_path, O_RDWR);
     if (-1 == clown_disk) {
 	if (!silent) {
-	    fputs ("\n\t", stderr);
+	    fputs ("\n\tI was not able to initialize the hard disk image:\n\t", 
+		stderr);
 	    perror (disc_path);
-	    fputs ("\tDid you forget to set CLOWN_DISC variable?\n", stderr);
+	    fprintf (stderr,
+			"\tPerhaps you forgot to set the "DISC_HOME" shell variable\n"
+			"\tto tell me the path to the disk image file?\n"
+			"\tMeanwhile, CLOWN will work without a hard drive.\n"
+			"\tThere is nothing wrong with that:\n"
+			"\tyour iPod has no hard drive, either!\n\n",
+			disc_path);
 	}
 	return 0;
     }

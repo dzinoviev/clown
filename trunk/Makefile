@@ -31,4 +31,4 @@ install:
 	make -C man install DESTDIR=$(DESTDIR)
 
 dist:
-	(cd ..; tar cvf clown-1.0.1.tar clown-1.0.1 --exclude '*.svn*' --exclude 'clob*'; gzip clown-1.0.1.tar)
+	(cd ..; mv clown clown-1.0.2; tar cvf clown-1.0.2.tar clown-1.0.2 --exclude '*.svn*' --exclude 'clob*'; gzip clown-1.0.2.tar; mv clown-1.0.2 clown)
