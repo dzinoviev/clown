@@ -1,0 +1,112 @@
+.TH CAS 1 "MAY 2008" "version 1.0" "USER COMMANDS"
+
+.SH NAME 
+
+cas \- assemble source files written in Clown assembler
+
+.SH SYNOPSIS
+.B cas 
+[-h|--help] [-P|--nocpp] [--pass-to-cpp
+.IR "options" ] 
+[-b|--cle] [-s|--clo] [-e|--entry
+.IR address ] 
+[-o
+.IR output-file ] 
+[-v|--version][-l|--listing] [-ng|--nodebug] [-V] [--]
+.I source-file
+
+.SH DESCRIPTION
+.B cas
+is the Clown assembler. It converts source files written in the Clown assembly language into binary files that contain executable Clown instructions, symbol tables, and debug information. An output binary file can be immediately executable (a 
+.SM CLE 
+file) if it contains no unresolved symbols and segments and no relocation information. Otherwise, the output file is an object file (a 
+.SM CLO 
+file) and must be combined (linked) with other 
+.SM CLO 
+files.
+
+
+.SH OPTIONS
+.TP
+\-h, \-\-help
+Show the help message and exit
+.TP 
+\-P|\-\-nocpp
+Do not preprocess the source with the C preprocessor,
+.B cpp
+.TP 
+\-\-pass-to-cpp "options"
+Pass 
+.I
+options 
+to the C preprocessor, 
+.BR cpp ; 
+if the shell variable 
+.SM CLOWN 
+is set, then option 
+.I -I($CLOWN/include/) 
+is passed to the 
+.B cpp 
+implicitly
+.TP
+\-b|\-\-cle
+Generate a non-relocatable directly executable 
+.SM CLE 
+module (default)
+.TP
+\-s|\-\-clo
+Generate a relocatable 
+.SM CLO 
+module
+.TP
+\-e|\-\-entry addr
+Set the start address to 
+.I addr 
+(default 0)
+.TP
+\-o output-file
+Set the output file name to 
+.I output-file 
+(the default name is 
+.IR source-file .cle 
+for 
+.SM CLE 
+modules and 
+.IR source-file .clo 
+for 
+.SM CLO 
+modules, where
+.I source-file 
+is the name of the input file, less the suffix 
+.IR .s )
+.TP 
+\-l, \-\-listing
+Produce a human-readable listing in addition to the binary file
+.TP
+\-ng|\-\-nodebug
+Do not include file and line information for debugging
+.TP 
+\-v|\-\-version
+Print the  version number and exit
+.TP 
+\-V
+Print the  version number and continue
+.TP
+\-\-
+Treat the next argument as a file name, even if it looks like yet another command line option
+
+.SH ENVIRONMENT
+.TP 
+CLOWN
+If set, then option 
+.I -I($CLOWN/include/) 
+is passed to the 
+.B cpp 
+implicitly.
+
+.SH AUTHOR
+Dmitry Zinoviev <dmitry at mcs dot suffolk dot edu>
+.SH "SEE ALSO"
+.BR clown (1),
+.BR clink (1),
+.BR cpp (1)

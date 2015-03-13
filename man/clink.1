@@ -1,0 +1,78 @@
+.TH CLINK 1 "MAY 2008" "version 1.0" "USER COMMANDS"
+
+.SH NAME 
+
+clink \- link Clown object files
+
+.SH SYNOPSIS
+.B clink 
+[-h|--help] [-b|--cle] [-s|--clo] [-o
+.IR output-file ] 
+[-v|--version] [-l|--listing] [-q|--silent] [-ng|--nodebug] [-V] [--]
+.I clo-files
+...
+
+.SH DESCRIPTION
+.B clink
+is the Clown linker. It is used to combine multiple 
+.SM CLO 
+(Clown object) files into one 
+.SM CLE 
+(Clown executable) file or 
+.SM CLO 
+(Clown object library file).
+
+.SH OPTIONS
+.TP
+\-h, \-\-help
+Show the help message and exit
+.TP 
+\-b, \-\-cle 
+Generate a non-relocatable directly executable 
+.SM CLE 
+module
+.I (default)
+.TP 
+\-s, \-\-clo 
+Generate a relocatable 
+.SM CLO 
+module (a library)
+.TP 
+\-o output-file
+Set the output file name to 
+.I output-file 
+(the default name is 
+.I default.cle 
+for 
+.SM 
+CLE 
+modules and 
+.I default.clo 
+for 
+.SM CLO 
+modules)
+.TP 
+\-v, \-\-version 
+Print the linker version number and exit
+.TP 
+\-l, \-\-listing
+ Produce the listing
+.TP 
+\-q, \-\-silent 
+Operate silently, without reporting warnings and error messages
+.TP 
+\-ng, \-\-nodebug 
+Do not include file and line information for debugging
+.TP 
+\-V 
+Print  the linker version number and continue
+.TP 
+\-\- 
+Treat the next argument as a file name, even if it looks like yet
+another command line option.
+
+.SH AUTHOR
+Dmitry Zinoviev <dmitry at mcs dot suffolk dot edu>
+.SH "SEE ALSO"
+.BR clown (1),
+.BR cas (1)
