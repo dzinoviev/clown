@@ -10,7 +10,7 @@
 /* #undef C_ALLOCA */
 
 /* Define to 1 if you have the `add_history' function. */
-#define HAVE_ADD_HISTORY 1
+/* #undef HAVE_ADD_HISTORY */
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #define HAVE_ALLOCA 1
@@ -44,7 +44,7 @@
 #define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `readline' library (-lreadline). */
-#define HAVE_LIBREADLINE 1
+/* #undef HAVE_LIBREADLINE */
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
@@ -66,7 +66,7 @@
 #define HAVE_MEMSET 1
 
 /* Define to 1 if you have the `readline' function. */
-#define HAVE_READLINE 1
+/* #undef HAVE_READLINE */
 
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */
