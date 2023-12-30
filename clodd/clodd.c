@@ -33,45 +33,61 @@ void component_error (const char *name, const char *msg, char *detail)
         fprintf (stderr, "clodd: %s: %s: %s\n", name, msg, detail);
 }
 
+static void validate_options(int argn, char *argv[])
+{
+  read_options(argn, argv);
+  if (!file) {
+    fprintf(stderr, "%s: no file name given on the command line\n", argv[0]);
+    exit(EXIT_FAILURE);      
+  }
+  if (direction == UNDEF) {
+    fprintf(stderr, "%s: no copy direction on the command line\n", argv[0]);
+    exit(EXIT_FAILURE);      
+  }
+}
+
+static void construct_disc_path(char *disc_path, size_t max_length)
+{
+  char *path = getenv(DISC_HOME);
+  if (path) {
+    strncpy(disc_path, path, max_length - strlen(DISC_IMAGE) - 1);
+  } else {
+    disc_path[0] = '\0';
+  }
+  strncat(disc_path, DISC_IMAGE, max_length - strlen(disc_path) - 1);
+}
+
+static void validate_track_sector(int track, int max_tracks,
+				  int max_sectors, char *prog_name) {
+  if (track >= max_tracks) {
+    fprintf(stderr, "%s: track too large: %d\n", prog_name, track);
+    exit(EXIT_FAILURE);      
+  }
+  if (sector >= max_sectors) {
+    fprintf(stderr, "%s: sector too large: %d\n", prog_name, sector);
+    exit(EXIT_FAILURE);      
+  }
+}
+
 int main (int argn, char *argv[])
 {
-  int infile, chunk, total;
+  int infile, chunk;
   struct Clown_Hdd params;
   char disc_path[PATH_MAX] = "";
   char *path;
   Dword wbuffer[DISC_WORDS_PER_SECTOR];
   char cbuffer[DISC_WORDS_PER_SECTOR * sizeof (Dword)];
 
-  read_options (argn, argv);
-  if (!file) {
-    fprintf (stderr, "%s: no file name given on the command line\n", argv[0]);
-    exit (EXIT_FAILURE);      
-  }
-  if (direction == UNDEF) {
-    fprintf (stderr, "%s: no copy direction on the command line\n", argv[0]);
-    exit (EXIT_FAILURE);      
-  }
-
-  if ((path = getenv (DISC_HOME)))
-    strcpy (disc_path, path);
-  strcat (disc_path, DISC_IMAGE);
-  disc_path[PATH_MAX - 1] = 0;
-
+  validate_options(argn, argv);
+  construct_disc_path(disc_path, PATH_MAX);
+ 
   if (!hdd_init (disc_path, &params, NULL)) {
     return EXIT_FAILURE;
   }
+  
+  validate_track_sector(track, params.n_tracks, params.n_sectors, argv[0]);
 
-  if (track >= params.n_tracks) {
-    fprintf (stderr, "%s: track too large: %d\n", argv[0], track);
-    exit (EXIT_FAILURE);      
-  }
-
-  if (sector >= params.n_sectors) {
-    fprintf (stderr, "%s: sector too large: %d\n", argv[0], sector);
-    exit (EXIT_FAILURE);      
-  }
-
-  total = 0;
+  int total = 0;
   if (direction == TODISK) {
     if (-1 == (infile = open (file, O_RDONLY))) {
       perror (file);
@@ -86,8 +102,7 @@ int main (int argn, char *argv[])
 	return EXIT_FAILURE;	
       }
       if (unpack) {
-	int i;
-	for (i = 0; i < DISC_WORDS_PER_SECTOR; i++) {
+	for (int i = 0; i < DISC_WORDS_PER_SECTOR; i++) {
 	  wbuffer[i] = (Dword)cbuffer[i];
 	}
 	hdd_write_sector (track, sector, wbuffer);      
@@ -111,9 +126,8 @@ int main (int argn, char *argv[])
 
     while (!size || total < size) {
       if (unpack) {
-	int i;
 	hdd_read_sector (track, sector, wbuffer);
-	for (i = 0; i < DISC_WORDS_PER_SECTOR; i++) {
+	for (int i = 0; i < DISC_WORDS_PER_SECTOR; i++) {
 	  cbuffer[i] = (char)wbuffer[i];
 	}
       } else {

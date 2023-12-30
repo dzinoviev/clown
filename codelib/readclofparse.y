@@ -167,7 +167,7 @@ oq: '"'	| ;			/*optional quotation mark */
 static int newSegment (struct Segment *s)
 {
     if (modules[current_module].st.size <= s->id) {
-	modules[current_module].st.segments = realloc (modules[current_module].st.segments, 
+	modules[current_module].st.segments = safe_realloc (modules[current_module].st.segments, 
 						       (s->id + 1) * sizeof (struct Segment));
 	if (!modules[current_module].st.segments) {
 	    perror ("realloc");
@@ -185,7 +185,7 @@ static int newSegment (struct Segment *s)
 static int newSymbol (struct Label *s)
 {
     if (modules[current_module].lt.size <= s->id) {
-	modules[current_module].lt.labels = realloc (modules[current_module].lt.labels, 
+	modules[current_module].lt.labels = safe_realloc (modules[current_module].lt.labels, 
 						     (s->id + 1) * sizeof (struct Label));
 	if (!modules[current_module].lt.labels) {
 	    perror ("realloc");

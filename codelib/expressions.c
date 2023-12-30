@@ -237,7 +237,6 @@ static Expression *restore_expression (Dword* code, int *pointer)
 Dword *build_expressions (Dword* code, int wordcodesize, int *truesize, int *escapes)
 {
     Dword *truecode;    
-    int i;
 
     *truesize = 0;    
     truecode = malloc (2 * sizeof (Dword) * wordcodesize);
@@ -246,7 +245,7 @@ Dword *build_expressions (Dword* code, int wordcodesize, int *truesize, int *esc
 	return NULL;
     }
 
-    for (i = 0; i < wordcodesize; ) {
+    for (int i = 0; i < wordcodesize; ) {
 	switch (truecode[(*truesize)++] = code[i++]) {/* escape sequence or actual instruction */
 	case FIX_EXPRESSION:
 	case FIX_ADISPLACEMENT:

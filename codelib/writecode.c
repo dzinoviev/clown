@@ -33,7 +33,9 @@ void init_module (struct Module *m, char *fname)
   
 static void list_segment (struct Segment s)
 {
-  int size = (module_type == CLOF_BIN) ? (s.image_size - s.link_overhead) : s.image_size;
+  int size = (module_type == CLOF_BIN) 
+    ? (s.image_size - s.link_overhead) 
+    : s.image_size;
   if (s.defined) {
     char type = 0;
     switch (s.type) {
@@ -50,20 +52,22 @@ static void list_segment (struct Segment s)
       type = 'M';
       break;
     }
-    fprintf (stderr, "%3d. $%-15s %c DEF size=%4d\n", s.new_index, s.name, type, size);
+    fprintf (stderr, "%3d. $%-15s %c DEF size=%4d\n",
+	     s.new_index, s.name, type, size);
   } else
     fprintf (stderr, "%3d. $%-17s UNDEF\n", s.new_index, s.name);
 }
 
 void list_segments (struct SegmentTable st)
 {
-  int i, found = 0;
+  int found = 0;
   fputs ("\nSegments:\n--------------------------\n", stderr);
 
-  for (i = 0; i < st.size; i++)
+  for (int i = 0; i < st.size; i++)
     if (st.segments[i].in_use || st.segments[i].defined) {
       list_segment (st.segments[i]);
       found = 1;
+      break;
     }
   
   if (!found)
@@ -79,7 +83,9 @@ static void list_label (struct Label l, struct Segment *seglist)
   if (l.defined) {
     fprintf (stderr, 
 	     "DEF $%s:(0x%08"PRIu32"X)\n", 
-	     (l.segment != DEFAULT_SEGMENT) ? seglist[l.segment].name : DEFAULT_SEGMENT_NAME,
+	     (l.segment != DEFAULT_SEGMENT)
+	     ? seglist[l.segment].name
+	     : DEFAULT_SEGMENT_NAME,
 	     l.address);
   } else {
     fputs ("UNDEF \n", stderr);
@@ -165,7 +171,7 @@ static void write_expression (int outfile, Expression *e, struct LabelTable *lab
     write_expression (outfile, e->detail.expression.right, labels);
     break;
   case DUMMY:
-    assert (e->type!=DUMMY);
+    assert (e->type != DUMMY);
     break;
   }
 }
@@ -175,9 +181,10 @@ void write_trailer (int outfile)
   safe_string (outfile, module_type == CLOF_EXE ? "</clof>\n" : "</clef>\n");
 }
 
-void write_header (int outfile, struct SegmentTable *segments, struct LabelTable *labels)
+void write_header (int outfile,
+		   struct SegmentTable *segments,
+		   struct LabelTable *labels)
 {
-  int i;
   static char params[PATH_MAX+128];
   char cwd[PATH_MAX];
   if (!getcwd (cwd, PATH_MAX)) {
@@ -189,32 +196,33 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
 
   /* Segment table */
   safe_string (outfile, "  <segments>\n");
-  for (i = 0; i < segments->size; i++) {
-    if (segments->segments[i].image_size || segments->segments[i].id != DEFAULT_SEGMENT) {
-      int j;
-      struct Segment s  = segments->segments[i];
+  
+  for (int i = 0; i < segments->size; i++) {
+    struct Segment *s = &segments->segments[i];
+    if (s->image_size || s->id != DEFAULT_SEGMENT) {
       safe_string (outfile, "    <segment");
-      sprintf (params, " name=\"%s\" id=\"%d\" defined=\"%d\"", s.name, i, s.defined);
+      sprintf (params, " name=\"%s\" id=\"%d\" defined=\"%d\"",
+	       s->name, i, s->defined);
       safe_string (outfile, params);
-      if (s.defined) {
-	sprintf (params, " type=\"%d\"", s.type);
+      if (s->defined) {
+	sprintf (params, " type=\"%d\"", s->type);
 	safe_string (outfile, params);
       }
       safe_string (outfile, ">\n");
-
+      
       /* DEBUG INFO */
-      if (debug && segments->segments[i].defined)
-	for (j = 0; j < s.nfiles; j++) {
-	  int k;
-	  if (s.files[j].file[0] == '/')
-	    sprintf (params, "      <file name=\"%s\">\n", s.files[j].file);
+      if (debug && s->defined)
+	for (int j = 0; j < s->nfiles; j++) {
+	  struct DebugFile src_file = s->files[j];
+	  if (src_file.file[0] == '/')
+	    sprintf (params, "      <file name=\"%s\">\n", src_file.file);
 	  else
-	    sprintf (params, "      <file name=\"%s/%s\">\n", cwd, s.files[j].file);
+	    sprintf (params, "      <file name=\"%s/%s\">\n", cwd, src_file.file);
 	  safe_string (outfile, params);
-	  for (k = 0; k < s.files[j].nlines_inuse; k++) {
+	  for (int  k = 0; k < src_file.nlines_inuse; k++) {
 	    sprintf (params, "        <line offset=\"%"PRIu32"\" lineno=\"%d\" />\n", 
-		     s.files[j].flines[k].offset,
-		     s.files[j].flines[k].line);
+		     src_file.flines[k].offset,
+		     src_file.flines[k].line);
 	    safe_string (outfile, params);
 	  }
 	  safe_string (outfile, "      </file>\n");		
@@ -228,21 +236,22 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
   if (module_type == CLOF_EXE) {
     safe_string (outfile, "  <symbols>\n");
     /* Symbol table */
-    for (i = 0; i < labels->size; i++) {
-      struct Label l = labels->labels[i];
+    for (int i = 0; i < labels->size; i++) {
+      struct Label *l = &labels->labels[i];
 	  
-      sprintf (params, "    <symbol name=\"%s\" id=\"%d\"", l.name, i);
+      sprintf (params, "    <symbol name=\"%s\" id=\"%d\"", l->name, i);
       safe_string (outfile, params);
 	  
-      if (l.export) {
-	assert (l.defined);
+      if (l->export) {
+	assert (l->defined);
 	safe_string (outfile, " global=\"1\"");
       } else {
 	safe_string (outfile, " global=\"0\"");
       }
 	  
-      if (l.defined) {
-	sprintf (params, " defined=\"1\" segment=\"%d\" offset=\"%"PRIi32"\"", l.segment, l.address);
+      if (l->defined) {
+	sprintf (params, " defined=\"1\" segment=\"%d\" offset=\"%"PRIi32"\"",
+		 l->segment, l->address);
 	safe_string (outfile, params);
       } else {
 	safe_string (outfile, " defined=\"0\"");
@@ -262,13 +271,23 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
   Expression *e;
   Dword my_offset, target_offset, segment = NOT_FOUND;
 
-  switch (state) {
+  if (state != FIX_SEGMENT) {
+    int64_t e1 = (int64_t)(seg->image[pointer]);
+    int64_t e2 = (int64_t)(seg->image[pointer + 1]) << 32;
+    e = (Expression*)(e1 + e2);
+    pointer += 2;
+    assert(e);
+  }
+
+ switch (state) {
   case FIX_SEGMENT:
     /*
      * emit_escape (instr); -- this is "instr"
      */
     segment = SEL_ID (I_SEG (instr));
-    if (seg->defined && seg->new_index != DEFAULT_SEGMENT && module_type == CLOF_BIN) {
+    if (seg->defined
+	&& seg->new_index != DEFAULT_SEGMENT
+	&& module_type == CLOF_BIN) {
       Dword newseg = I_SEG (instr);
       SET_NEWID (newseg, st->segments[segment].new_index);
       UPDATE_SEGMENT (instr, newseg);
@@ -287,13 +306,6 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
      * emit_escape (target); 
      * emit_escape (offset);
      */
-    {
-      int64_t e1 = (int64_t)(seg->image[pointer]);
-      int64_t e2 = (int64_t)(seg->image[pointer + 1]) << 32;
-      e = (Expression*)(e1 + e2);
-      pointer += 2;
-      assert (e);
-    }
 
     my_offset = seg->image[pointer++];
 
@@ -316,14 +328,6 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
      * emit_escape (BUILD_INSTRUCTION_B (opc, 0, 0)); -- this is "instr"
      * emit_escape (expression); 
      */
-    {
-      int64_t e1 = (int64_t)(seg->image[pointer]);
-      int64_t e2 = (int64_t)(seg->image[pointer + 1]) << 32;
-      e = (Expression*)(e1 + e2);
-      pointer += 2;
-      assert (e);
-    }
-
     if (module_type == CLOF_EXE) {
       /* do nothing -- let the linker take care of this */
       safe_base64 (outfile, state);
@@ -347,14 +351,6 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
      * emit_escape (0); -- this is "instr"
      * emit_escape (expression); 
      */
-    {
-      int64_t e1 = (int64_t)(seg->image[pointer]);
-      int64_t e2 = (int64_t)(seg->image[pointer + 1]) << 32;
-      e = (Expression*)(e1 + e2);
-      pointer += 2;
-      assert (e);
-    }
-
     if (module_type == CLOF_EXE) {
       /* do nothing -- let the linker take care of this */
       safe_base64 (outfile, state);
@@ -380,73 +376,68 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
   return pointer;
 }
 
-int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTable *labels, int fragment)
+int save_segment (int outfile, int id,
+		  struct SegmentTable *st,
+		  struct LabelTable *labels,
+		  int fragment)
 {
-  Dword instr, escape = ~FIX_SEGMENT;
-  int pointer = 0; 
-  int status = 1, newpointer;
+  int status = 1;
   struct Segment *seg = &st->segments[id];
-  static char tmp[1000];
 
   if (fragment & FIRST_FRAGMENT) {
+    static char tmp[64]; // Long enough
     sprintf (tmp, "  <bin segment=\"%d\"><![CDATA[",  st->segments[id].new_index);
     safe_string (outfile, tmp);
+    output_offset = 0;
+    bin_offset = 0;
   }
 
   if (listing)
     fprintf (stderr, "$%s\n", seg->name);
 
-  if (fragment & FIRST_FRAGMENT) { 
-    output_offset = 0;
-    bin_offset = 0;
-  }
-
+  Dword escape = ~FIX_SEGMENT;
+  int pointer = 0, newpointer ;
   while (pointer < seg->image_size) {
-    instr = seg->image[pointer++];
+    Dword instr = seg->image[pointer++];
      
-    switch (instr) {
-    case FIX_SEGMENT:
-    case FIX_ADISPLACEMENT:
-    case FIX_RDISPLACEMENT:
-    case FIX_EXPRESSION:
-      if        (escape == instr) {/* real escape! */
+    if (   instr == FIX_SEGMENT
+	|| instr == FIX_ADISPLACEMENT
+	|| instr == FIX_RDISPLACEMENT
+	|| instr == FIX_EXPRESSION) {
+      if (escape == instr) { // Real escape
 	safe_base64 (outfile, instr);
 	list_word (instr, 1);
 	escape = ~FIX_SEGMENT;
-      } else if (escape == ~FIX_SEGMENT) /* escape prefix */
+      } else if (escape == ~FIX_SEGMENT) { // Escape prefix 
 	escape = instr;
-      else {		/* special symbol */
+      } else {		// Special symbol
 	newpointer = save_escape (pointer, escape, instr, outfile, st, seg, labels);
+	if (newpointer == -1) status = 0; else pointer = newpointer;
 	escape = ~FIX_SEGMENT;
-	if (newpointer == -1)
-	  status = 0;
-	else
-	  pointer = newpointer;
       }
-      break;
-    default:
-      if (escape == ~FIX_SEGMENT) {	/* normal copy */
+    } else {
+      if (escape == ~FIX_SEGMENT) {	// Normal copy 
 	safe_base64 (outfile, instr);
 	list_word (instr, 1);
-      } else {		/* special symbol */
+      } else {		// Special symbol 
 	newpointer = save_escape (pointer, escape, instr, outfile, st, seg, labels);
+	if (newpointer == -1) status = 0; else pointer = newpointer;
 	escape = ~FIX_SEGMENT;
-	if (newpointer == -1)
-	  status = 0;
-	else
-	  pointer = newpointer;
       }
-      break;
     }
   }
 
-  if (escape != ~FIX_SEGMENT)
+  if (escape != ~FIX_SEGMENT) {
     component_error (seg->name, "warning: incomplete escape sequence at EOF",
 		     "ESC");
+  }
+  
   free (seg->image);
+  
   if (fragment & LAST_FRAGMENT) {
     safe_string (outfile, "]]></bin>\n");
   }
+  
   /*
     assert ((module_type == CLOF_BIN) || (offset==0) || (output_offset == offset + current_overhead));
   */

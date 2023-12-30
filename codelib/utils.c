@@ -64,12 +64,11 @@ static const int unbase64[] = {
 int base64_decode (char *orig, Dword *decoded)
 {
   int i = 0;
-  char *cur;
   int unbase64_phase = 0;
   Dword *start = decoded;
   uint32_t my_word = 0;
 
-  for (cur = orig; *cur; cur++) {
+  for (char *cur = orig; *cur; cur++) {
     int shift;
     uint32_t d = unbase64[(int)*cur];
     if (d == -1) {		/* bad character */
@@ -128,10 +127,9 @@ void safe_base64 (int file, Dword word)
 
 static void finalize_base64 (int file)
 {
-  int i;
   if (base64_phase == 0)
     return;
-  for (i = 0; i < base64_phase * BASE64_ZIPFACTOR + 1; i++)
+  for (int i = 0; i < base64_phase * BASE64_ZIPFACTOR + 1; i++)
     buffer_base64[i] = base64[buffer_base64[i]];
   safe_write (file, buffer_base64, base64_phase * BASE64_ZIPFACTOR + 1);
   base64_phase = 0;
