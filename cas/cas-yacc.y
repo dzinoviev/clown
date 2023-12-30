@@ -7,29 +7,14 @@
 
 void yywarning (char *s);
 static void emit_expression (Expression *target);
-static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative);
+static void emit_displacement (int opc, Dword op1, Expression *dspl, Bit relative);
 
- enum {PORT_NAME, PORT_NUMBER, ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS, ALIGNSEGMENT};
+ enum {ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS, ALIGNSEGMENT};
  static struct {
      char *concise;
      char *full;
      int count;
  } _errors[] = {
-     {
-	 "port name must start with a question mark...",
-	 "\n\tport name must start with a question mark, e.g., ?12; this is done"
-	 "\n\tto avoid confusion with the parameters to the OUT instruction;"
-	 "\n\tthe notation without a question mark will soon be obsolete",
-	 0
-     },
-
-     {
-	 "port number must be a positive constant...",
-	 "\n\tport number must be an expression that evaluates to a positive "
-	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
-	 0
-     },
-
      {
 	 "array size must be a positive constant...",
 	 "\n\tarray size must be an expression that evaluates to a positive "
@@ -315,8 +300,10 @@ datadef     : T_DEFSTRING T_STRING {
 		    yywarning (error_buffer);
 		    $4.size = $2;
 		}
-		for (i = 0; i < $4.size; i++) {		   
-		    emit_expression ((Expression*)$4.data[i]);
+		for (i = 0; i < $4.size; i += 2) {
+		  int64_t e1 = (int64_t)($4.data[i]);
+		  int64_t e2 = (int64_t)($4.data[i+1]) << 32;
+		  emit_expression ((Expression*)(e1 + e2));
 		}
 		for (     ; i < $2     ; i++)
 		    emit (0);
@@ -346,14 +333,16 @@ expression_or_selector: expression {
 
 values      : {$$.size = 0; $$.data = NULL;}
             | expression_or_selector {
-		$$.data = safe_malloc (sizeof (Dword)); 
-		$$.data[0] = (Dword)$1;
-		$$.size = 1;
+		$$.data = safe_malloc (2 * sizeof (Dword)); 
+		$$.data[0] = (Dword)((int64_t)$1 << 32 >> 32);
+		$$.data[1] = (Dword)((int64_t)$1 >> 32);
+		$$.size = 2;
 	    }
             | values ',' expression_or_selector { 
-		$$.data = safe_realloc ($$.data, ($$.size + 1) * sizeof (Dword)); 
-		$$.data[$$.size] = (Dword)$3;
-		$$.size = $$.size + 1;
+		$$.data = safe_realloc ($$.data, ($$.size + 2) * sizeof (Dword)); 
+		$$.data[$$.size] = (Dword)((int64_t)$3 << 32 >> 32);
+		$$.data[$$.size + 1] = (Dword)((int64_t)$3 >> 32);
+		$$.size = $$.size + 2;
 	    } ;
 
 symbol     : T_ADDRESS {
@@ -488,12 +477,6 @@ instruction : error instruction
 
             | T_IN T_GREGISTER ',' '?' expression
               { emit_displacement (IN, $2, $5, 0);} /* IN */
-
-            | T_IN T_GREGISTER ',' expression
-              {
-		  report (0, PORT_NAME);
-		  emit_displacement (IN, $2, $4, 0);
-	      } /* IN */
 
             | T_INC T_GREGISTER
 	    {emit (BUILD_INSTRUCTION_A (INC, $2, 0));} /* INC */
@@ -674,19 +657,6 @@ instruction : error instruction
 		  emit_expression ($2);
 	      } /* xOUTI */
 
-            | T_OUT T_GREGISTER ',' expression
-              {
-		  report (0, PORT_NAME);
-		  emit_displacement (OUT, $2, $4, 0); 
-	      }	/* OUT */
-
-            | T_OUT expression ',' expression
-	       {
-		  report (0, PORT_NAME);
-		  emit_displacement (xOUTI, 0, $4, 0); 
-		  emit_expression ($2);
-	       } /* xOUTI */
-
             | T_POP T_GREGISTER
 	    {emit (BUILD_INSTRUCTION_A (POP, $2, 0));} /* POP */
 
@@ -818,8 +788,13 @@ static void emit_expression (Expression *e)
     case SELECTOR:
 	emit_escape (FIX_EXPRESSION);
 	emit (0);		/* fake instruction */
-	emit_escape ((Dword)e);
-	current_overhead += 1 + expression_overhead (e);
+	
+	Dword d1 = (Dword)((int64_t)(e) << 32 >> 32);
+	Dword d2 = (Dword)((int64_t)(e) >> 32);
+	emit_escape (d1);
+	emit_escape (d2);
+
+	current_overhead += 2 + expression_overhead (e);
 	break;	
     case DUMMY:
 	assert (e->type != DUMMY);
@@ -830,11 +805,15 @@ static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative)
 {
     emit_escape (relative ? FIX_RDISPLACEMENT : FIX_ADISPLACEMENT);
     emit (BUILD_INSTRUCTION_B (opc, op1, 0));
-    emit_escape ((Dword)dspl);
+
+    Dword d1 = (Dword)((int64_t)(dspl) << 32 >> 32);
+    Dword d2 = (Dword)((int64_t)(dspl) >> 32);
+    emit_escape (d1);
+    emit_escape (d2);
     if (relative) {
 	emit_escape (offset);   /* current_offset */
     } else {
-	current_overhead += 1 + expression_overhead (dspl);
+	current_overhead += 2 + expression_overhead (dspl);
     }
 }
 

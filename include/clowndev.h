@@ -136,7 +136,7 @@ void write_header (int outfile, struct SegmentTable *segments, struct LabelTable
 void write_trailer (int outfile);
 int save_segment (int outfile, int id, struct SegmentTable *st, struct LabelTable *labels, int fragment);
 
-Expression *newConstant (int constant);
+Expression *newConstant (Dword constant);
 Expression *newLabel (int label);
 Expression *newSelector (Selector s);
 Expression *newExpression (int op, Expression *left, Expression *right);

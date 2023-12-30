@@ -309,7 +309,7 @@ extern int success;
 int parse_and_assembly (FILE *infile, int outfile)
 {
     assert (infile);
-    assert (outfile);
+    assert (outfile >= 0);
 
     yyin = infile;
 

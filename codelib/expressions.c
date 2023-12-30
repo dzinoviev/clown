@@ -34,7 +34,7 @@ Expression *newExpression (int operation, Expression *left, Expression *right)
     return e;
 }
 
-Expression *newConstant (int constant)
+Expression *newConstant (Dword constant)
 {
     Expression *e = safe_malloc (sizeof (Expression));
 
@@ -240,7 +240,7 @@ Dword *build_expressions (Dword* code, int wordcodesize, int *truesize, int *esc
     int i;
 
     *truesize = 0;    
-    truecode = malloc (sizeof (Dword) * wordcodesize);
+    truecode = malloc (2 * sizeof (Dword) * wordcodesize);
     if (!truecode) {
 	perror ("malloc");
 	return NULL;
@@ -251,7 +251,11 @@ Dword *build_expressions (Dword* code, int wordcodesize, int *truesize, int *esc
 	case FIX_EXPRESSION:
 	case FIX_ADISPLACEMENT:
 	    truecode[(*truesize)++] = code[i++]; /* "instruction" */
-	    truecode[(*truesize)++] = (Dword)restore_expression (code, &i);
+	    Expression *e = restore_expression (code, &i);
+	    
+	    truecode[(*truesize)++] = (Dword)((int64_t)e << 32 >> 32);
+	    truecode[(*truesize)++] = (Dword)((int64_t)e >> 32);
+	    
 	    (*escapes)+=2;
 	    link_overhead+=2;
 	    break;
