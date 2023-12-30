@@ -42,7 +42,7 @@ static void show_usage (char *name)
 }
 
 int get_options (int argc, char *argv[], char **object,
-		 char **source, int *ecode)
+		 char **opt_names, int *ecode)
 {
     int i;
     char *suffix = NULL;
@@ -172,7 +172,7 @@ int get_options (int argc, char *argv[], char **object,
 
 	if (i != argc) {
 	  struct stat buf;
-	  if (*source) {
+	  if (*opt_names) {
 	    fprintf (stderr,
 		     "%s: only one source can be assembled at a time\n", 
 		     argv[0]);
@@ -180,19 +180,19 @@ int get_options (int argc, char *argv[], char **object,
 	    return 0;
 	  }
 	  
-	  *source = safe_malloc (strlen (argv[i]) + 3);
-	  strcpy (*source, argv[i]);
-	  if (-1 == stat (*source, &buf))
-	    strcat (*source, ".s");
-	  if (-1 == stat (*source, &buf)) {
-	    perror (*source);
+	  *opt_names = safe_malloc (strlen (argv[i]) + 3);
+	  strcpy (*opt_names, argv[i]);
+	  if (-1 == stat (*opt_names, &buf))
+	    strcat (*opt_names, ".s");
+	  if (-1 == stat (*opt_names, &buf)) {
+	    perror (*opt_names);
 	    *ecode = EXIT_FAILURE;
 	    return 0;
 	  }
 	}
     }
 
-    if (!*source) {
+    if (!*opt_names) {
       fprintf (stderr,
 	       "%s: no input files\n", 
 	       argv[0]);
@@ -202,7 +202,7 @@ int get_options (int argc, char *argv[], char **object,
 
     switch (module_type) {
     case CLOF_UNKNOWN:
-      module_type = CLOF_BIN;
+      module_type = CLOF_BIN; // Not a fall-through!
     case CLOF_BIN:
       suffix = "cle";
       break;
@@ -212,11 +212,11 @@ int get_options (int argc, char *argv[], char **object,
     }
 
     if (!*object) {
-      if (*source[0]) {
+      if (*opt_names[0]) {
 	int len;
-	char *filename = strrchr (*source, '/');
+	char *filename = strrchr (*opt_names, '/');
 	if (!filename)
-	  filename = *source;
+	  filename = *opt_names;
 	else
 	  filename ++;
 

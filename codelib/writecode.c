@@ -268,13 +268,17 @@ static int save_escape (int pointer, Dword state, Dword instr, int outfile,
 			struct Segment *seg,
 			struct LabelTable *labels)
 {
-  Expression *e;
+  Expression *e = NULL;
   Dword my_offset, target_offset, segment = NOT_FOUND;
 
   if (state != FIX_SEGMENT) {
-    int64_t e1 = (int64_t)(seg->image[pointer]);
-    int64_t e2 = (int64_t)(seg->image[pointer + 1]) << 32;
+    uint64_t e1 = (uint64_t)(seg->image[pointer]) << 32 >> 32;
+    uint64_t e2 = (uint64_t)(seg->image[pointer + 1]) << 32;
     e = (Expression*)(e1 + e2);
+    /*
+    fprintf(stderr, "OUT: %p %p %p %x %x\n", e1, e2, e, seg->image[pointer],
+    seg->image[pointer + 1]);
+    */
     pointer += 2;
     assert(e);
   }

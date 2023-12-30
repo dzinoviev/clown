@@ -151,48 +151,42 @@ int mark_export_label (char *label)
     return lab;
 }
 
-static void define_label (int i, int segment, Dword offset)
+static void define_label (int i, int segment, Dword label_offset)
 {
-    labels.labels[i].address = offset;
+    labels.labels[i].address = label_offset;
     labels.labels[i].segment = segment;
     labels.labels[i].defined = 1;
 }
 
-int add_label (char *label, int segment, Dword offset, int global, int align8)
+int add_label (char *label, int segment, Dword label_offset, int global, int align8)
 {
-    int i;
+    int label_id;
 
-    if (NOT_FOUND == (i = lookup_label (label)) &&
-	NOT_FOUND == (i = create_label (label)))
+    if (NOT_FOUND == (label_id = lookup_label (label)) &&
+	NOT_FOUND == (label_id = create_label (label)))
       return NOT_FOUND;
 
-    if (labels.labels[i].defined) {
+    if (labels.labels[label_id].defined) {
 	component_error (*source, "duplicate symbol", label);
       return NOT_FOUND;
     }
 	
-    if (align8) {
-	int boundary;
-	if (align8 == 1) {
-	    boundary = 8;
-	} else {
-	    boundary = CLOWN_FRAME_SIZE;	/* PAGE ALIGNMENT */
-	}
-      if (offset % boundary) {
-	int i;
-	Dword offset1 = (offset / boundary + 1) * boundary;
-	for (i = 0; i < offset1 - offset; i++)
+    if (align8) { // Page Alignment
+      int boundary = (align8 == 1) ? 8 : CLOWN_FRAME_SIZE;
+      if (label_offset % boundary) {
+	Dword label_offset1 = (label_offset / boundary + 1) * boundary;
+	for (int i = 0; i < label_offset1 - label_offset; i++)
 	  emit (BUILD_INSTRUCTION_A (NOP, 0, 0));
-	offset = offset1;
+	label_offset = label_offset1;
       }
     }
     
     if (global)
-      labels.labels[i].export = 1;
+      labels.labels[label_id].export = 1;
 
-    define_label (i, segment, offset);
+    define_label (label_id, segment, label_offset);
     
-    return i;
+    return label_id;
 }
 
 int use_label (char *label, int segment)

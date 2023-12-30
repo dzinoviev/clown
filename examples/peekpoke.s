@@ -7,9 +7,9 @@
 ;; We will be pushing parameters in the reverse order.
 ;; If the function takes no parameters, but returns values, it is the 
 ;; responsibility of the caller to reserve at least one slot in the stack.
-	push	'5'	; push the third parameter
-	push	'0'	; push the second parameter
-	push	'6'	; push the first parameter
+	push	'3'	; push the third parameter
+	push	'2'	; push the second parameter
+	push	'1'	; push the first parameter
 	call	func	; call the function
 	pop	%r1	; save the return value
 	sub	%sp, 2	; restore the stack, if necessary (still has 2 words)

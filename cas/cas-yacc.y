@@ -301,8 +301,8 @@ datadef     : T_DEFSTRING T_STRING {
 		    $4.size = $2;
 		}
 		for (i = 0; i < $4.size; i += 2) {
-		  int64_t e1 = (int64_t)($4.data[i]);
-		  int64_t e2 = (int64_t)($4.data[i+1]) << 32;
+		  uint64_t e1 = (uint64_t)($4.data[i]) << 32 >> 32;
+		  uint64_t e2 = (uint64_t)($4.data[i + 1]) >> 32;
 		  emit_expression ((Expression*)(e1 + e2));
 		}
 		for (     ; i < $2     ; i++)
@@ -789,8 +789,8 @@ static void emit_expression (Expression *e)
 	emit_escape (FIX_EXPRESSION);
 	emit (0);		/* fake instruction */
 	
-	Dword d1 = (Dword)((int64_t)(e) << 32 >> 32);
-	Dword d2 = (Dword)((int64_t)(e) >> 32);
+	Uword d1 = (Uword)((uint64_t)(e) << 32 >> 32);
+	Uword d2 = (Uword)((uint64_t)(e) >> 32);
 	emit_escape (d1);
 	emit_escape (d2);
 
@@ -806,8 +806,11 @@ static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative)
     emit_escape (relative ? FIX_RDISPLACEMENT : FIX_ADISPLACEMENT);
     emit (BUILD_INSTRUCTION_B (opc, op1, 0));
 
-    Dword d1 = (Dword)((int64_t)(dspl) << 32 >> 32);
-    Dword d2 = (Dword)((int64_t)(dspl) >> 32);
+    Uword d1 = (Uword)((uint64_t)(dspl) << 32 >> 32);
+    Uword d2 = (Uword)((uint64_t)(dspl) >> 32);
+    /*
+      fprintf(stderr, "IN: %p %p %p %d\n", dspl, d1, d2, current_overhead);
+    */
     emit_escape (d1);
     emit_escape (d2);
     if (relative) {
