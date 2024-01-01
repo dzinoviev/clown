@@ -1,8 +1,8 @@
-.TH CAS 1 "MAY 2008" "version 1.0" "USER COMMANDS"
+.TH CAS 1 "DECEMBER 2023" "version 2.20" "USER COMMANDS"
 
 .SH NAME 
 
-cas \- assemble source files written in Clown assembler
+cas \- Assemble Clown assembly language source files into binary files.
 
 .SH SYNOPSIS
 .B cas 
@@ -17,47 +17,45 @@ cas \- assemble source files written in Clown assembler
 
 .SH DESCRIPTION
 .B cas
-is the Clown assembler. It converts source files written in the Clown assembly language into binary files that contain executable Clown instructions, symbol tables, and debug information. An output binary file can be immediately executable (a 
-.SM CLE 
-file) if it contains no unresolved symbols and segments and no relocation information. Otherwise, the output file is an object file (a 
-.SM CLO 
-file) and must be combined (linked) with other 
-.SM CLO 
-files.
+is the Clown assembler, responsible for transforming source files written in Clown assembly language into binary files. These binary files contain executable Clown instructions, symbol tables, and debug information. A binary file is immediately executable (a
+.SM CLE
+file) if it is free of unresolved symbols and segments and lacks relocation information. If not, the output is an object file (a
+.SM CLO
+file), requiring linkage with other
+.SM CLO
+files for execution.
 
 
 .SH OPTIONS
 .TP
 \-h, \-\-help
-Show the help message and exit
+Display the help message and exit.
 .TP 
 \-P|\-\-nocpp
-Do not preprocess the source with the C preprocessor,
+Bypass preprocessing of the source with the C preprocessor,
 .B cpp
 .TP 
 \-\-pass-to-cpp "options"
 Pass 
 .I
-options 
-to the C preprocessor, 
-.BR cpp ; 
-if the shell variable 
+options to the C preprocessor,
+.BR cpp.
+if the environment variable 
 .SM CLOWN 
-is set, then option 
+is set, the option 
 .I -I($CLOWN/include/) 
-is passed to the 
-.B cpp 
-implicitly
+is automatically passed to
+.B cpp.
 .TP
 \-b|\-\-cle
-Generate a non-relocatable directly executable 
+Generate a directly executable, non-relocatable
 .SM CLE 
-module (default)
+module (default).
 .TP
 \-s|\-\-clo
-Generate a relocatable 
+Create a relocatable
 .SM CLO 
-module
+module.
 .TP
 \-e|\-\-entry addr
 Set the start address to 
@@ -65,9 +63,9 @@ Set the start address to
 (default 0)
 .TP
 \-o output-file
-Set the output file name to 
-.I output-file 
-(the default name is 
+Specify the output file name as
+.I output-file.
+The default is 
 .IR source-file .cle 
 for 
 .SM CLE 
@@ -77,23 +75,24 @@ for
 .SM CLO 
 modules, where
 .I source-file 
-is the name of the input file, less the suffix 
-.IR .s )
+is the input file name, minus the suffix
+.IR .s
 .TP 
 \-l, \-\-listing
-Produce a human-readable listing in addition to the binary file
+Generate a human-readable listing alongside the binary file.
 .TP
 \-ng|\-\-nodebug
-Do not include file and line information for debugging
+Exclude file and line debugging information.
 .TP 
 \-v|\-\-version
-Print the  version number and exit
+Show the version number and exit.
 .TP 
 \-V
-Print the  version number and continue
+Show the version number and continue.
 .TP
 \-\-
-Treat the next argument as a file name, even if it looks like yet another command line option
+Interpret the next argument as a file name, even if it resembles
+another command line option.
 
 .SH ENVIRONMENT
 .TP 
@@ -105,7 +104,8 @@ is passed to the
 implicitly.
 
 .SH AUTHOR
-Dmitry Zinoviev <dmitry at mcs dot suffolk dot edu>
+Dmitry Zinoviev <dzinoviev at suffolk dot edu>
+
 .SH "SEE ALSO"
 .BR clown (1),
 .BR clink (1),

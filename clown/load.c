@@ -9,7 +9,6 @@
 #include "clowndev.h"
 
 int firstcode = -1;
-int link_overhead = 0;/* not really needed */
 int listing = 0;/* not really needed */
 Clof_Type module_type = CLOF_UNKNOWN;/* not really needed */
 struct Clown_Segment_Descriptor init_ldt_descr = {0,0,0};

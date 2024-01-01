@@ -1,0 +1,102 @@
+.TH CDISKDUP 1 "DECEMBER 2023" "version 2.20" "USER COMMANDS"
+
+.SH NAME 
+
+cdiskdup \- Copy host system files to and from the Clown disk image file.
+
+.SH SYNOPSIS
+.B cdiskdup 
+[-h|--help] [-v]
+
+.B cdiskdup 
+[-sector
+.IR sec ] 
+[-track
+.IR tr ] 
+[-count
+.IR cnt ]
+[-unpack]  [-q] -todisk
+.I host-file
+
+.B cdiskdup 
+[-sector
+.IR sec ]
+[-track
+.IR tr ] 
+[-count
+.IR cnt ]
+[-unpack] [-q] -fromdisk
+.I host-file
+
+.SH DESCRIPTION
+.B cdiskdup
+transfers files between the host system and the Clown disk image file.
+.P
+
+By default,
+.B cdiskdup
+copies data directly, meaning each host word is converted into a Clown
+word, and each Clown word is transformed back into a host word. When
+the
+.I \-unpack
+option is used, each host byte is stored as a Clown word, and each
+Clown word is read as a host byte, with the least significant byte of
+the Clown word being recorded and the remaining three bytes
+discarded. This option is useful for text files, as Clown treats
+printable characters as words.
+
+
+.SH OPTIONS
+.TP
+\-h, \-\-help
+Display help message and exit.
+.TP 
+\-sector sec 
+Specify the sector for reading/writing as
+.I sec
+(default: 0).
+.TP 
+\-track tr 
+Specify the track for reading/writing as
+.I tr
+(default: 0).
+.TP
+\-count cnt
+Read at most
+.I cnt 
+blocks (default: entire disk).
+.TP
+\-unpack
+Convert 8-bit characters to Clown words when writing to disk, and
+Clown words to 8-bit characters when reading.
+.TP
+\-fromdisk
+Transfer data from the disk image to the specified
+.I host-file
+.TP
+\-todisk
+Copy data from the specified
+.I host-file
+to the disk image.
+.TP 
+\-q, \-\-silent 
+Operate silently, suppressing warnings and error messages.
+.TP 
+\-v
+Show version number and exit.
+
+.SH FILES
+The disk image is located in the file
+.IR clown.dsk .
+
+.SH ENVIRONMENT
+.TP 
+CLOWN_DISC When set, the disk image file is located in the directory
+specified by variable
+.IR CLOWN_DISC .
+
+.SH AUTHOR
+Dmitry Zinoviev <dzinoviev at suffolk dot edu>
+.SH "SEE ALSO"
+.BR clown (1),
+.BR cformat (1)

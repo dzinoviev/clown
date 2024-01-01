@@ -109,12 +109,14 @@ am_clown_OBJECTS = clown.$(OBJEXT) decode.$(OBJEXT) paging.$(OBJEXT) \
 	options.$(OBJEXT) readln.$(OBJEXT) load.$(OBJEXT) \
 	cmd-yacc.$(OBJEXT) cmd-lex.$(OBJEXT)
 clown_OBJECTS = $(am_clown_OBJECTS)
-clown_DEPENDENCIES = ../codelib/libclowncode.la \
-	../devlib/libclowndevices.la
+clown_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+clown_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(clown_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -277,6 +279,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -330,7 +333,8 @@ top_srcdir = @top_srcdir@
 BUILT_SOURCES = cmd-yacc.h
 AM_LFLAGS = -i -I --prefix=cmd --outfile=lex.yy.c
 AM_YFLAGS = -d --name-prefix=cmd
-clown_LDADD = ../codelib/libclowncode.la ../devlib/libclowndevices.la
+clown_LDFLAGS = -L../codelib -L../devlib/
+clown_LDADD = -lclowncode -lclowndevices
 clown_SOURCES = clown.c decode.c paging.c segmentation.c general.c tlb.c options.c readln.c  load.c cmd-yacc.y cmd-lex.l
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -421,7 +425,7 @@ cmd-yacc.h: cmd-yacc.c
 
 clown$(EXEEXT): $(clown_OBJECTS) $(clown_DEPENDENCIES) $(EXTRA_clown_DEPENDENCIES) 
 	@rm -f clown$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(clown_OBJECTS) $(clown_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(clown_LINK) $(clown_OBJECTS) $(clown_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

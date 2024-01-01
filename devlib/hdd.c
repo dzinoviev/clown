@@ -308,13 +308,13 @@ void execute_hdd (Bit dummy)
 }
 
 
-static struct Clown_IOPort ports[] =  {
-{id_hdd, control_hdd}, 
-{status_hdd, NULL}, 
-{read_hdd, write_hdd}, 
+static struct Clown_IOPort ports[] = {
+  {id_hdd, control_hdd}, 
+  {status_hdd, NULL}, 
+  {read_hdd, write_hdd}, 
 };
 struct Clown_IODevice hdd_device = {3, ports, 
-execute_hdd,
-init_hdd,
-reset_hdd
+  execute_hdd,
+  init_hdd,
+  reset_hdd
 };

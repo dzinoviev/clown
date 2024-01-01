@@ -1,0 +1,54 @@
+.TH CFORMAT 1 "DECEMBER 2023" "version 2.20" "USER COMMANDS"
+
+.SH NAME 
+
+cformat \- Clown disk formatting utility.
+
+.SH SYNOPSIS
+.B cformat 
+tracks sectors t2t-seek-latency max-seek-latency speed
+
+.SH DESCRIPTION
+.B cformat
+is a utility for formatting disk images in the Clown system. It
+requires all parameters to be positive integers. The newly formatted
+disk must contain at least three tracks. Additionally, the
+track-to-track seek latency must be lower than the maximum seek
+latency. The formatted disk image is stored in the file
+.IR clown.dsk.
+
+.SH PARAMETERS
+.TP
+tracks
+Specifies the number of tracks on the disk.
+.TP
+sectors
+Defines the number of sectors per track.
+.TP
+t2t-seek-latency
+Sets the track-to-track seek latency in Clown
+.SM CPU
+cycles.
+.TP
+max-seek-latency
+Indicates the maximum seek latency across the disk in Clown
+.SM CPU
+cycles.
+.TP
+speed
+Determines the disk's rotation speed in Clown
+.SM CPU
+cycles per revolution.
+
+.SH FILES
+The formatted disk image is saved in the file
+.IR clown.dsk.
+
+.SH NOTES
+The utiulity is the oldest component of the Clown system.
+
+.SH AUTHOR
+Dmitry Zinoviev <dzinoviev at suffolk dot edu>
+.SH "SEE ALSO"
+.BR clown (1),
+.BR cdiskdup (1)

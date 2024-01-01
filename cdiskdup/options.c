@@ -16,7 +16,7 @@
 
 #include "clodd.h"
 
-#define CLODD_VERSION "CLOWN disc copy utility version "VERSION" ["__DATE__"]"
+#define CLODD_VERSION "CLOWN disc copy utility version "PACKAGE_VERSION" ["__DATE__"]"
 
 
 static void show_version (void)

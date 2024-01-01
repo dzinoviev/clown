@@ -5,6 +5,6 @@ AM_YFLAGS = -d
 AM_CFLAGS += -D'INCLUDEHOME="$(pkgincludedir)"'
 BUILT_SOURCES = cas-yacc.h
 bin_PROGRAMS = cas
-cas_LDADD = ../codelib/libclowncode.la # -lefence
+cas_LDADD = -L../codelib -lclowncode # -lefence
 cas_SOURCES = cas.c options.c parse.c cas-yacc.y cas-lex.l cas.h
 

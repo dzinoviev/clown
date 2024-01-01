@@ -8,7 +8,7 @@
 
 #define DEFAULT_OBJECT "default.clo"
 #define DEFAULT_EXE "default.cle"
-#define CLINK_VERSION "CLOWN linker version "VERSION" ["__DATE__"]"
+#define CLINK_VERSION "CLOWN linker version "PACKAGE_VERSION" ["__DATE__"]"
 
 static void show_version (void)
 {

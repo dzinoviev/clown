@@ -5,20 +5,20 @@
 #define MAX_TRAP 16
 #define TRAP_BITS 5
 enum Clown_Exception {
-    /* Faults */
-    INVALIDOPC_EX = 0,
-     PAGEFAULT_EX = 1,
-    DIVIDEZERO_EX = 2,
-     STACKOVER_EX = 3,
-      SEGFAULT_EX = 4,
-    PROTECTION_EX = 5,
-      BUSERROR_EX = 6,
-         RESERVED = 7,
+  /* Faults */
+  INVALIDOPC_EX = 0,
+  PAGEFAULT_EX = 1,
+  DIVIDEZERO_EX = 2,
+  STACKOVER_EX = 3,
+  SEGFAULT_EX = 4,
+  PROTECTION_EX = 5,
+  BUSERROR_EX = 6,
+  RESERVED = 7,
 
-    /* Traps */
-          TRAP_EX = MAX_TRAP - 1,
-    /* hardware interrupts live here, too */
-	 DUMMY_EX = MAX_TRAP
+  /* Traps */
+  TRAP_EX = MAX_TRAP - 1,
+  /* hardware interrupts live here, too */
+  DUMMY_EX = MAX_TRAP
 };
 
 enum {SEG2CODE, CPLVIOL, SEGVIOL, INVSEGR, SMALLISR};

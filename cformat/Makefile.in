@@ -88,8 +88,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = clodd$(EXEEXT)
-subdir = clodd
+bin_PROGRAMS = cformat$(EXEEXT)
+subdir = cformat
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -104,9 +104,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_clodd_OBJECTS = clodd.$(OBJEXT) options.$(OBJEXT)
-clodd_OBJECTS = $(am_clodd_OBJECTS)
-clodd_DEPENDENCIES = ../devlib/libclowndevices.la
+am_cformat_OBJECTS = makedisc.$(OBJEXT)
+cformat_OBJECTS = $(am_cformat_OBJECTS)
+cformat_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -126,7 +126,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/clodd.Po ./$(DEPDIR)/options.Po
+am__depfiles_remade = ./$(DEPDIR)/makedisc.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -146,8 +146,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(clodd_SOURCES)
-DIST_SOURCES = $(clodd_SOURCES)
+SOURCES = $(cformat_SOURCES)
+DIST_SOURCES = $(cformat_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -250,6 +250,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -300,8 +301,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-clodd_LDADD = ../devlib/libclowndevices.la
-clodd_SOURCES = clodd.c options.c clodd.h
+cformat_SOURCES = makedisc.c clowndev.h hdd.h
 all: all-am
 
 .SUFFIXES:
@@ -315,9 +315,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign clodd/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign cformat/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign clodd/Makefile
+	  $(AUTOMAKE) --foreign cformat/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -385,9 +385,9 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-clodd$(EXEEXT): $(clodd_OBJECTS) $(clodd_DEPENDENCIES) $(EXTRA_clodd_DEPENDENCIES) 
-	@rm -f clodd$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(clodd_OBJECTS) $(clodd_LDADD) $(LIBS)
+cformat$(EXEEXT): $(cformat_OBJECTS) $(cformat_DEPENDENCIES) $(EXTRA_cformat_DEPENDENCIES) 
+	@rm -f cformat$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cformat_OBJECTS) $(cformat_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -395,8 +395,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clodd.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makedisc.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -557,8 +556,7 @@ clean: clean-am
 clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/clodd.Po
-	-rm -f ./$(DEPDIR)/options.Po
+		-rm -f ./$(DEPDIR)/makedisc.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -604,8 +602,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/clodd.Po
-	-rm -f ./$(DEPDIR)/options.Po
+		-rm -f ./$(DEPDIR)/makedisc.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

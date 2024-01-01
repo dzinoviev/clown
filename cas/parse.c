@@ -11,11 +11,8 @@
 int fileno (FILE *stream);	/* for Ansi C  */
 #endif
 
-       Clof_Type module_type      = CLOF_UNKNOWN;
-jmp_buf   failure;
-
-       int listing = 0;
-
+Clof_Type module_type      = CLOF_UNKNOWN;
+int listing = 0;
 int global_offset = 0;
 struct SegmentTable    segments     = {0, NULL};
 struct LabelTable      labels       = {0, NULL};

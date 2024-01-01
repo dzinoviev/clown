@@ -1,8 +1,8 @@
-.TH CLINK 1 "MAY 2008" "version 1.0" "USER COMMANDS"
+.TH CLINK 1 "DECEMBER 2023" "version 2.20" "USER COMMANDS"
 
 .SH NAME 
 
-clink \- link Clown object files
+clink \- Clown object file linker.
 
 .SH SYNOPSIS
 .B clink 
@@ -13,35 +13,35 @@ clink \- link Clown object files
 ...
 
 .SH DESCRIPTION
-.B clink
-is the Clown linker. It is used to combine multiple 
-.SM CLO 
-(Clown object) files into one 
-.SM CLE 
-(Clown executable) file or 
-.SM CLO 
-(Clown object library file).
+.B clink,
+the Clown linker, combines multiple
+.SM CLO
+(Clown Object) files into a single
+.SM CLE
+(Clown Executable) file or a
+.SM CLO
+(Clown Object Library file). This tool is essential for creating executable programs or libraries from individual object files.
 
 .SH OPTIONS
 .TP
 \-h, \-\-help
-Show the help message and exit
+Display the help message and exit.
 .TP 
 \-b, \-\-cle 
-Generate a non-relocatable directly executable 
+Create a non-relocatable, directly executable
 .SM CLE 
 module
 .I (default)
 .TP 
 \-s, \-\-clo 
-Generate a relocatable 
+Create a relocatable 
 .SM CLO 
 module (a library)
 .TP 
 \-o output-file
-Set the output file name to 
-.I output-file 
-(the default name is 
+Specify the output file name as
+.I output-file.
+Default names are 
 .I default.cle 
 for 
 .SM 
@@ -50,29 +50,29 @@ modules and
 .I default.clo 
 for 
 .SM CLO 
-modules)
+modules.
 .TP 
 \-v, \-\-version 
-Print the linker version number and exit
+Display the linker's version number and exit.
 .TP 
 \-l, \-\-listing
- Produce the listing
+Produce a listing of the linking process.
 .TP 
 \-q, \-\-silent 
-Operate silently, without reporting warnings and error messages
+Operate silently, suppressing warnings and error messages.
 .TP 
 \-ng, \-\-nodebug 
-Do not include file and line information for debugging
+Exclude debugging-related file and line information.
 .TP 
 \-V 
-Print  the linker version number and continue
+Display the linker's version number and continue.
 .TP 
 \-\- 
-Treat the next argument as a file name, even if it looks like yet
-another command line option.
+Interpret the next argument as a file name, even if it resembles a command line option.
 
 .SH AUTHOR
-Dmitry Zinoviev <dmitry at mcs dot suffolk dot edu>
+Dmitry Zinoviev <dzinoviev at suffolk dot edu>
+
 .SH "SEE ALSO"
 .BR clown (1),
 .BR cas (1)

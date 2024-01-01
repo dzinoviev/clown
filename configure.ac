@@ -9,6 +9,8 @@ AC_PROG_YACC
 AC_PROG_INSTALL
 AC_PROG_CXX
 
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
 AC_CHECK_TYPES([struct termios, struct termio], [], [], [[#include <term.h>]])
 
 AC_SUBST([AM_CFLAGS], [-Wno-unused-result])
@@ -41,8 +43,8 @@ AC_CONFIG_FILES([
         clown/Makefile
         cas/Makefile
         clink/Makefile
-        clodd/Makefile
-        makedisc/Makefile
+        cdiskdup/Makefile
+        cformat/Makefile
         man/Makefile
         examples/Makefile
 ])

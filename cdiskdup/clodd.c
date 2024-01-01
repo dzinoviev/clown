@@ -27,6 +27,7 @@ enum Clodd_Dir direction = UNDEF;
 char *file = NULL;
 Clof_Type module_type = CLOF_UNKNOWN;
 
+
 void component_error (const char *name, const char *msg, char *detail)
 {
     if (!silent)
@@ -58,7 +59,8 @@ static void construct_disc_path(char *disc_path, size_t max_length)
 }
 
 static void validate_track_sector(int track, int max_tracks,
-				  int max_sectors, char *prog_name) {
+				  int max_sectors, char *prog_name)
+{
   if (track >= max_tracks) {
     fprintf(stderr, "%s: track too large: %d\n", prog_name, track);
     exit(EXIT_FAILURE);      
@@ -145,7 +147,7 @@ int main (int argn, char *argv[])
 	  break;
 	}
       }
-   }
+    }
     fprintf (stderr, "%s: %d block(s) copied into file %s\n", argv[0], total, file);
   }
   

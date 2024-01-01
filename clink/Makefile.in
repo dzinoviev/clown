@@ -106,7 +106,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_clink_OBJECTS = clink.$(OBJEXT) options.$(OBJEXT)
 clink_OBJECTS = $(am_clink_OBJECTS)
-clink_DEPENDENCIES = ../codelib/libclowncode.la
+clink_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -250,6 +250,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -300,7 +301,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-clink_LDADD = ../codelib/libclowncode.la
+clink_LDADD = -L../codelib -lclowncode
 clink_SOURCES = clink.c options.c clink.h
 all: all-am
 

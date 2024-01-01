@@ -1,2 +1,2 @@
-	call main
-	stop
+	CALL main
+	STOP

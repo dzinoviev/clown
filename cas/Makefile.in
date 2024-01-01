@@ -107,7 +107,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_cas_OBJECTS = cas.$(OBJEXT) options.$(OBJEXT) parse.$(OBJEXT) \
 	cas-yacc.$(OBJEXT) cas-lex.$(OBJEXT)
 cas_OBJECTS = $(am_cas_OBJECTS)
-cas_DEPENDENCIES = ../codelib/libclowncode.la
+cas_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -270,6 +270,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -323,7 +324,7 @@ top_srcdir = @top_srcdir@
 AM_LFLAGS = -CF -8
 AM_YFLAGS = -d
 BUILT_SOURCES = cas-yacc.h
-cas_LDADD = ../codelib/libclowncode.la # -lefence
+cas_LDADD = -L../codelib -lclowncode # -lefence
 cas_SOURCES = cas.c options.c parse.c cas-yacc.y cas-lex.l cas.h
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am

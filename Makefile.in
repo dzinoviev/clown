@@ -188,8 +188,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in README \
-	compile config.guess config.sub depcomp install-sh ltmain.sh \
-	missing ylwrap
+	ar-lib compile config.guess config.sub depcomp install-sh \
+	ltmain.sh missing ylwrap
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -312,6 +312,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -363,7 +364,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = include codelib devlib clown cas clink clodd makedisc man examples
+SUBDIRS = include codelib devlib clown cas clink cdiskdup cformat man examples
 dist_doc_DATA = README license.txt
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive

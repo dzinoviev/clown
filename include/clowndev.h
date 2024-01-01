@@ -6,7 +6,7 @@
 #include "isa.h"
 #include "symtab.h"
 
-#define COPYRIGHT "Copyright © 2004, 2008, 2011 D. Zinoviev\n"\
+#define COPYRIGHT "Copyright © 2004, 2008, 2011, 2023 D. Zinoviev\n"\
   "This program is free software; you may redistribute it under the terms of\n"\
   "the GNU General Public License.  This program has absolutely no warranty.\n"
 
@@ -104,10 +104,10 @@ typedef struct _Expression {
     } detail;
 } Expression;
 
-#define FIX_SEGMENT      ((Dword)0xFF000001)
+#define FIX_SEGMENT       ((Dword)0xFF000001)
 #define FIX_ADISPLACEMENT ((Dword)0xFF000002)
 #define FIX_RDISPLACEMENT ((Dword)0xFF000004)
-#define FIX_EXPRESSION   ((Dword)0xFF000008)
+#define FIX_EXPRESSION    ((Dword)0xFF000008)
 
 extern jmp_buf   failure;
 extern int current_overhead;

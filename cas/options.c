@@ -8,7 +8,7 @@
 #include "cas.h"
 
 #define DEFAULT_OBJECT "a.cle"
-#define CAS_VERSION "CLOWN assembler version "VERSION" ["__DATE__"]"
+#define CAS_VERSION "CLOWN assembler version "PACKAGE_VERSION" ["__DATE__"]"
 
 static void show_version (void)
 {
@@ -63,7 +63,8 @@ int get_options (int argc, char *argv[], char **object,
 	    continue;
 	}
 
-	if (!strcmp (argv[i], "--version")) {
+	if (   !strcmp (argv[i], "--version")
+	    || !strcmp (argv[i], "-v")) {
 	    show_version ();
 	    show_copy ();
 	    *ecode = EXIT_SUCCESS;
