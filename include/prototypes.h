@@ -3,7 +3,7 @@
 
 #include "clown_types.h"
 
-cycle_t     clown_decode_execute (Dword i, Dword op3);
+cycle_t     clown_decode_execute (Dword i, Uword op3);
 cycle_t     clown_write_linear (Dword addr, Dword data);
 cycle_t     clown_read_linear (Dword addr, Dword *data);
 cycle_t     clown_load_seg (Selector seg, int reg);
@@ -43,7 +43,7 @@ void show_sregs (Dword nmb, int format);
 void set_regs (Dword nmb, Dword value);
 void show_nmb (Dword nmb, int format);
 void set_refregs (Dword nmb, Dword value);
-void show_flags (int format);
+void show_flags ();
 void show_ir (int format);
 void show_pc (int format);
 void set_pc (Dword value);

@@ -96,7 +96,7 @@ int main(int argn, char *argv[])
   }
 
   memcpy(&sep, "########", sizeof(Uword));
-  for(int i = 0; i < params.n_tracks * params.n_sectors; i++) {
+  for(unsigned int i = 0; i < params.n_tracks * params.n_sectors; i++) {
     for(int j = 0; j < DISC_WORDS_PER_SECTOR; j++)
       if(sizeof(Dword) != write(image, &zero, sizeof(Dword))) {
 	perror(DISC_IMAGE);

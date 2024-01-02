@@ -18,8 +18,8 @@ static struct DebugFile *lookup_debug_info (Dword address, int *record)
     for (i = modules[j].st.size - 1; i >= 0; i--) {
 	struct Segment s;
 	int k;
-	Dword adjusted_address = address - modules[j].st.segments[i].base;
-	if ((adjusted_address >= modules[j].st.segments[i].image_size) || (adjusted_address < 0))
+	Uword adjusted_address = address - modules[j].st.segments[i].base;
+	if (adjusted_address >= modules[j].st.segments[i].image_size)
 	    continue;
 	s = modules[j].st.segments[i];
 	for (k = s.nfiles - 1; k >= 0; k--) {
@@ -50,12 +50,10 @@ void print_debug_info (Dword address)
 
 static void show_val (Dword val, int format)
 {
-  unsigned uval;
   int j;
   switch (format) {
   case 'b':
   case 'B':
-    uval = (unsigned)val;
     for (j = sizeof (Dword) * 8 - 1; j >= 0; j--)
       fprintf (stderr, "%c", (val & (0x01 << j)) ? '1' : '0');
     fprintf (stderr, "b");
@@ -109,7 +107,7 @@ void show_nmb (Dword value, int format)
     fprintf (stderr, "\n");
 }
 
-void show_flags (int format)
+void show_flags ()
 {
     fprintf (stderr, "%%FLAGS:");
     fprintf (stderr, " CPL=%1d",  clown.flags.bitwise.cpl  );
@@ -373,7 +371,7 @@ static const char *sregs[] = {
     "FS",
 };
 
-static void show_selector (Selector s, int format)
+static void show_selector (Selector s)
 {
     fprintf (stderr, "ID=%"PRIu32" RPL=%"PRIu32" %s",
 	     SEL_ID (s), SEL_RPL (s), SEL_TABL(s) ? "GDT" : "LDT");
@@ -401,7 +399,7 @@ static void show_sflags (struct Clown_Segment_Descriptor sd)
 static void show_sreg (struct Clown_Segment_Register sreg, int format)
 {
     fputs ("  Selector  : ", stderr);
-    show_selector (sreg.selector, format);
+    show_selector (sreg.selector);
     fputs ("\n  Descriptor: [", stderr);
     show_val (sreg.descriptor.base, format);
     fputs ("]:[", stderr);

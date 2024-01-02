@@ -3,6 +3,7 @@
 ;; puts
 ;; Write a null-terminated string to the terminal output device
 .global puts:
+nop
 	push %r1		; save registers
 	push %r2		; save registers
 	peek %r1, 3 ; stack: %r2[top], %r1[-1], ret.add.[-2], string[-3]
@@ -27,6 +28,7 @@ endw:
 ;; gets
 ;; Read a single line from the terminal input device
 .global gets:
+nop
 	push %r1		; save registers
 	push %r2		; save registers
 	peek %r1, 3 + 0	; stack: %r2[top], %r1[-1], ret.add.[-2], string[-3]

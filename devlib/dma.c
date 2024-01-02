@@ -199,12 +199,13 @@ void execute_dma (Bit bus_slot)
 
 
 static struct Clown_IOPort ports[] =  {
-{id_dma, control_dma}, 
-{status_dma, NULL}, 
-{NULL, write_dma}, 
+  {id_dma, control_dma, 0}, 
+  {status_dma, NULL, 0}, 
+  {NULL, write_dma, 0}, 
 };
-struct Clown_IODevice dma_device = {3, ports, 
-execute_dma, 
-init_dma, 
-reset_dma
+
+struct Clown_IODevice dma_device = {
+  3, ports, 
+  execute_dma, init_dma, reset_dma,
+  0, 0, 0
 };

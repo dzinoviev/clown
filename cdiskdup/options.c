@@ -97,15 +97,10 @@ void read_options (int argc, char *argv[])
 		 argv[0]);
 	exit (EXIT_FAILURE);
       }
-      sector = strtol (argv[i], &endptr, 0);
+      sector = strtoul (argv[i], &endptr, 0);
       if (*endptr) {
 	fprintf (stderr, 
 		 "%s: bad character(s) in sector number: %s\n", argv[0], endptr);
-	exit (EXIT_FAILURE);
-      }
-      if (sector < 0) {
-	fprintf (stderr, 
-		 "%s: sector number must be non-negative: %d\n", argv[0], sector);
 	exit (EXIT_FAILURE);
       }
       continue;
@@ -120,15 +115,10 @@ void read_options (int argc, char *argv[])
 		 argv[0]);
 	exit (EXIT_FAILURE);
       }
-      track = strtol (argv[i], &endptr, 0);
+      track = strtoul(argv[i], &endptr, 0);
       if (*endptr) {
 	fprintf (stderr, 
 		 "%s: bad character(s) in sector number: %s\n", argv[0], endptr);
-	exit (EXIT_FAILURE);
-      }
-      if (track < 0) {
-	fprintf (stderr, 
-		 "%s: track number must be non-negative: %d\n", argv[0], track);
 	exit (EXIT_FAILURE);
       }
       continue;

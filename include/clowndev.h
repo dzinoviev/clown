@@ -35,29 +35,29 @@ struct DebugFile {
 };
 
 struct Segment {
-    char *name;
-    enum {SEG_DEFAULT, SEG_CODE, SEG_DATA, SEG_CONST} type;
-    Bit   defined;
-    Bit   global;
+  char *name;
+  enum {SEG_DEFAULT, SEG_CODE, SEG_DATA, SEG_CONST} type;
+  Bit   defined;
+  Bit   global;
 
-    Dword *image;
-    int image_size;
-    int image_extent;
+  Dword *image;
+  unsigned image_size;
+  unsigned image_extent;
 
-    /* Debug info */
-    int nfiles;
-    struct DebugFile *files;
+  /* Debug info */
+  int nfiles;
+  struct DebugFile *files;
 
-    /* These fields are used only by the linker */
-    int  id;
-    int  in_use;
-    int  escapes;
-    int  link_overhead;
-    int  new_index;
-    int  module;
+  /* These fields are used only by the linker */
+  int  id;
+  int  in_use;
+  int  escapes;
+  int  link_overhead;
+  int  new_index;
+  int  module;
 
-    /* This field is used only by the loader/clown */
-    int  base;		
+  /* This field is used only by the loader/clown */
+  int  base;		
 }; 
 
 struct SegmentTable {

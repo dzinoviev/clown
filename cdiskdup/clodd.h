@@ -4,9 +4,9 @@
 #include "clowndev.h"
 #include "hdd.h"
 
-extern int sector;
-extern int track;
-extern int size;
+extern unsigned sector;
+extern unsigned track;
+extern unsigned size;
 extern int unpack;
 extern enum Clodd_Dir { UNDEF, TODISK, FROMDISK } direction;
 extern char *file;

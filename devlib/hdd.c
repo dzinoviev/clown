@@ -28,8 +28,9 @@ static struct Clown_Hdd params;
 static Bit running = 0;
 static Dword        buffer[DISC_WORDS_PER_SECTOR];
 static Dword hidden_buffer[DISC_WORDS_PER_SECTOR];
-static Dword track, phi /* the current angle */, pointer, hidden_pointer;
-static Dword dest_track, dest_phi, direction;
+static Uword track, phi /* the current angle */, pointer, hidden_pointer;
+static Uword dest_track, dest_phi;
+static Dword direction;
 static Uword counter, n_words, phi_counter, 
              delta_seek /* time to move from track to track */,
              delta_phi /* time to move from word to word */;
@@ -86,54 +87,54 @@ Bit init_hdd (void)
 
 Dword read_hdd (void)
 {
-    if (!running)
-	return 0;
-    else {
-	Dword datum = buffer[pointer++];
-	if (pointer == DISC_WORDS_PER_SECTOR)
-	    pointer = 0;
-	return datum;
-    }
+  if (!running)
+    return 0;
+  else {
+    Dword datum = buffer[pointer++];
+    if (pointer == DISC_WORDS_PER_SECTOR)
+      pointer = 0;
+    return datum;
+  }
 }
 
 void write_hdd (Dword datum)
 {
 #ifdef DEBUG
-    printf ("Write: %0x [%d]\n", datum, operation);
+  printf ("Write: %0x [%d]\n", datum, operation);
 #endif
-    if (running) {
-	switch (operation) {
-	case PREP_DSCOP_SEEK_START:	/* specify the destination track number */
-	    if (datum < 0 || datum >= params.n_tracks || track == datum) {
-		operation = DSCOP_NONE;
-		break;
-	    }
-	    dest_track = datum;
-	    direction = (dest_track > track) ? 1 : -1;
-	    counter = 0;
-	    operation = DSCOP_SEEK_START;
-	    break;
-	case PREP_DSCOP_READ_START:
-	case PREP_DSCOP_WRITE_START:
-	    operation = (operation == PREP_DSCOP_READ_START) ? DSCOP_READ_START
-		: DSCOP_WRITE_START;
-	    datum = MAX (datum, 0);
-	    datum = datum % params.n_sectors;
-	    dest_phi = datum * (DISC_WORDS_PER_SECTOR + DISC_WORDS_PER_GAP);
-	    if (dest_phi == phi) {
-		operation = (operation == DSCOP_READ_START) 
-		    ? DSCOP_READ : DSCOP_WRITE;
-		counter = 0;
-		pointer = hidden_pointer = 0;
-	    }	
-	    break;
-	default:			/* just write into the buffer */
-	    buffer[pointer++] = datum;
-	    if (pointer == DISC_WORDS_PER_SECTOR)
-		pointer = 0;
-	    break;
-	}
+  if (running) {
+    switch (operation) {
+    case PREP_DSCOP_SEEK_START:	/* specify the destination track number */
+      if (datum < 0 || (Uword)datum >= params.n_tracks || track == (Uword)datum) {
+	operation = DSCOP_NONE;
+	break;
+      }
+      dest_track = datum;
+      direction = (dest_track > track) ? 1 : -1;
+      counter = 0;
+      operation = DSCOP_SEEK_START;
+      break;
+    case PREP_DSCOP_READ_START:
+    case PREP_DSCOP_WRITE_START:
+      operation = (operation == PREP_DSCOP_READ_START) ? DSCOP_READ_START
+	: DSCOP_WRITE_START;
+      datum = MAX (datum, 0);
+      datum = datum % params.n_sectors;
+      dest_phi = datum * (DISC_WORDS_PER_SECTOR + DISC_WORDS_PER_GAP);
+      if (dest_phi == phi) {
+	operation = (operation == DSCOP_READ_START) 
+	  ? DSCOP_READ : DSCOP_WRITE;
+	counter = 0;
+	pointer = hidden_pointer = 0;
+      }	
+      break;
+    default:			/* just write into the buffer */
+      buffer[pointer++] = datum;
+      if (pointer == DISC_WORDS_PER_SECTOR)
+	pointer = 0;
+      break;
     }
+  }
 }
 
 Dword status_hdd (void)
@@ -202,7 +203,7 @@ void control_hdd (Dword datum)
     }
 }
 
-void execute_hdd (Bit dummy)
+void execute_hdd (__attribute__((unused)) Bit dummy)
 {
     if (!running)
 	return;
@@ -214,7 +215,8 @@ void execute_hdd (Bit dummy)
     if (phi_counter == delta_phi) {
 	phi++;
 	phi_counter = 0;
-	if (phi == n_words) phi = 0;
+	if (phi == n_words)
+	  phi = 0;
     }
 
     switch (operation) {
@@ -309,12 +311,12 @@ void execute_hdd (Bit dummy)
 
 
 static struct Clown_IOPort ports[] = {
-  {id_hdd, control_hdd}, 
-  {status_hdd, NULL}, 
-  {read_hdd, write_hdd}, 
+  {id_hdd, control_hdd, 0}, 
+  {status_hdd, NULL, 0}, 
+  {read_hdd, write_hdd, 0}, 
 };
 struct Clown_IODevice hdd_device = {3, ports, 
   execute_hdd,
   init_hdd,
-  reset_hdd
+  reset_hdd, 0,0,0
 };

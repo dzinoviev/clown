@@ -1,5 +1,5 @@
 %{
-  int fileno(FILE *stream);	/* to make th CC happy  */
+  int fileno(FILE *stream);	/* to make the CC happy  */
 #include <string.h>
 #include "registers.h"
 #include "cmd-yacc.h"
@@ -8,6 +8,9 @@
 OD [0-7]
 DD [0-9]
 HD [0-9A-Fa-f]
+
+%option nounput
+%option noinput
 
 %%
 

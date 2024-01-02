@@ -4,18 +4,20 @@
 #include "cas.h"
 #include "registers.h"
 #include "cas-yacc.h"
-int fileno(FILE *stream);	/* for ANSI compatibility */
-static char string_buf[1024];
-static char *string_buf_ptr;
-int line_no = 1;
-/*char *strdup(const char *s);*/
- static char dummy[1024];
-
+  int fileno(FILE *stream);	/* for ANSI compatibility */
+  static char string_buf[1024];
+  static char *string_buf_ptr;
+  int line_no = 1;
+  static char dummy[1024];
+  
 static void lex_error (const char *message)
 {
-    fprintf (stderr, "cas:%s:%d: %s: %s\n", *source, line_no, message, yytext);
+  fprintf (stderr, "cas:%s:%d: %s: %s\n", *source, line_no, message, yytext);
 }
 %}
+
+%option nounput
+%option noinput
 
 ID [a-zA-Z_][a-zA-Z_0-9]*
 D [0-9]
@@ -23,17 +25,16 @@ HD [0-9A-Fa-f]
 
 %x STRING
 %x COMMENT
-
 %%
 
 \#(\ )*[0-9]+(\ )+\"[^\"]*\"(\ [0-9]+)* {	/* preprocessor line directives */
-sscanf (yytext, "# %d \"%[^\"]s\"", &line_no, dummy);
-line_no--;
+  sscanf (yytext, "# %d \"%[^\"]s\"", &line_no, dummy);
+  line_no--;
 }
 
 \#.* {    			/* all other preprocessor directives */
-lex_error ("hmmm... looks like I need to be preprocessed first");
-return T_ERROR;
+  lex_error ("hmmm... looks like I need to be preprocessed first");
+  return T_ERROR;
 }
 
 ;.*      			/* eat up comments */
@@ -48,16 +49,16 @@ return T_ERROR;
 }
 
 
-\.[gG][lL][oO][bB][aA][lL] {return T_GLOBAL;}
-\.[aA][lL][iI][gG][nN]8 {return T_ALIGN8;}
-\.[pP][aA][gG][eE] {return T_PAGE;}
+\.(?i:global) {return T_GLOBAL;}
+\.(?i:align8) {return T_ALIGN8;}
+\.(?i:page) {return T_PAGE;}
 
-\.[sS][tT][rR][iI][nN][gG] {return T_DEFSTRING;}
-\.[wW][oO][rR][dD]         {return T_DEFWORD;}
+\.(?i:string) {return T_DEFSTRING;}
+\.(?i:word)         {return T_DEFWORD;}
 
-\.[cC][oO][dD][eE]         {return T_CODE;}
-\.[dD][aA][tT][aA]         {return T_DATA;}
-\.[cC][oO][nN][sS][tT]     {return T_CONST;}
+\.(?i:code)         {return T_CODE;}
+\.(?i:data)         {return T_DATA;}
+\.(?i:const)     {return T_CONST;}
 
 \${ID}          {yylval.s = strdup (yytext + 1); return T_SEGMENT;}
 
@@ -71,18 +72,18 @@ return T_ERROR;
 		 }
 		 return T_GREGISTER;}
 
-%[sS][pP]          {yylval.i = CLOWN_NGPR - 3; return T_GREGISTER;}
-%[pP][aA][gG][eE]  {yylval.i = CLOWN_NGPR - 2; return T_GREGISTER;}
-%[fF][aA][rR]      {yylval.i = CLOWN_NGPR - 1; return T_GREGISTER;}
+%(?i:sp)          {yylval.i = CLOWN_NGPR - 3; return T_GREGISTER;}
+%(?i:page) {yylval.i = CLOWN_NGPR - 2; return T_GREGISTER;}
+%(?i:far)      {yylval.i = CLOWN_NGPR - 1; return T_GREGISTER;}
 
-%[iI][sS][rR]   {yylval.i = _ISR  ; return T_SREGISTER;}
-%[gG][dD][tT]   {yylval.i = _GDT  ; return T_SREGISTER;}
-%[lL][dD][tT]   {yylval.i = _LDT  ; return T_SREGISTER;}
-%[cC][sS]    {yylval.i = _CODE ; return T_SREGISTER;}
-%[sS][sS]    {yylval.i = _STACK; return T_SREGISTER;}
-%[dD][sS]    {yylval.i = _DATA ; return T_SREGISTER;}
-%[eE][sS]    {yylval.i = _ES   ; return T_SREGISTER;}
-%[fF][sS]    {yylval.i = _FS   ; return T_SREGISTER;}
+%(?i:isr)   {yylval.i = _ISR  ; return T_SREGISTER;}
+%(?i:gdt)   {yylval.i = _GDT  ; return T_SREGISTER;}
+%(?i:ldt)   {yylval.i = _LDT  ; return T_SREGISTER;}
+%(?i:cs)    {yylval.i = _CODE ; return T_SREGISTER;}
+%(?i:ss)    {yylval.i = _STACK; return T_SREGISTER;}
+%(?i:ds)    {yylval.i = _DATA ; return T_SREGISTER;}
+%(?i:es)    {yylval.i = _ES   ; return T_SREGISTER;}
+%(?i:fs)    {yylval.i = _FS   ; return T_SREGISTER;}
 
 %[a-zA-Z0-9]+   {lex_error ("illegal register"); return T_ERROR;}
 

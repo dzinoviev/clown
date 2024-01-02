@@ -1801,7 +1801,7 @@ yyreduce:
 
   case 3: /* program: $@1 lines  */
 #line 197 "cas-yacc.y"
-              { end_segment (current_segment, offset); }
+              { end_segment (offset); }
 #line 1806 "cas-yacc.c"
     break;
 
@@ -1812,7 +1812,7 @@ yyreduce:
                   yyerror ("explicit segment definitions not allowed with non-zero entry point");
                   YYABORT;
               }
-		  end_segment (current_segment, offset);
+		  end_segment (offset);
 		  if ((current_segment = begin_segment ((yyvsp[-1].i), (yyvsp[0].s))) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;

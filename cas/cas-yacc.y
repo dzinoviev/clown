@@ -194,7 +194,7 @@ program     : { if ((current_segment = begin_segment (SEG_DEFAULT, "code*")) == 
 		  } 
               }
               lines
-	      { end_segment (current_segment, offset); };
+	      { end_segment (offset); };
 
 lines       : line lines 
             | ;
@@ -204,7 +204,7 @@ line        : segtype T_SEGMENT {
                   yyerror ("explicit segment definitions not allowed with non-zero entry point");
                   YYABORT;
               }
-		  end_segment (current_segment, offset);
+		  end_segment (offset);
 		  if ((current_segment = begin_segment ($1, $2)) == NOT_FOUND) {
 		      yyerror ("fatal error");
 		      YYABORT;

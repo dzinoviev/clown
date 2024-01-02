@@ -60,7 +60,7 @@ Bit init_timer (void)
     return 1;			/* it never fails */
 }
 
-void execute_timer (Bit dummy)
+void execute_timer (__attribute__((unused)) Bit dummy)
 {
     if (state == WORKING && !(--counter)) {
 	raise_exception (timer_device.IRQ);
@@ -72,11 +72,11 @@ void execute_timer (Bit dummy)
 }
 
 static struct Clown_IOPort ports[] =  {
-{id_timer, write_timer}, 
-{read_timer, NULL}, 
+  {id_timer, write_timer, 0}, 
+  {read_timer, NULL,0 }, 
 };
 struct Clown_IODevice timer_device = {2, ports, 
 execute_timer, 
 init_timer, 
-reset_timer		    
+reset_timer, 0, 0, 0
 };

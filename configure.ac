@@ -13,8 +13,9 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 AC_CHECK_TYPES([struct termios, struct termio], [], [], [[#include <term.h>]])
 
-AC_SUBST([AM_CFLAGS], [-Wno-unused-result])
+AC_SUBST([AM_CFLAGS], ["-Wno-unused-result -Wall -Werror -fpic -Wall -Wextra"])
 AC_SUBST([AM_CPPFLAGS], [-I../include/])
+AC_SUBST([AM_CXXFLAGS], ["-Wno-unused-result -Wall -Werror -fpic -Wall -Wextra"])
 
 # Supplied by autoscan
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h libintl.h limits.h linux/limits.h malloc.h stddef.h stdlib.h string.h sys/ioctl.h sys/time.h unistd.h])

@@ -22,7 +22,7 @@ void component_error (const char *name, const char *msg, char *detail)
     fprintf (stderr, "%s: %s: %s\n", name, msg, detail);
 }
 
-void end_segment (int segment, Dword size)
+void end_segment (Dword size)
 {
     size -= global_offset;
 }

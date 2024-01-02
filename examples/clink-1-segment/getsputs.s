@@ -1,5 +1,6 @@
 ;; test function
 .global main:
+nop
 	mov %r1, msg
 	
 	push %r1		; push the parameter -- optional!

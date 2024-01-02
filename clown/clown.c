@@ -88,7 +88,6 @@ static void normal_terminal ()
 cycle_t do_one_step ()
 {
   cycle_t cycles_all = 0, cycles;
-  int i;
 
   if (fetch) {		/* fetch unit enabled  */
     clown.old_pc = clown.pc;
@@ -119,7 +118,7 @@ cycle_t do_one_step ()
   }
 
   /* Periphery devices work regardless of the state of the fetch unit */
-  for (i = 0; i < clown_active_count; i++)
+  for (unsigned i = 0; i < clown_active_count; i++)
     if (clown_periphery[i].device->execute)
       clown_periphery[i].device->execute (cycles_all == 0);
 
@@ -150,7 +149,7 @@ extern struct Clown_IODevice hdd_device;
 
 static int suspend = 0;
 
-static void suspend_clown (int dummy)
+static void suspend_clown (__attribute__((unused)) int dummy)
 {
   suspend = 1;
   fputs ("Execution suspended. Type 'run' to resume\n", stderr);

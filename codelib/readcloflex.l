@@ -12,6 +12,9 @@ int line_no = 1;
 #define CDATA_END (sizeof("]]>")-1) /* 3 */
 %}
 
+%option nounput
+%option noinput
+
 %%
 
 "<![CDATA["(.*)"]]>" { 

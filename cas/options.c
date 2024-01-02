@@ -204,6 +204,7 @@ int get_options (int argc, char *argv[], char **object,
     switch (module_type) {
     case CLOF_UNKNOWN:
       module_type = CLOF_BIN; // Not a fall-through!
+      [[fallthrough]];
     case CLOF_BIN:
       suffix = "cle";
       break;

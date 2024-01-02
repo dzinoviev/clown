@@ -19,9 +19,9 @@
 
 int listing = 0;
 Bit silent = 0;
-int sector = 0;
-int track = 0;
-int size = 0;
+unsigned sector = 0;
+unsigned track = 0;
+unsigned size = 0;
 int unpack = 0;
 enum Clodd_Dir direction = UNDEF;
 char *file = NULL;
@@ -58,8 +58,8 @@ static void construct_disc_path(char *disc_path, size_t max_length)
   strncat(disc_path, DISC_IMAGE, max_length - strlen(disc_path) - 1);
 }
 
-static void validate_track_sector(int track, int max_tracks,
-				  int max_sectors, char *prog_name)
+static void validate_track_sector(unsigned track, unsigned max_tracks,
+				  unsigned max_sectors, char *prog_name)
 {
   if (track >= max_tracks) {
     fprintf(stderr, "%s: track too large: %d\n", prog_name, track);
@@ -76,7 +76,6 @@ int main (int argn, char *argv[])
   int infile, chunk;
   struct Clown_Hdd params;
   char disc_path[PATH_MAX] = "";
-  char *path;
   Dword wbuffer[DISC_WORDS_PER_SECTOR];
   char cbuffer[DISC_WORDS_PER_SECTOR * sizeof (Dword)];
 
@@ -89,7 +88,7 @@ int main (int argn, char *argv[])
   
   validate_track_sector(track, params.n_tracks, params.n_sectors, argv[0]);
 
-  int total = 0;
+  unsigned total = 0;
   if (direction == TODISK) {
     if (-1 == (infile = open (file, O_RDONLY))) {
       perror (file);

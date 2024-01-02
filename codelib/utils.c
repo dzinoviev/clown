@@ -34,11 +34,11 @@ void *safe_realloc (void *ptr, size_t size)
 }
 
 #define BASE64_SYM 6
-#define BASE64_ZIPFACTOR ((sizeof(Dword)*CHAR_BIT)/BASE64_SYM)
+#define BASE64_ZIPFACTOR (int)((sizeof(Dword) * CHAR_BIT) / BASE64_SYM)
 #define BASE64_MASK(x) ((1<<(x))-1)
 #define BASE64_BUFSIZE 16
-#define BASE64_PHASES (BASE64_BUFSIZE/BASE64_ZIPFACTOR)
-static unsigned char buffer_base64[BASE64_BUFSIZE]= {0};
+#define BASE64_PHASES (BASE64_BUFSIZE / BASE64_ZIPFACTOR)
+static unsigned char buffer_base64[BASE64_BUFSIZE] = {0};
 static int base64_phase = 0;
 static const unsigned char base64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const int unbase64[] = {
@@ -70,7 +70,7 @@ int base64_decode (char *orig, Dword *decoded)
 
   for (char *cur = orig; *cur; cur++) {
     int shift;
-    uint32_t d = unbase64[(int)*cur];
+    int32_t d = unbase64[(int)*cur];
     if (d == -1) {		/* bad character */
       return -1;
     }

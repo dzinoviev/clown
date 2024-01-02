@@ -150,15 +150,14 @@ static void execute_tty (Bit dummy)
 #endif
 
 #ifdef HAVE_LIBPTHREAD
-static void *monitor (void* args)
+static void *monitor (__attribute__((unused)) void* args)
 {
-    int fid;
     fd_set kbd;
 
     while (1) {
 	FD_ZERO (&kbd);
 	FD_SET (0, &kbd);
-	fid = select (1, &kbd, NULL, NULL, NULL);
+	select (1, &kbd, NULL, NULL, NULL);
 
 	if (mode == POLLING) {
 	    my_lock (&poll);
@@ -190,12 +189,12 @@ static Bit init_tty (void)
 #endif
 
 static struct Clown_IOPort ports[] =  {
-    {     id_tty, write_tty}, 
-    {   read_tty,  mode_tty}, 
-    {isready_tty,      NULL}
+  {     id_tty, write_tty, 0}, 
+  {   read_tty,  mode_tty, 0}, 
+  {isready_tty,      NULL, 0}
 };
 struct Clown_IODevice tty_device = {3, ports, 
 				    execute_tty, /* execute */
 				    init_tty, /* initialize */
-				    NULL /* reset */
+				    NULL /* reset */, 0,0,0
 };
