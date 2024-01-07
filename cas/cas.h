@@ -8,12 +8,11 @@
 extern char *cpp_options;
 
 /* The current position */
+extern FILE *yyin, *debugfile;
 extern int line_no;
 extern int global_offset;
-extern FILE *yyin, *debugfile;
-extern Dword offset;
+extern Uword offset;
 extern int current_segment;
-extern int current_overhead;
 extern struct SegmentTable segments;
 
 struct labelDef {
@@ -23,17 +22,17 @@ struct labelDef {
 
 int begin_segment (int type, char *name);
 void end_segment (Dword size);
-int add_label (char *label, int segment, Dword offset, int global, int align8);
+int add_label (char *label, int segment, Uword offset, int global, int align8);
 int mark_export_label (char *label);
 int lookup_segment (char *name);
 int use_label (char *label, int segment);
 void mark_near_label (int i);
 int yyerror (char *s);
-int yyparse (void);
+//int yyparse (void);
 int yylex (void);
 int insert_into_export (char *s);
 void emit (Dword i);
-void emit_escape (Dword i);
+void store (Dword i);
 int get_options (int argc, char *argv[], char **object, char **source, 
 		 int *ecode);
 int parse_and_assembly (FILE *infile, int outfile);

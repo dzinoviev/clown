@@ -51,14 +51,14 @@ HD [0-9A-Fa-f]
 
 \.(?i:global) {return T_GLOBAL;}
 \.(?i:align8) {return T_ALIGN8;}
-\.(?i:page) {return T_PAGE;}
+\.(?i:page)   {return T_PAGE;}
 
 \.(?i:string) {return T_DEFSTRING;}
-\.(?i:word)         {return T_DEFWORD;}
+\.(?i:word)   {return T_DEFWORD;}
 
-\.(?i:code)         {return T_CODE;}
-\.(?i:data)         {return T_DATA;}
-\.(?i:const)     {return T_CONST;}
+\.(?i:code)   {return T_CODE;}
+\.(?i:data)   {return T_DATA;}
+\.(?i:const)  {return T_CONST;}
 
 \${ID}          {yylval.s = strdup (yytext + 1); return T_SEGMENT;}
 
@@ -185,60 +185,60 @@ HD [0-9A-Fa-f]
 			 *string_buf_ptr++ = *yptr++;
 		 }
 
-[aA][dD][dD]	     return T_ADD    ;
-[aA][nN][dD]	     return T_AND    ;
-[cC][aA][lL][lL]     return T_CALL   ;
-[cC][hH][iI][oO]     return T_CHIO   ;
-[cC][lL][cC]	     return T_CLC    ;
-[cC][lL][iI]	     return T_CLI    ;
-[cC][lL][rR][bB]     return T_CLRB   ;
-[cC][mM][pP]	     return T_CMP    ;
-[dD][eE][cC]	     return T_DEC    ;
-[dD][iI][vV]	     return T_DIV    ;
-[gG][eE][tT][bB]     return T_GETB   ;
-[hH][lL][tT]	     return T_HLT    ;
-[iI][nN]	     return T_IN     ;
-[iI][nN][cC]	     return T_INC    ;
-[jJ][cC]	     return T_JC     ;
-[jJ][mM][pP]	     return T_JMP    ;
-[jJ][nN][cC]	     return T_JNC    ;
-[jJ][nN][oO]	     return T_JNO    ;
-[jJ][nN][sS]	     return T_JNS    ;
-[jJ][nN][zZ]	     return T_JNZ    ;
-[jJ][oO]	     return T_JO     ;
-[jJ][sS]	     return T_JS     ;
-[jJ][zZ]	     return T_JZ     ;
-[mM][oO][vV]	     return T_MOV    ;
-[mM][uU][lL]	     return T_MUL    ;
-[nN][eE][gG]	     return T_NEG    ;
-[nN][oO][pP]	     return T_NOP    ;
-[nN][oO][tT]	     return T_NOT    ;
-[oO][rR]	     return T_OR     ;
-[oO][uU][tT]	     return T_OUT    ;
-[pP][oO][pP]	     return T_POP    ;
-[pP][oO][pP][fF]     return T_POPF   ;
-[pP][oO][kK][eE]     return T_POKE   ;
-[pP][uU][sS][hH]     return T_PUSH   ;
-[pP][uU][sS][hH][fF] return T_PUSHF  ;
-[pP][eE][eE][kK]     return T_PEEK   ;
-[rR][eE][mM]	     return T_REM    ;
-[rR][eE][tT][fF]     return T_RETF   ;
-[rR][eE][tT][fF][iI] return T_RETFI  ;
-[rR][eE][tT][nN]     return T_RETN   ;
-[rR][eE][tT][nN][iI] return T_RETNI  ;
-[rR][oO][lL]	     return T_ROL    ;
-[rR][oO][rR]	     return T_ROR    ;
-[sS][aA][lL]	     return T_SAL    ;
-[sS][aA][rR]	     return T_SAR    ;
-[sS][eE][tT][bB]     return T_SETB   ;
-[sS][tT][cC]	     return T_STC    ;
-[sS][tT][iI]	     return T_STI    ;
-[sS][tT][oO][pP]     return T_STOP   ;
-[sS][uU][bB]	     return T_SUB    ;
-[tT][rR][aA][pP]     return T_TRAP   ;
-[tT][sS][tT]	     return T_TST    ;
-[xX][cC][hH][gG]     return T_XCHG   ;
-[xX][oO][rR]         return T_XOR    ;
+(?i:add)	     return T_ADD    ;
+(?i:and)	     return T_AND    ;
+(?i:call)     return T_CALL   ;
+(?i:chio)     return T_CHIO   ;
+(?i:clc)	     return T_CLC    ;
+(?i:cli)	     return T_CLI    ;
+(?i:clrb)     return T_CLRB   ;
+(?i:cmp)	     return T_CMP    ;
+(?i:dec)	     return T_DEC    ;
+(?i:div)	     return T_DIV    ;
+(?i:getb)     return T_GETB   ;
+(?i:hlt)	     return T_HLT    ;
+(?i:in)	     return T_IN     ;
+(?i:inc)	     return T_INC    ;
+(?i:jc)	     return T_JC     ;
+(?i:jmp)	     return T_JMP    ;
+(?i:jnc)	     return T_JNC    ;
+(?i:jno)	     return T_JNO    ;
+(?i:jns)	     return T_JNS    ;
+(?i:jnz)     return T_JNZ    ;
+(?i:jo)	     return T_JO     ;
+(?i:js)	     return T_JS     ;
+(?i:jz)	     return T_JZ     ;
+(?i:mov)	     return T_MOV    ;
+(?i:mul)	     return T_MUL    ;
+(?i:neg)	     return T_NEG    ;
+(?i:nop)	     return T_NOP    ;
+(?i:not)	     return T_NOT    ;
+(?i:or)	     return T_OR     ;
+(?i:out)	     return T_OUT    ;
+(?i:pop)     return T_POP    ;
+(?i:popf)     return T_POPF   ;
+(?i:poke)     return T_POKE   ;
+(?i:push)     return T_PUSH   ;
+(?i:pushf) return T_PUSHF  ;
+(?i:peek)     return T_PEEK   ;
+(?i:rem)	   return T_REM    ;
+(?i:retf)    return T_RETF   ;
+(?i:retfi) return T_RETFI  ;
+(?i:retn)     return T_RETN   ;
+(?i:retni) return T_RETNI  ;
+(?i:rol)	   return T_ROL    ;
+(?i:ror)	   return T_ROR    ;
+(?i:sal)	   return T_SAL    ;
+(?i:sar)	   return T_SAR    ;
+(?i:setb)     return T_SETB   ;
+(?i:stc)	   return T_STC    ;
+(?i:sti)	   return T_STI    ;
+(?i:stop)     return T_STOP   ;
+(?i:sub)	   return T_SUB    ;
+(?i:trap)     return T_TRAP   ;
+(?i:tst)	   return T_TST    ;
+(?i:xchg)     return T_XCHG   ;
+(?i:xor)         return T_XOR    ;
 
 {ID} {yylval.s = strdup (yytext); return T_ADDRESS;}
 

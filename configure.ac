@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([clown], [2.10], [dmitry@mcs.suffolk.edu])
+AC_INIT([clown], [2.10], [dzinoviev@suffolk.edu])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_PROG_CC
 AC_PROG_LIBTOOL
@@ -48,5 +48,6 @@ AC_CONFIG_FILES([
         cformat/Makefile
         man/Makefile
         examples/Makefile
+        examples/speedtest/Makefile
 ])
 AC_OUTPUT

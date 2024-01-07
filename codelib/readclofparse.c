@@ -71,14 +71,14 @@
 
 #include <stdio.h>
 #include "clowndev.h"
-struct Module *modules = NULL;
-int current_module;
-char **source = NULL;
-void yyerror (char *s);
-int yylex(); 
-
-static int newSegment (struct Segment *s);
-static int newSymbol (struct Label *s);
+  struct Module *modules = NULL;
+  int current_module;
+  char **source = NULL;
+  void yyerror(char *s);
+  int yylex(); 
+  
+  static void new_segment(struct Segment *s);
+  static void new_symbol(struct Label *s);
 
 #line 84 "readclofparse.c"
 
@@ -138,17 +138,18 @@ extern int yydebug;
     T_OFFSET = 269,                /* T_OFFSET  */
     T_SEGMENT = 270,               /* T_SEGMENT  */
     T_SEGMENTS = 271,              /* T_SEGMENTS  */
-    T_SYMBOL = 272,                /* T_SYMBOL  */
-    T_SYMBOLS = 273,               /* T_SYMBOLS  */
-    T_ESYMBOLS = 274,              /* T_ESYMBOLS  */
-    T_TYPE = 275,                  /* T_TYPE  */
-    T_LS = 276,                    /* T_LS  */
-    T_SG = 277,                    /* T_SG  */
-    T_L = 278,                     /* T_L  */
-    T_G = 279,                     /* T_G  */
-    T_CODE = 280,                  /* T_CODE  */
-    T_STRING = 281,                /* T_STRING  */
-    T_NUMBER = 282                 /* T_NUMBER  */
+    T_SIZE = 272,                  /* T_SIZE  */
+    T_SYMBOL = 273,                /* T_SYMBOL  */
+    T_SYMBOLS = 274,               /* T_SYMBOLS  */
+    T_ESYMBOLS = 275,              /* T_ESYMBOLS  */
+    T_TYPE = 276,                  /* T_TYPE  */
+    T_LS = 277,                    /* T_LS  */
+    T_SG = 278,                    /* T_SG  */
+    T_L = 279,                     /* T_L  */
+    T_G = 280,                     /* T_G  */
+    T_CODE = 281,                  /* T_CODE  */
+    T_STRING = 282,                /* T_STRING  */
+    T_NUMBER = 283                 /* T_NUMBER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -171,17 +172,18 @@ extern int yydebug;
 #define T_OFFSET 269
 #define T_SEGMENT 270
 #define T_SEGMENTS 271
-#define T_SYMBOL 272
-#define T_SYMBOLS 273
-#define T_ESYMBOLS 274
-#define T_TYPE 275
-#define T_LS 276
-#define T_SG 277
-#define T_L 278
-#define T_G 279
-#define T_CODE 280
-#define T_STRING 281
-#define T_NUMBER 282
+#define T_SIZE 272
+#define T_SYMBOL 273
+#define T_SYMBOLS 274
+#define T_ESYMBOLS 275
+#define T_TYPE 276
+#define T_LS 277
+#define T_SG 278
+#define T_L 279
+#define T_G 280
+#define T_CODE 281
+#define T_STRING 282
+#define T_NUMBER 283
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -189,20 +191,20 @@ union YYSTYPE
 {
 #line 14 "readclofparse.y"
 
-    char *s;
-    int i;
-    struct {
-	int size;
-	int escapes;
-	Dword *bin;
-    } code;
-    struct Segment seg;
-    struct Label sym;
-    struct MyDebug di;
-    struct DebugFile df;
-    struct DebugInfo dl;
+  char *s;
+  int i;
+  struct {
+    int size;
+    //	int escapes;
+    Dword *bin;
+  } code;
+  struct Segment seg;
+  struct Label sym;
+  struct MyDebug di;
+  struct DebugFile df;
+  struct DebugInfo dl;
 
-#line 206 "readclofparse.c"
+#line 208 "readclofparse.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -239,39 +241,41 @@ enum yysymbol_kind_t
   YYSYMBOL_T_OFFSET = 14,                  /* T_OFFSET  */
   YYSYMBOL_T_SEGMENT = 15,                 /* T_SEGMENT  */
   YYSYMBOL_T_SEGMENTS = 16,                /* T_SEGMENTS  */
-  YYSYMBOL_T_SYMBOL = 17,                  /* T_SYMBOL  */
-  YYSYMBOL_T_SYMBOLS = 18,                 /* T_SYMBOLS  */
-  YYSYMBOL_T_ESYMBOLS = 19,                /* T_ESYMBOLS  */
-  YYSYMBOL_T_TYPE = 20,                    /* T_TYPE  */
-  YYSYMBOL_T_LS = 21,                      /* T_LS  */
-  YYSYMBOL_T_SG = 22,                      /* T_SG  */
-  YYSYMBOL_T_L = 23,                       /* T_L  */
-  YYSYMBOL_T_G = 24,                       /* T_G  */
-  YYSYMBOL_T_CODE = 25,                    /* T_CODE  */
-  YYSYMBOL_T_STRING = 26,                  /* T_STRING  */
-  YYSYMBOL_T_NUMBER = 27,                  /* T_NUMBER  */
-  YYSYMBOL_28_ = 28,                       /* '='  */
-  YYSYMBOL_29_ = 29,                       /* '"'  */
-  YYSYMBOL_YYACCEPT = 30,                  /* $accept  */
-  YYSYMBOL_module = 31,                    /* module  */
-  YYSYMBOL_exetype = 32,                   /* exetype  */
-  YYSYMBOL_sec_segments = 33,              /* sec_segments  */
-  YYSYMBOL_segments = 34,                  /* segments  */
-  YYSYMBOL_segment = 35,                   /* segment  */
-  YYSYMBOL_36_1 = 36,                      /* $@1  */
-  YYSYMBOL_seg_attribs = 37,               /* seg_attribs  */
-  YYSYMBOL_sec_symbols = 38,               /* sec_symbols  */
-  YYSYMBOL_symbols = 39,                   /* symbols  */
-  YYSYMBOL_symbol = 40,                    /* symbol  */
-  YYSYMBOL_sym_attribs = 41,               /* sym_attribs  */
-  YYSYMBOL_bins = 42,                      /* bins  */
-  YYSYMBOL_bin = 43,                       /* bin  */
-  YYSYMBOL_bin_attribs = 44,               /* bin_attribs  */
-  YYSYMBOL_debuginfo = 45,                 /* debuginfo  */
-  YYSYMBOL_debugfile = 46,                 /* debugfile  */
-  YYSYMBOL_debuglines = 47,                /* debuglines  */
-  YYSYMBOL_debugline = 48,                 /* debugline  */
-  YYSYMBOL_oq = 49                         /* oq  */
+  YYSYMBOL_T_SIZE = 17,                    /* T_SIZE  */
+  YYSYMBOL_T_SYMBOL = 18,                  /* T_SYMBOL  */
+  YYSYMBOL_T_SYMBOLS = 19,                 /* T_SYMBOLS  */
+  YYSYMBOL_T_ESYMBOLS = 20,                /* T_ESYMBOLS  */
+  YYSYMBOL_T_TYPE = 21,                    /* T_TYPE  */
+  YYSYMBOL_T_LS = 22,                      /* T_LS  */
+  YYSYMBOL_T_SG = 23,                      /* T_SG  */
+  YYSYMBOL_T_L = 24,                       /* T_L  */
+  YYSYMBOL_T_G = 25,                       /* T_G  */
+  YYSYMBOL_T_CODE = 26,                    /* T_CODE  */
+  YYSYMBOL_T_STRING = 27,                  /* T_STRING  */
+  YYSYMBOL_T_NUMBER = 28,                  /* T_NUMBER  */
+  YYSYMBOL_29_ = 29,                       /* '='  */
+  YYSYMBOL_30_ = 30,                       /* '"'  */
+  YYSYMBOL_YYACCEPT = 31,                  /* $accept  */
+  YYSYMBOL_module = 32,                    /* module  */
+  YYSYMBOL_exetype = 33,                   /* exetype  */
+  YYSYMBOL_sec_segments = 34,              /* sec_segments  */
+  YYSYMBOL_segments = 35,                  /* segments  */
+  YYSYMBOL_segment = 36,                   /* segment  */
+  YYSYMBOL_37_1 = 37,                      /* $@1  */
+  YYSYMBOL_seg_attribs = 38,               /* seg_attribs  */
+  YYSYMBOL_sec_symbols = 39,               /* sec_symbols  */
+  YYSYMBOL_symbols = 40,                   /* symbols  */
+  YYSYMBOL_symbol = 41,                    /* symbol  */
+  YYSYMBOL_sym_attribs = 42,               /* sym_attribs  */
+  YYSYMBOL_bins = 43,                      /* bins  */
+  YYSYMBOL_bin = 44,                       /* bin  */
+  YYSYMBOL_bin_segno = 45,                 /* bin_segno  */
+  YYSYMBOL_bin_segsize = 46,               /* bin_segsize  */
+  YYSYMBOL_debuginfo = 47,                 /* debuginfo  */
+  YYSYMBOL_debugfile = 48,                 /* debugfile  */
+  YYSYMBOL_debuglines = 49,                /* debuglines  */
+  YYSYMBOL_debugline = 50,                 /* debugline  */
+  YYSYMBOL_oq = 51                         /* oq  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -599,19 +603,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  6
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   115
+#define YYLAST   122
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  30
+#define YYNTOKENS  31
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  20
+#define YYNNTS  21
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  39
+#define YYNRULES  40
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  135
+#define YYNSTATES  141
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   282
+#define YYMAXUTOK   283
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -628,10 +632,10 @@ static const yytype_int8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,    29,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,    30,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    28,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,    29,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -653,17 +657,18 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27
+      25,    26,    27,    28
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    67,    67,    75,    76,    79,    82,    83,    86,    86,
-      93,    94,    95,    96,    97,    98,   101,   102,   105,   106,
-     109,   112,   113,   114,   115,   116,   117,   118,   121,   122,
-     125,   133,   136,   141,   144,   148,   156,   159,   163,   163
+       0,    68,    68,    77,    78,    81,    84,    85,    88,    88,
+      95,    96,    97,    98,    99,   100,   103,   104,   107,   108,
+     111,   114,   115,   116,   117,   118,   119,   120,   123,   124,
+     127,   136,   138,   140,   145,   148,   152,   160,   163,   167,
+     167
 };
 #endif
 
@@ -682,12 +687,12 @@ static const char *const yytname[] =
   "\"end of file\"", "error", "\"invalid token\"", "T_BIN", "T_CLOFEXE",
   "T_CLEFEXE", "T_CODESTAR", "T_DEFINED", "T_FILE", "T_GLOBAL", "T_ID",
   "T_LINE", "T_LINENO", "T_NAME", "T_OFFSET", "T_SEGMENT", "T_SEGMENTS",
-  "T_SYMBOL", "T_SYMBOLS", "T_ESYMBOLS", "T_TYPE", "T_LS", "T_SG", "T_L",
-  "T_G", "T_CODE", "T_STRING", "T_NUMBER", "'='", "'\"'", "$accept",
-  "module", "exetype", "sec_segments", "segments", "segment", "$@1",
-  "seg_attribs", "sec_symbols", "symbols", "symbol", "sym_attribs", "bins",
-  "bin", "bin_attribs", "debuginfo", "debugfile", "debuglines",
-  "debugline", "oq", YY_NULLPTR
+  "T_SIZE", "T_SYMBOL", "T_SYMBOLS", "T_ESYMBOLS", "T_TYPE", "T_LS",
+  "T_SG", "T_L", "T_G", "T_CODE", "T_STRING", "T_NUMBER", "'='", "'\"'",
+  "$accept", "module", "exetype", "sec_segments", "segments", "segment",
+  "$@1", "seg_attribs", "sec_symbols", "symbols", "symbol", "sym_attribs",
+  "bins", "bin", "bin_segno", "bin_segsize", "debuginfo", "debugfile",
+  "debuglines", "debugline", "oq", YY_NULLPTR
 };
 
 static const char *
@@ -711,20 +716,21 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-     -10,    19,    17,   -57,   -57,     4,   -57,    -3,    16,    23,
-      13,    20,   -57,   -57,   -57,    -7,    -2,   -15,    19,    42,
-     -57,    34,    37,   -57,    29,    39,   -57,    30,    43,    35,
-     -57,   -57,   -57,   -57,    32,    38,   -57,     5,    33,    36,
-      41,    40,    44,    45,    47,   -57,    49,    50,    51,    52,
-      53,    54,   -57,   -57,    56,    46,    36,    36,    55,    36,
-     -57,    36,    36,    36,    57,    36,    36,    36,    58,    60,
-      61,    -4,    62,    10,    63,    64,    65,    31,    66,    67,
-     -57,    71,    36,    36,    68,    69,    36,    48,    77,   -57,
-      36,    36,    36,    70,    36,    36,   -57,   -57,   -57,   -57,
-     -57,   -57,    72,    87,   -57,   -57,   -57,   -57,   -57,   -57,
-     -57,    73,    74,    76,    75,    81,   -57,    28,    98,    59,
-     -57,    83,    94,   -57,    82,    36,    84,    36,    97,    85,
-      36,    88,    36,    90,   -57
+     -20,    15,    17,   -57,   -57,     7,   -57,     3,    20,    22,
+      23,    24,   -57,   -57,   -57,    -8,     1,   -14,    15,    42,
+     -57,    38,    40,   -57,    28,    39,   -57,    31,    43,    34,
+     -57,   -57,   -57,   -57,    32,    45,   -57,     8,    37,    33,
+      35,    41,    36,    44,    47,    49,   -57,    50,    52,    54,
+      55,    56,    57,   -57,   -57,    46,    33,    61,    33,    33,
+      58,    33,   -57,    33,    33,    33,    59,    33,    33,    33,
+      62,    48,    63,    64,    -5,    65,     2,    66,    67,    68,
+      70,    71,    72,   -57,    33,    69,    33,    33,    73,    74,
+      33,    53,    90,   -57,    33,    33,    33,    75,    33,    33,
+     -57,    76,   -57,   -57,   -57,   -57,   -57,    77,    93,   -57,
+     -57,   -57,   -57,   -57,   -57,   -57,   -57,    78,    79,    81,
+      80,    86,   -57,    13,   104,    60,   -57,    88,   100,   -57,
+      87,    33,    89,    33,   103,    91,    33,    94,    33,    95,
+     -57
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -735,31 +741,34 @@ static const yytype_int8 yydefact[] =
        0,     0,     0,     3,     4,     0,     1,     0,     0,    17,
        0,     0,    29,     7,    19,     0,     0,     0,     0,     0,
       28,     0,     0,     6,     0,     0,    18,     0,     0,     0,
-      15,    16,    27,     2,     0,     0,     5,     0,     0,    39,
-       0,     0,     0,     0,     0,     8,     0,     0,     0,     0,
-       0,     0,    20,    38,     0,     0,    39,    39,     0,    39,
-      33,    39,    39,    39,     0,    39,    39,    39,     0,     0,
+      15,    16,    27,     2,     0,     0,     5,     0,     0,    40,
+       0,     0,     0,     0,     0,     0,     8,     0,     0,     0,
+       0,     0,     0,    20,    39,     0,    40,     0,    40,    40,
+       0,    40,    34,    40,    40,    40,     0,    40,    40,    40,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-      31,     0,    39,    39,     0,     0,    39,     0,     0,    32,
-      39,    39,    39,     0,    39,    39,    30,    12,    14,    11,
-      10,    13,     0,     0,    25,    26,    24,    21,    23,    22,
-       9,     0,     0,     0,     0,     0,    36,     0,     0,     0,
-      35,     0,     0,    34,     0,    39,     0,    39,     0,     0,
-      39,     0,    39,     0,    37
+       0,     0,     0,    31,    40,     0,    40,    40,     0,     0,
+      40,     0,     0,    33,    40,    40,    40,     0,    40,    40,
+      32,     0,    12,    14,    11,    10,    13,     0,     0,    25,
+      26,    24,    21,    23,    22,    30,     9,     0,     0,     0,
+       0,     0,    37,     0,     0,     0,    36,     0,     0,    35,
+       0,    40,     0,    40,     0,     0,    40,     0,    40,     0,
+      38
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -57,   -57,    96,   -57,   -57,   -57,   -57,   -57,   -57,   -57,
-     -57,   -57,   -57,   -57,   -57,   -57,   -57,   -57,   -57,   -56
+     -57,   -57,    51,   -57,   -57,   -57,   -57,   -57,   -57,   -57,
+     -57,   -57,   -57,   -57,   -57,   -57,   -57,   -57,   -57,   -57,
+     -56
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     2,     5,     9,    16,    23,    60,    37,    12,    17,
-      26,    38,    15,    20,    35,    73,    89,   117,   120,    54
+       0,     2,     5,     9,    16,    23,    62,    37,    12,    17,
+      26,    38,    15,    20,    35,    41,    76,    93,   123,   126,
+      55
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -767,63 +776,67 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      69,    70,    84,    72,    24,    74,    75,    76,    25,    78,
-      79,    80,    41,     1,    18,    42,    19,     6,    43,    21,
-       8,    22,    85,     3,     4,    44,    97,    98,     7,    45,
-     101,    87,    10,    88,   104,   105,   106,    13,   108,   109,
-      46,    11,    47,    48,    14,    28,    49,    50,    51,   118,
-      29,   119,    30,    31,    33,    52,    32,    93,    34,    36,
-      39,    81,    40,   102,     0,    53,    55,    68,    56,   126,
-     122,   128,    57,    58,   131,    59,   133,    61,    62,    63,
-      64,    65,    66,    67,    71,   103,    77,    82,    83,    86,
-      90,    91,    92,    94,    95,    96,   110,    99,   100,   107,
-     111,   112,   114,   113,   115,   116,   121,   123,   124,   129,
-     125,   127,   134,   130,    27,   132
+      70,    88,    72,    73,     1,    75,    24,    77,    78,    79,
+      25,    81,    82,    83,    18,    42,    19,     6,    43,     3,
+       4,    44,    89,    21,    91,    22,    92,     8,   100,    45,
+     102,   103,     7,    46,   106,   124,    10,   125,   109,   110,
+     111,    11,   113,   114,    47,    28,    48,    49,    13,    14,
+      50,    51,    52,    31,    29,    30,    33,    32,    34,    36,
+      53,    39,    40,    54,    56,    58,    57,     0,   107,    27,
+      85,   128,   101,    59,    69,   132,    60,   134,    61,    63,
+     137,    64,   139,    65,    66,    67,    68,    71,    74,    80,
+      84,    86,    87,    90,    94,    95,    96,    97,   108,    98,
+      99,   115,   116,   104,   105,   112,   117,   118,   120,   119,
+     121,   122,   127,   129,   130,   135,   131,   133,   140,     0,
+     136,     0,   138
 };
 
 static const yytype_int16 yycheck[] =
 {
-      56,    57,     6,    59,    19,    61,    62,    63,    23,    65,
-      66,    67,     7,    23,    21,    10,    23,     0,    13,    21,
-      23,    23,    26,     4,     5,    20,    82,    83,    24,    24,
-      86,    21,    16,    23,    90,    91,    92,    24,    94,    95,
-       7,    18,     9,    10,    24,     3,    13,    14,    15,    21,
-      16,    23,    15,    24,    24,    22,    17,    26,    15,    24,
-      28,     3,    24,    15,    -1,    29,    25,    21,    28,   125,
-      11,   127,    28,    28,   130,    28,   132,    28,    28,    28,
-      28,    28,    28,    27,    29,     8,    29,    27,    27,    27,
-      27,    27,    27,    27,    27,    24,    24,    29,    29,    29,
-      13,    28,    26,    29,    29,    24,     8,    24,    14,    12,
-      28,    27,    22,    28,    18,    27
+      56,     6,    58,    59,    24,    61,    20,    63,    64,    65,
+      24,    67,    68,    69,    22,     7,    24,     0,    10,     4,
+       5,    13,    27,    22,    22,    24,    24,    24,    84,    21,
+      86,    87,    25,    25,    90,    22,    16,    24,    94,    95,
+      96,    19,    98,    99,     7,     3,     9,    10,    25,    25,
+      13,    14,    15,    25,    16,    15,    25,    18,    15,    25,
+      23,    29,    17,    30,    29,    29,    25,    -1,    15,    18,
+      22,    11,     3,    29,    28,   131,    29,   133,    29,    29,
+     136,    29,   138,    29,    29,    29,    29,    26,    30,    30,
+      28,    28,    28,    28,    28,    28,    28,    27,     8,    28,
+      28,    25,    25,    30,    30,    30,    13,    29,    27,    30,
+      30,    25,     8,    25,    14,    12,    29,    28,    23,    -1,
+      29,    -1,    28
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    23,    31,     4,     5,    32,     0,    24,    23,    33,
-      16,    18,    38,    24,    24,    42,    34,    39,    21,    23,
-      43,    21,    23,    35,    19,    23,    40,    32,     3,    16,
-      15,    24,    17,    24,    15,    44,    24,    37,    41,    28,
-      24,     7,    10,    13,    20,    24,     7,     9,    10,    13,
-      14,    15,    22,    29,    49,    25,    28,    28,    28,    28,
-      36,    28,    28,    28,    28,    28,    28,    27,    21,    49,
-      49,    29,    49,    45,    49,    49,    49,    29,    49,    49,
-      49,     3,    27,    27,     6,    26,    27,    21,    23,    46,
-      27,    27,    27,    26,    27,    27,    24,    49,    49,    29,
-      29,    49,    15,     8,    49,    49,    49,    29,    49,    49,
-      24,    13,    28,    29,    26,    29,    24,    47,    21,    23,
-      48,     8,    11,    24,    14,    28,    49,    27,    49,    12,
-      28,    49,    27,    49,    22
+       0,    24,    32,     4,     5,    33,     0,    25,    24,    34,
+      16,    19,    39,    25,    25,    43,    35,    40,    22,    24,
+      44,    22,    24,    36,    20,    24,    41,    33,     3,    16,
+      15,    25,    18,    25,    15,    45,    25,    38,    42,    29,
+      17,    46,     7,    10,    13,    21,    25,     7,     9,    10,
+      13,    14,    15,    23,    30,    51,    29,    25,    29,    29,
+      29,    29,    37,    29,    29,    29,    29,    29,    29,    28,
+      51,    26,    51,    51,    30,    51,    47,    51,    51,    51,
+      30,    51,    51,    51,    28,    22,    28,    28,     6,    27,
+      28,    22,    24,    48,    28,    28,    28,    27,    28,    28,
+      51,     3,    51,    51,    30,    30,    51,    15,     8,    51,
+      51,    51,    30,    51,    51,    25,    25,    13,    29,    30,
+      27,    30,    25,    49,    22,    24,    50,     8,    11,    25,
+      14,    29,    51,    28,    51,    12,    29,    51,    28,    51,
+      23
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    30,    31,    32,    32,    33,    34,    34,    36,    35,
-      37,    37,    37,    37,    37,    37,    38,    38,    39,    39,
-      40,    41,    41,    41,    41,    41,    41,    41,    42,    42,
-      43,    44,    45,    45,    46,    47,    47,    48,    49,    49
+       0,    31,    32,    33,    33,    34,    35,    35,    37,    36,
+      38,    38,    38,    38,    38,    38,    39,    39,    40,    40,
+      41,    42,    42,    42,    42,    42,    42,    42,    43,    43,
+      44,    45,    46,    47,    47,    48,    49,    49,    50,    51,
+      51
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
@@ -832,7 +845,8 @@ static const yytype_int8 yyr2[] =
        0,     2,     9,     1,     1,     7,     2,     0,     0,     9,
        6,     6,     6,     6,     6,     0,     5,     0,     2,     0,
        4,     6,     6,     6,     6,     6,     6,     0,     2,     0,
-       8,     5,     2,     0,    12,     2,     0,    13,     1,     0
+       9,     5,     5,     2,     0,    12,     2,     0,    13,     1,
+       0
 };
 
 
@@ -1296,193 +1310,201 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* module: T_L exetype T_G sec_segments sec_symbols bins T_LS exetype T_G  */
-#line 67 "readclofparse.y"
+#line 68 "readclofparse.y"
                                                                                {
-    if ((yyvsp[-7].i) != (yyvsp[-1].i)) {
-		yyerror ("opening tag does not match closing tag"); YYABORT;
-		}
-		modules[current_module].type = (yyvsp[-7].i);
-		}
-#line 1307 "readclofparse.c"
+  if ((yyvsp[-7].i) != (yyvsp[-1].i)) {
+    yyerror("opening tag does not match closing tag");
+    YYABORT;
+  }
+  modules[current_module].type = (yyvsp[-7].i);
+ }
+#line 1322 "readclofparse.c"
     break;
 
   case 3: /* exetype: T_CLOFEXE  */
-#line 75 "readclofparse.y"
+#line 77 "readclofparse.y"
                           { (yyval.i) = CLOF_EXE; }
-#line 1313 "readclofparse.c"
+#line 1328 "readclofparse.c"
     break;
 
   case 4: /* exetype: T_CLEFEXE  */
-#line 76 "readclofparse.y"
-                          { (yyval.i) = CLOF_BIN; }
-#line 1319 "readclofparse.c"
-    break;
-
-  case 8: /* $@1: %empty  */
-#line 86 "readclofparse.y"
-                                              { if (!newSegment (&((yyvsp[-1].seg)))) YYABORT;}
-#line 1325 "readclofparse.c"
-    break;
-
-  case 9: /* segment: T_L T_SEGMENT seg_attribs T_G $@1 debuginfo T_LS T_SEGMENT T_G  */
-#line 87 "readclofparse.y"
-                                             { 
-		    modules[current_module].st.segments[(yyvsp[-6].seg).id].nfiles = (yyvsp[-3].di).nfiles;
-		modules[current_module].st.segments[(yyvsp[-6].seg).id].files = (yyvsp[-3].di).files;
-		}
+#line 78 "readclofparse.y"
+                  { (yyval.i) = CLOF_BIN; }
 #line 1334 "readclofparse.c"
     break;
 
-  case 10: /* seg_attribs: seg_attribs T_NAME '=' '"' T_STRING '"'  */
-#line 93 "readclofparse.y"
-                                                             { (yyval.seg).name = (yyvsp[-1].s); }
+  case 8: /* $@1: %empty  */
+#line 88 "readclofparse.y"
+                                              { new_segment(&((yyvsp[-1].seg))); }
 #line 1340 "readclofparse.c"
     break;
 
+  case 9: /* segment: T_L T_SEGMENT seg_attribs T_G $@1 debuginfo T_LS T_SEGMENT T_G  */
+#line 89 "readclofparse.y"
+                             { 
+  modules[current_module].st.segments[(yyvsp[-6].seg).id].nfiles = (yyvsp[-3].di).nfiles;
+  modules[current_module].st.segments[(yyvsp[-6].seg).id].files = (yyvsp[-3].di).files;
+}
+#line 1349 "readclofparse.c"
+    break;
+
+  case 10: /* seg_attribs: seg_attribs T_NAME '=' '"' T_STRING '"'  */
+#line 95 "readclofparse.y"
+                                                             { (yyval.seg).name = (yyvsp[-1].s); }
+#line 1355 "readclofparse.c"
+    break;
+
   case 11: /* seg_attribs: seg_attribs T_NAME '=' '"' T_CODESTAR '"'  */
-#line 94 "readclofparse.y"
-                                                             { (yyval.seg).name = NULL; }
-#line 1346 "readclofparse.c"
+#line 96 "readclofparse.y"
+                                                     { (yyval.seg).name = NULL; }
+#line 1361 "readclofparse.c"
     break;
 
   case 12: /* seg_attribs: seg_attribs T_DEFINED '=' oq T_NUMBER oq  */
-#line 95 "readclofparse.y"
-                                                             { (yyval.seg).defined = (yyvsp[-1].i); }
-#line 1352 "readclofparse.c"
+#line 97 "readclofparse.y"
+                                                     { (yyval.seg).defined = (yyvsp[-1].i); }
+#line 1367 "readclofparse.c"
     break;
 
   case 13: /* seg_attribs: seg_attribs T_TYPE '=' oq T_NUMBER oq  */
-#line 96 "readclofparse.y"
-                                                             { (yyval.seg).type = (yyvsp[-1].i); }
-#line 1358 "readclofparse.c"
+#line 98 "readclofparse.y"
+                                                     { (yyval.seg).type = (yyvsp[-1].i); }
+#line 1373 "readclofparse.c"
     break;
 
   case 14: /* seg_attribs: seg_attribs T_ID '=' oq T_NUMBER oq  */
-#line 97 "readclofparse.y"
-                                                             { (yyval.seg).id = (yyvsp[-1].i); }
-#line 1364 "readclofparse.c"
+#line 99 "readclofparse.y"
+                                                     { (yyval.seg).id = (yyvsp[-1].i); }
+#line 1379 "readclofparse.c"
     break;
 
   case 15: /* seg_attribs: %empty  */
-#line 98 "readclofparse.y"
-                {}
-#line 1370 "readclofparse.c"
+#line 100 "readclofparse.y"
+        {}
+#line 1385 "readclofparse.c"
     break;
 
   case 20: /* symbol: T_L T_SYMBOL sym_attribs T_SG  */
-#line 109 "readclofparse.y"
-                                              { if (!newSymbol (&((yyvsp[-1].sym)))) YYABORT; }
-#line 1376 "readclofparse.c"
+#line 111 "readclofparse.y"
+                                              { new_symbol(&((yyvsp[-1].sym))); }
+#line 1391 "readclofparse.c"
     break;
 
   case 21: /* sym_attribs: sym_attribs T_NAME '=' '"' T_STRING '"'  */
-#line 112 "readclofparse.y"
+#line 114 "readclofparse.y"
                                                            { (yyval.sym).name = (yyvsp[-1].s);  }
-#line 1382 "readclofparse.c"
+#line 1397 "readclofparse.c"
     break;
 
   case 22: /* sym_attribs: sym_attribs T_SEGMENT '=' oq T_NUMBER oq  */
-#line 113 "readclofparse.y"
-                                                           { (yyval.sym).segment = (yyvsp[-1].i); }
-#line 1388 "readclofparse.c"
+#line 115 "readclofparse.y"
+                                                   { (yyval.sym).segment = (yyvsp[-1].i); }
+#line 1403 "readclofparse.c"
     break;
 
   case 23: /* sym_attribs: sym_attribs T_OFFSET '=' oq T_NUMBER oq  */
-#line 114 "readclofparse.y"
-                                                           { (yyval.sym).address = (yyvsp[-1].i); }
-#line 1394 "readclofparse.c"
+#line 116 "readclofparse.y"
+                                                   { (yyval.sym).address = (yyvsp[-1].i); }
+#line 1409 "readclofparse.c"
     break;
 
   case 24: /* sym_attribs: sym_attribs T_ID '=' oq T_NUMBER oq  */
-#line 115 "readclofparse.y"
-                                                           { (yyval.sym).id = (yyvsp[-1].i);      }
-#line 1400 "readclofparse.c"
+#line 117 "readclofparse.y"
+                                                   { (yyval.sym).id = (yyvsp[-1].i);      }
+#line 1415 "readclofparse.c"
     break;
 
   case 25: /* sym_attribs: sym_attribs T_DEFINED '=' oq T_NUMBER oq  */
-#line 116 "readclofparse.y"
-                                                           { (yyval.sym).defined = (yyvsp[-1].i); }
-#line 1406 "readclofparse.c"
+#line 118 "readclofparse.y"
+                                                   { (yyval.sym).defined = (yyvsp[-1].i); }
+#line 1421 "readclofparse.c"
     break;
 
   case 26: /* sym_attribs: sym_attribs T_GLOBAL '=' oq T_NUMBER oq  */
-#line 117 "readclofparse.y"
-                                                           { (yyval.sym).export = (yyvsp[-1].i);  }
-#line 1412 "readclofparse.c"
+#line 119 "readclofparse.y"
+                                                   { (yyval.sym).export = (yyvsp[-1].i);  }
+#line 1427 "readclofparse.c"
     break;
 
   case 27: /* sym_attribs: %empty  */
-#line 118 "readclofparse.y"
-                {}
-#line 1418 "readclofparse.c"
+#line 120 "readclofparse.y"
+        {}
+#line 1433 "readclofparse.c"
     break;
 
-  case 30: /* bin: T_L T_BIN bin_attribs T_G T_CODE T_LS T_BIN T_G  */
-#line 125 "readclofparse.y"
-                                                                { 
-		    modules[current_module].st.segments[(yyvsp[-5].i)].image_size = (yyvsp[-3].code).size; 
-		modules[current_module].st.segments[(yyvsp[-5].i)].escapes = (yyvsp[-3].code).escapes; 
-		modules[current_module].st.segments[(yyvsp[-5].i)].image = (yyvsp[-3].code).bin; 
-		modules[current_module].st.segments[(yyvsp[-5].i)].link_overhead = link_overhead; 
-		}
-#line 1429 "readclofparse.c"
-    break;
-
-  case 31: /* bin_attribs: T_SEGMENT '=' oq T_NUMBER oq  */
-#line 133 "readclofparse.y"
-                                             { (yyval.i) = (yyvsp[-1].i); }
-#line 1435 "readclofparse.c"
-    break;
-
-  case 32: /* debuginfo: debuginfo debugfile  */
-#line 136 "readclofparse.y"
-                                    { 
-		(yyval.di).nfiles = (yyvsp[-1].di).nfiles + 1; 
-		(yyval.di).files = safe_realloc ((yyvsp[-1].di).files, sizeof (struct DebugFile) *  (yyval.di).nfiles); 
-		(yyval.di).files[(yyval.di).nfiles - 1] = (yyvsp[0].df);
-		}
+  case 30: /* bin: T_L T_BIN bin_segno bin_segsize T_G T_CODE T_LS T_BIN T_G  */
+#line 127 "readclofparse.y"
+                                                                          { 
+  modules[current_module].st.segments[(yyvsp[-6].i)].code_size = (yyvsp[-5].i); 
+  modules[current_module].st.segments[(yyvsp[-6].i)].image_size = (yyvsp[-3].code).size; 
+  //  modules[current_module].st.segments[$3].escapes = $6.escapes; 
+  modules[current_module].st.segments[(yyvsp[-6].i)].image = (yyvsp[-3].code).bin; 
+  //  modules[current_module].st.segments[$3].link_overhead = link_overhead; 
+}
 #line 1445 "readclofparse.c"
     break;
 
-  case 33: /* debuginfo: %empty  */
-#line 141 "readclofparse.y"
-          { 	(yyval.di).nfiles = 0;  (yyval.di).files = NULL; }
+  case 31: /* bin_segno: T_SEGMENT '=' oq T_NUMBER oq  */
+#line 136 "readclofparse.y"
+                                             { (yyval.i) = (yyvsp[-1].i); }
 #line 1451 "readclofparse.c"
     break;
 
-  case 34: /* debugfile: T_L T_FILE T_NAME '=' '"' T_STRING '"' T_G debuglines T_LS T_FILE T_G  */
-#line 145 "readclofparse.y"
-                { (yyval.df) = (yyvsp[-3].df); (yyval.df).file = (yyvsp[-6].s); }
+  case 32: /* bin_segsize: T_SIZE '=' oq T_NUMBER oq  */
+#line 138 "readclofparse.y"
+                                          { (yyval.i) = (yyvsp[-1].i); }
 #line 1457 "readclofparse.c"
     break;
 
-  case 35: /* debuglines: debuglines debugline  */
-#line 148 "readclofparse.y"
+  case 33: /* debuginfo: debuginfo debugfile  */
+#line 140 "readclofparse.y"
+                                    { 
+  (yyval.di).nfiles = (yyvsp[-1].di).nfiles + 1; 
+  (yyval.di).files = safe_realloc((yyvsp[-1].di).files, sizeof(struct DebugFile) * (yyval.di).nfiles); 
+  (yyval.di).files[(yyval.di).nfiles - 1] = (yyvsp[0].df);
+}
+#line 1467 "readclofparse.c"
+    break;
+
+  case 34: /* debuginfo: %empty  */
+#line 145 "readclofparse.y"
+  { (yyval.di).nfiles = 0; (yyval.di).files = NULL; }
+#line 1473 "readclofparse.c"
+    break;
+
+  case 35: /* debugfile: T_L T_FILE T_NAME '=' '"' T_STRING '"' T_G debuglines T_LS T_FILE T_G  */
+#line 149 "readclofparse.y"
+{ (yyval.df) = (yyvsp[-3].df); (yyval.df).file = (yyvsp[-6].s); }
+#line 1479 "readclofparse.c"
+    break;
+
+  case 36: /* debuglines: debuglines debugline  */
+#line 152 "readclofparse.y"
                                      {
-		if ((yyval.df).nlines_inuse >= (yyval.df).nlines) {
-		(yyval.df).nlines = (yyval.df).nlines + IMAGE_CHUNK;
-		(yyval.df).flines = safe_realloc ((yyval.df).flines, (yyval.df).nlines * sizeof (struct DebugInfo));
-		}
-		(yyval.df).flines[(yyval.df).nlines_inuse] = (yyvsp[0].dl);
-		(yyval.df).nlines_inuse = (yyval.df).nlines_inuse + 1;
-		}
-#line 1470 "readclofparse.c"
+  if ((yyval.df).nlines_inuse >= (yyval.df).nlines) {
+    (yyval.df).nlines = (yyval.df).nlines + IMAGE_CHUNK;
+    (yyval.df).flines = safe_realloc((yyval.df).flines, (yyval.df).nlines * sizeof(struct DebugInfo));
+  }
+  (yyval.df).flines[(yyval.df).nlines_inuse] = (yyvsp[0].dl);
+  (yyval.df).nlines_inuse = (yyval.df).nlines_inuse + 1;
+}
+#line 1492 "readclofparse.c"
     break;
 
-  case 36: /* debuglines: %empty  */
-#line 156 "readclofparse.y"
-                {(yyval.df).nlines = (yyval.df).nlines_inuse = 0; (yyval.df).flines = NULL; }
-#line 1476 "readclofparse.c"
-    break;
-
-  case 37: /* debugline: T_L T_LINE T_OFFSET '=' oq T_NUMBER oq T_LINENO '=' oq T_NUMBER oq T_SG  */
+  case 37: /* debuglines: %empty  */
 #line 160 "readclofparse.y"
-                { (yyval.dl).offset = (yyvsp[-7].i); (yyval.dl).line = (yyvsp[-2].i); }
-#line 1482 "readclofparse.c"
+  {(yyval.df).nlines = (yyval.df).nlines_inuse = 0; (yyval.df).flines = NULL; }
+#line 1498 "readclofparse.c"
+    break;
+
+  case 38: /* debugline: T_L T_LINE T_OFFSET '=' oq T_NUMBER oq T_LINENO '=' oq T_NUMBER oq T_SG  */
+#line 164 "readclofparse.y"
+{ (yyval.dl).offset = (yyvsp[-7].i); (yyval.dl).line = (yyvsp[-2].i); }
+#line 1504 "readclofparse.c"
     break;
 
 
-#line 1486 "readclofparse.c"
+#line 1508 "readclofparse.c"
 
       default: break;
     }
@@ -1675,50 +1697,40 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 165 "readclofparse.y"
+#line 169 "readclofparse.y"
 
 
-static int newSegment (struct Segment *s)
-{
-    if (modules[current_module].st.size <= s->id) {
-	modules[current_module].st.segments = safe_realloc (modules[current_module].st.segments, 
-						       (s->id + 1) * sizeof (struct Segment));
-	if (!modules[current_module].st.segments) {
-	    perror ("realloc");
-	    return 0;
-	}
-	modules[current_module].st.size = s->id + 1;
-    }
-    s->in_use = 1;
-    modules[current_module].st.segments[s->id] = *s;
-    modules[current_module].st.segments[s->id].module = current_module;
-
-    return 1;
+static void new_segment(struct Segment *s)
+{  
+  struct SegmentTable *st = &modules[current_module].st; 
+  if (st->size <= s->id) {
+    st->segments = safe_realloc(st->segments, 
+				(s->id + 1) * sizeof(struct Segment));
+    st->size = s->id + 1;
+  }
+  s->in_use = 1;
+  st->segments[s->id] = *s;
+  st->segments[s->id].module = current_module;
 }
 
-static int newSymbol (struct Label *s)
+static void new_symbol(struct Label *s)
 {
-    if (modules[current_module].lt.size <= s->id) {
-	modules[current_module].lt.labels = safe_realloc (modules[current_module].lt.labels, 
-						     (s->id + 1) * sizeof (struct Label));
-	if (!modules[current_module].lt.labels) {
-	    perror ("realloc");
-	    return 0;
-	}
-	modules[current_module].lt.size = s->id + 1;
-    }
-    s->in_use = 1;
-    modules[current_module].lt.labels[s->id] = *s;
-
-    return 1;
+  struct LabelTable *lt = &modules[current_module].lt;
+  if (lt->size <= s->id) {
+    lt->labels = safe_realloc(lt->labels, 
+			      (s->id + 1) * sizeof(struct Label));
+    lt->size = s->id + 1;
+  }
+  s->in_use = 1;
+  lt->labels[s->id] = *s;
 }
 
-void yyerror (char *s)
+void yyerror(char *s)
 {
-    fprintf (stderr, "%s:%d: %s\n", source[current_module], line_no, s);
+  fprintf(stderr, "%s:%d: %s\n", source[current_module], line_no, s);
 }
 
-int yywrap (void)
+int yywrap(void)
 {
-    return 1;
+  return 1;
 }

@@ -213,16 +213,16 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 83 "cas-yacc.y"
+#line 84 "cas-yacc.y"
 
-    char  *s;
-    Dword i;
-    struct {
-	int size;
-	Dword *data;
-    } v;
-    struct labelDef sym;
-    struct _Expression *expr;
+  char  *s;
+  Dword i;
+  struct {
+    int size;
+    Dword *data;
+  } v;
+  struct labelDef sym;
+  struct _Expression *expr;
 
 #line 228 "cas-yacc.h"
 

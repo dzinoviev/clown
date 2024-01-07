@@ -68,17 +68,18 @@ extern int yydebug;
     T_OFFSET = 269,                /* T_OFFSET  */
     T_SEGMENT = 270,               /* T_SEGMENT  */
     T_SEGMENTS = 271,              /* T_SEGMENTS  */
-    T_SYMBOL = 272,                /* T_SYMBOL  */
-    T_SYMBOLS = 273,               /* T_SYMBOLS  */
-    T_ESYMBOLS = 274,              /* T_ESYMBOLS  */
-    T_TYPE = 275,                  /* T_TYPE  */
-    T_LS = 276,                    /* T_LS  */
-    T_SG = 277,                    /* T_SG  */
-    T_L = 278,                     /* T_L  */
-    T_G = 279,                     /* T_G  */
-    T_CODE = 280,                  /* T_CODE  */
-    T_STRING = 281,                /* T_STRING  */
-    T_NUMBER = 282                 /* T_NUMBER  */
+    T_SIZE = 272,                  /* T_SIZE  */
+    T_SYMBOL = 273,                /* T_SYMBOL  */
+    T_SYMBOLS = 274,               /* T_SYMBOLS  */
+    T_ESYMBOLS = 275,              /* T_ESYMBOLS  */
+    T_TYPE = 276,                  /* T_TYPE  */
+    T_LS = 277,                    /* T_LS  */
+    T_SG = 278,                    /* T_SG  */
+    T_L = 279,                     /* T_L  */
+    T_G = 280,                     /* T_G  */
+    T_CODE = 281,                  /* T_CODE  */
+    T_STRING = 282,                /* T_STRING  */
+    T_NUMBER = 283                 /* T_NUMBER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -101,17 +102,18 @@ extern int yydebug;
 #define T_OFFSET 269
 #define T_SEGMENT 270
 #define T_SEGMENTS 271
-#define T_SYMBOL 272
-#define T_SYMBOLS 273
-#define T_ESYMBOLS 274
-#define T_TYPE 275
-#define T_LS 276
-#define T_SG 277
-#define T_L 278
-#define T_G 279
-#define T_CODE 280
-#define T_STRING 281
-#define T_NUMBER 282
+#define T_SIZE 272
+#define T_SYMBOL 273
+#define T_SYMBOLS 274
+#define T_ESYMBOLS 275
+#define T_TYPE 276
+#define T_LS 277
+#define T_SG 278
+#define T_L 279
+#define T_G 280
+#define T_CODE 281
+#define T_STRING 282
+#define T_NUMBER 283
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -119,20 +121,20 @@ union YYSTYPE
 {
 #line 14 "readclofparse.y"
 
-    char *s;
-    int i;
-    struct {
-	int size;
-	int escapes;
-	Dword *bin;
-    } code;
-    struct Segment seg;
-    struct Label sym;
-    struct MyDebug di;
-    struct DebugFile df;
-    struct DebugInfo dl;
+  char *s;
+  int i;
+  struct {
+    int size;
+    //	int escapes;
+    Dword *bin;
+  } code;
+  struct Segment seg;
+  struct Label sym;
+  struct MyDebug di;
+  struct DebugFile df;
+  struct DebugInfo dl;
 
-#line 136 "readclofparse.h"
+#line 138 "readclofparse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

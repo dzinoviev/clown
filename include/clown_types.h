@@ -20,10 +20,6 @@ typedef signed char cycle_t;
 
 #include "exceptions.h"
 
-/*
-typedef long unsigned       Uword;
-typedef   long signed       Dword;
-*/
 typedef      uint32_t       Uword;
 typedef       int32_t       Dword;
 typedef long long signed    DDword;

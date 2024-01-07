@@ -7,8 +7,8 @@ all: test clean
 %.clo: %.s
 	$(AS) -s $*
 
-example.clo: getsputs.clo stdio.clo
-	$(LD) -s getsputs.clo stdio.clo -o example.clo
+example.clo: main.clo stdio.clo
+	$(LD) -s main.clo stdio.clo -o example.clo
 
 example.cle: example.clo crt0.clo
 	$(LD) crt0.clo example.clo -o example.cle

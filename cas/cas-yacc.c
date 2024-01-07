@@ -75,81 +75,82 @@
 #include "cas.h"
 #include "registers.h"
 
-void yywarning (char *s);
-static void emit_expression (Expression *target);
-static void emit_displacement (int opc, Dword op1, Expression *dspl, Bit relative);
+void yywarning(char *s);
+static void emit_expression(Expression *target);
+static void emit_displacement(int opc, Dword op1, Expression *e, Bit relative);
 
- enum {ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS, ALIGNSEGMENT};
+enum {ARRAY_SIZE, INDIRECTION, SEGMENTINBIN, VARINDEX, BADUSEOFCS, ALIGNSEGMENT};
+
  static struct {
-     char *concise;
-     char *full;
-     int count;
+   char *concise;
+   char *full;
+   int count;
  } _errors[] = {
-     {
-	 "array size must be a positive constant...",
-	 "\n\tarray size must be an expression that evaluates to a positive "
-	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
-	 0
-     },
+   {
+     "array size must be a positive constant...",
+     "\n\tarray size must be an expression that evaluates to a positive "
+     "\n\tconstant and does not involve any symbols; e.g., 2+3",
+     0
+   },
 
-     {
-	 "invalid indirection...",
-	 "\n\tinvalid indirection: there must be a register name or an expression"
-	 "\n\tin the brackets, e.g., [%r0] or [lock+5]",
-	 0
-     },
+   {
+     "invalid indirection...",
+     "\n\tinvalid indirection: there must be a register name or an expression"
+     "\n\tin the brackets, e.g., [%r0] or [lock+5]",
+     0
+   },
 
-     {
-	 "named segment in s CLE module...",
-	 "\n\ta CLE module consists of one implicit anonymous segment;"
-	 "\n\tnamed segments are allowed only in CLO modules",
-	 0
-     },
+   {
+     "named segment in s CLE module...",
+     "\n\ta CLE module consists of one implicit anonymous segment;"
+     "\n\tnamed segments are allowed only in CLO modules",
+     0
+   },
 
-     {
-	 "byte access index must be a positive constant...",
-	 "\n\tbyte access index must be an expression that evaluates to a positive "
-	 "\n\tconstant and does not involve any symbols; e.g., 2+3",
-	 0
-     },
+   {
+     "byte access index must be a positive constant...",
+     "\n\tbyte access index must be an expression that evaluates to a positive "
+     "\n\tconstant and does not involve any symbols; e.g., 2+3",
+     0
+   },
 
-     {
-	 "%cs can be initialized only through CALL or JMP...",
-	 "\n\tit is not allowed to load a value into %cs with a MOV command:"
-	 "\n\tyou must use CALL or JMP instead",
-	 0
-     },
+   {
+     "%cs can be initialized only through CALL or JMP...",
+     "\n\tit is not allowed to load a value into %cs with a MOV command:"
+     "\n\tyou must use CALL or JMP instead",
+     0
+   },
 
-     {
-	 ".page or .align8 in the explicit segmentation mode...",
-	 "\n\tthe symbol will not be aligned to a page or 8-word boundary"
-	 "\n\tsegment bases are in general are not aligned:",
-	 0
-     },
+   {
+     ".page or .align8 in the explicit segmentation mode...",
+     "\n\tthe symbol will not be aligned to a page or 8-word boundary"
+     "\n\tsegment bases are in general are not aligned:",
+     0
+   },
 
-};
+ };
 
 #define MAX_ERROR 1024    
 int current_segment = DEFAULT_SEGMENT;
 static char error_buffer[MAX_ERROR];
 int success = 1;
 
-static void report (int severe, int id)
+static void report(int severe, int id)
 {
-    char *message;
-    if (_errors[id].count > 0)
-	message = _errors[id].concise;
-    else
-	message = _errors[id].full;
-    if (severe)
-	yyerror (message);
-    else
-	yywarning (message);
-    _errors[id].count++;
+  char *message;
+  if (_errors[id].count > 0)
+    message = _errors[id].concise;
+  else
+    message = _errors[id].full;
+  if (severe)
+    yyerror(message);
+  else
+    yywarning(message);
+  _errors[id].count++;
 }
 
 
-#line 153 "cas-yacc.c"
+#line 154 "cas-yacc.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -352,18 +353,18 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 83 "cas-yacc.y"
+#line 84 "cas-yacc.y"
 
-    char  *s;
-    Dword i;
-    struct {
-	int size;
-	Dword *data;
-    } v;
-    struct labelDef sym;
-    struct _Expression *expr;
+  char  *s;
+  Dword i;
+  struct {
+    int size;
+    Dword *data;
+  } v;
+  struct labelDef sym;
+  struct _Expression *expr;
 
-#line 367 "cas-yacc.c"
+#line 368 "cas-yacc.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -890,22 +891,22 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   191,   191,   191,   199,   200,   202,   214,   215,   216,
-     217,   220,   221,   222,   225,   226,   227,   228,   229,   230,
-     231,   232,   233,   234,   235,   236,   237,   238,   239,   240,
-     241,   244,   245,   248,   258,   261,   265,   269,   273,   277,
-     281,   285,   287,   295,   312,   312,   314,   314,   316,   317,
-     324,   326,   329,   334,   335,   341,   348,   357,   365,   367,
-     370,   374,   377,   381,   387,   390,   393,   407,   421,   424,
-     427,   430,   433,   436,   439,   445,   448,   451,   455,   459,
-     462,   466,   470,   473,   476,   478,   481,   484,   490,   504,
-     518,   520,   522,   524,   526,   528,   530,   532,   535,   540,
-     543,   546,   552,   557,   560,   566,   569,   572,   587,   590,
-     593,   599,   606,   615,   624,   627,   633,   636,   639,   642,
-     645,   651,   654,   660,   663,   666,   669,   675,   678,   681,
-     684,   687,   690,   693,   696,   699,   702,   705,   708,   711,
-     714,   717,   720,   723,   726,   728,   731,   734,   737,   740,
-     746,   749,   755,   760,   763,   766
+       0,   192,   192,   192,   199,   200,   202,   213,   214,   215,
+     216,   219,   220,   221,   224,   225,   226,   227,   228,   229,
+     230,   231,   232,   233,   234,   235,   236,   237,   238,   239,
+     240,   243,   244,   247,   257,   260,   264,   268,   272,   276,
+     280,   284,   286,   294,   311,   311,   313,   313,   315,   316,
+     323,   325,   328,   333,   334,   341,   349,   358,   366,   368,
+     371,   375,   378,   382,   388,   391,   394,   407,   420,   423,
+     426,   429,   432,   435,   438,   444,   447,   450,   454,   458,
+     461,   465,   469,   472,   475,   477,   480,   483,   489,   502,
+     515,   517,   519,   521,   523,   525,   527,   529,   532,   538,
+     541,   544,   550,   555,   558,   564,   567,   570,   584,   587,
+     590,   596,   603,   612,   621,   624,   630,   633,   636,   639,
+     642,   648,   651,   657,   660,   663,   666,   672,   675,   678,
+     681,   684,   687,   690,   693,   696,   699,   702,   705,   708,
+     711,   714,   717,   720,   723,   726,   729,   732,   735,   738,
+     744,   747,   753,   758,   761,   764
 };
 #endif
 
@@ -1790,1081 +1791,1072 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* $@1: %empty  */
-#line 191 "cas-yacc.y"
-              { if ((current_segment = begin_segment (SEG_DEFAULT, "code*")) == NOT_FOUND) {
-		      yyerror ("fatal error");
-		      YYABORT;
-		  } 
-              }
-#line 1800 "cas-yacc.c"
-    break;
-
-  case 3: /* program: $@1 lines  */
-#line 197 "cas-yacc.y"
-              { end_segment (offset); }
-#line 1806 "cas-yacc.c"
+#line 192 "cas-yacc.y"
+              {
+  if ((current_segment = begin_segment(SEG_DEFAULT, "code*")) == NOT_FOUND) {
+    yyerror("fatal error");
+    YYABORT;
+  }
+ }
+#line 1802 "cas-yacc.c"
     break;
 
   case 6: /* line: segtype T_SEGMENT  */
 #line 202 "cas-yacc.y"
                                 {
-              if (global_offset) {
-                  yyerror ("explicit segment definitions not allowed with non-zero entry point");
-                  YYABORT;
-              }
-		  end_segment (offset);
-		  if ((current_segment = begin_segment ((yyvsp[-1].i), (yyvsp[0].s))) == NOT_FOUND) {
-		      yyerror ("fatal error");
-		      YYABORT;
-		  }
-		  offset = 0;
-	      }
-#line 1823 "cas-yacc.c"
+  if (global_offset) {
+    yyerror("explicit segment definitions not allowed with non-zero entry point");
+    YYABORT;
+  }
+  if ((current_segment = begin_segment((yyvsp[-1].i), (yyvsp[0].s))) == NOT_FOUND) {
+    yyerror("fatal error");
+    YYABORT;
+  }
+  offset = 0;
+ }
+#line 1818 "cas-yacc.c"
     break;
 
   case 11: /* segtype: T_CODE  */
-#line 220 "cas-yacc.y"
+#line 219 "cas-yacc.y"
                      {(yyval.i) = SEG_CODE;}
-#line 1829 "cas-yacc.c"
+#line 1824 "cas-yacc.c"
     break;
 
   case 12: /* segtype: T_DATA  */
-#line 221 "cas-yacc.y"
+#line 220 "cas-yacc.y"
          {(yyval.i) = SEG_DATA;}
-#line 1835 "cas-yacc.c"
+#line 1830 "cas-yacc.c"
     break;
 
   case 13: /* segtype: T_CONST  */
-#line 222 "cas-yacc.y"
+#line 221 "cas-yacc.y"
           {(yyval.i) = SEG_CONST;}
-#line 1841 "cas-yacc.c"
+#line 1836 "cas-yacc.c"
     break;
 
   case 14: /* expression: T_NUMBER  */
-#line 225 "cas-yacc.y"
-                                             { (yyval.expr) = newConstant ((yyvsp[0].i)); }
-#line 1847 "cas-yacc.c"
+#line 224 "cas-yacc.y"
+                                 { (yyval.expr) = newConstant((yyvsp[0].i)); }
+#line 1842 "cas-yacc.c"
     break;
 
   case 15: /* expression: symbol  */
-#line 226 "cas-yacc.y"
-                                             { (yyval.expr) = newLabel ((yyvsp[0].i)); }
-#line 1853 "cas-yacc.c"
+#line 225 "cas-yacc.y"
+                                 { (yyval.expr) = newLabel((yyvsp[0].i)); }
+#line 1848 "cas-yacc.c"
     break;
 
   case 16: /* expression: '(' expression ')'  */
-#line 227 "cas-yacc.y"
-                                             { (yyval.expr) = (yyvsp[-1].expr); }
-#line 1859 "cas-yacc.c"
+#line 226 "cas-yacc.y"
+                                 { (yyval.expr) = (yyvsp[-1].expr); }
+#line 1854 "cas-yacc.c"
     break;
 
   case 17: /* expression: expression '+' expression  */
-#line 228 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('+', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1865 "cas-yacc.c"
+#line 227 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('+', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1860 "cas-yacc.c"
     break;
 
   case 18: /* expression: '-' expression  */
-#line 229 "cas-yacc.y"
-                                             { (yyval.expr) = do_math (C_UNARY_MIN, (yyvsp[0].expr), NULL); }
-#line 1871 "cas-yacc.c"
+#line 228 "cas-yacc.y"
+                                 { (yyval.expr) = do_math(C_UNARY_MIN, (yyvsp[0].expr), NULL); }
+#line 1866 "cas-yacc.c"
     break;
 
   case 19: /* expression: expression '-' expression  */
-#line 230 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('-', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1877 "cas-yacc.c"
+#line 229 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('-', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1872 "cas-yacc.c"
     break;
 
   case 20: /* expression: expression '*' expression  */
-#line 231 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('*', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1883 "cas-yacc.c"
+#line 230 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('*', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1878 "cas-yacc.c"
     break;
 
   case 21: /* expression: expression '/' expression  */
-#line 232 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('/', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1889 "cas-yacc.c"
+#line 231 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('/', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1884 "cas-yacc.c"
     break;
 
   case 22: /* expression: expression '%' expression  */
-#line 233 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('%', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1895 "cas-yacc.c"
+#line 232 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('%', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1890 "cas-yacc.c"
     break;
 
   case 23: /* expression: expression '^' expression  */
-#line 234 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('^', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1901 "cas-yacc.c"
+#line 233 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('^', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1896 "cas-yacc.c"
     break;
 
   case 24: /* expression: expression '&' expression  */
-#line 235 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('&', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1907 "cas-yacc.c"
+#line 234 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('&', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1902 "cas-yacc.c"
     break;
 
   case 25: /* expression: expression '|' expression  */
-#line 236 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('|', (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1913 "cas-yacc.c"
+#line 235 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('|', (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1908 "cas-yacc.c"
     break;
 
   case 26: /* expression: '!' expression  */
-#line 237 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('!', (yyvsp[0].expr), NULL); }
-#line 1919 "cas-yacc.c"
+#line 236 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('!', (yyvsp[0].expr), NULL); }
+#line 1914 "cas-yacc.c"
     break;
 
   case 27: /* expression: '~' expression  */
-#line 238 "cas-yacc.y"
-                                             { (yyval.expr) = do_math ('~', (yyvsp[0].expr), NULL); }
-#line 1925 "cas-yacc.c"
+#line 237 "cas-yacc.y"
+                                 { (yyval.expr) = do_math('~', (yyvsp[0].expr), NULL); }
+#line 1920 "cas-yacc.c"
     break;
 
   case 28: /* expression: expression T_LL expression  */
-#line 239 "cas-yacc.y"
-                                             { (yyval.expr) = do_math (C_LL, (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1931 "cas-yacc.c"
+#line 238 "cas-yacc.y"
+                                 { (yyval.expr) = do_math(C_LL, (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1926 "cas-yacc.c"
     break;
 
   case 29: /* expression: expression T_GG expression  */
-#line 240 "cas-yacc.y"
-                                             { (yyval.expr) = do_math (C_GG, (yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1937 "cas-yacc.c"
+#line 239 "cas-yacc.y"
+                                 { (yyval.expr) = do_math(C_GG, (yyvsp[-2].expr), (yyvsp[0].expr)); }
+#line 1932 "cas-yacc.c"
     break;
 
   case 30: /* expression: '(' error ')'  */
-#line 241 "cas-yacc.y"
-                                             { (yyval.expr) = NULL; yyerror ("malformed expression"); }
-#line 1943 "cas-yacc.c"
+#line 240 "cas-yacc.y"
+                                 { (yyval.expr) = NULL; yyerror("malformed expression"); }
+#line 1938 "cas-yacc.c"
     break;
 
   case 33: /* label: symdef T_LABEL  */
-#line 248 "cas-yacc.y"
+#line 247 "cas-yacc.y"
                              {
-                if (NOT_FOUND == add_label ((yyvsp[0].s), current_segment, offset, 
-				     (yyvsp[-1].sym).global, (yyvsp[-1].sym).align8)) {
-		    yyerror ("fatal error");
-		    YYABORT;
-		}
-            }
-#line 1955 "cas-yacc.c"
+  if (NOT_FOUND == add_label((yyvsp[0].s), current_segment, offset, 
+			     (yyvsp[-1].sym).global, (yyvsp[-1].sym).align8)) {
+    yyerror("fatal error");
+    YYABORT;
+  }
+ }
+#line 1950 "cas-yacc.c"
     break;
 
   case 34: /* symdef: T_GLOBAL  */
-#line 258 "cas-yacc.y"
+#line 257 "cas-yacc.y"
          { 
-    (yyval.sym).align8 = 0; (yyval.sym).global = 1;
+  (yyval.sym).align8 = 0; (yyval.sym).global = 1;
 }
-#line 1963 "cas-yacc.c"
+#line 1958 "cas-yacc.c"
     break;
 
   case 35: /* symdef: T_ALIGN8  */
-#line 261 "cas-yacc.y"
+#line 260 "cas-yacc.y"
            {
-    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
-    (yyval.sym).align8 = 1; (yyval.sym).global = 0;
+  if (current_segment != DEFAULT_SEGMENT) report(0, ALIGNSEGMENT);
+  (yyval.sym).align8 = 1; (yyval.sym).global = 0;
 }
-#line 1972 "cas-yacc.c"
+#line 1967 "cas-yacc.c"
     break;
 
   case 36: /* symdef: T_PAGE  */
-#line 265 "cas-yacc.y"
+#line 264 "cas-yacc.y"
            {
-    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
-    (yyval.sym).align8 = 2; (yyval.sym).global = 0; 
+  if (current_segment != DEFAULT_SEGMENT) report(0, ALIGNSEGMENT);
+  (yyval.sym).align8 = 2; (yyval.sym).global = 0; 
 }
-#line 1981 "cas-yacc.c"
+#line 1976 "cas-yacc.c"
     break;
 
   case 37: /* symdef: T_ALIGN8 T_GLOBAL  */
-#line 269 "cas-yacc.y"
+#line 268 "cas-yacc.y"
                     {
-    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
-    (yyval.sym).align8 = 1; (yyval.sym).global = 1;
+  if (current_segment != DEFAULT_SEGMENT) report(0, ALIGNSEGMENT);
+  (yyval.sym).align8 = 1; (yyval.sym).global = 1;
 }
-#line 1990 "cas-yacc.c"
+#line 1985 "cas-yacc.c"
     break;
 
   case 38: /* symdef: T_GLOBAL T_ALIGN8  */
-#line 273 "cas-yacc.y"
+#line 272 "cas-yacc.y"
                     {
-    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
-    (yyval.sym).align8 = 1; (yyval.sym).global = 1;
+  if (current_segment != DEFAULT_SEGMENT) report(0, ALIGNSEGMENT);
+  (yyval.sym).align8 = 1; (yyval.sym).global = 1;
 }
-#line 1999 "cas-yacc.c"
+#line 1994 "cas-yacc.c"
     break;
 
   case 39: /* symdef: T_PAGE T_GLOBAL  */
-#line 277 "cas-yacc.y"
+#line 276 "cas-yacc.y"
                   {
-    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
-    (yyval.sym).align8 = 2; (yyval.sym).global = 1;
+  if (current_segment != DEFAULT_SEGMENT) report(0, ALIGNSEGMENT);
+  (yyval.sym).align8 = 2; (yyval.sym).global = 1;
 }
-#line 2008 "cas-yacc.c"
+#line 2003 "cas-yacc.c"
     break;
 
   case 40: /* symdef: T_GLOBAL T_PAGE  */
-#line 281 "cas-yacc.y"
+#line 280 "cas-yacc.y"
                   {
-    if (current_segment != DEFAULT_SEGMENT) report (0, ALIGNSEGMENT);
-    (yyval.sym).align8 = 2; (yyval.sym).global = 1;
+  if (current_segment != DEFAULT_SEGMENT) report(0, ALIGNSEGMENT);
+  (yyval.sym).align8 = 2; (yyval.sym).global = 1;
 }
-#line 2017 "cas-yacc.c"
+#line 2012 "cas-yacc.c"
     break;
 
   case 41: /* symdef: %empty  */
-#line 285 "cas-yacc.y"
+#line 284 "cas-yacc.y"
   {(yyval.sym).global = (yyval.sym).align8 = 0; }
-#line 2023 "cas-yacc.c"
+#line 2018 "cas-yacc.c"
     break;
 
   case 42: /* datadef: T_DEFSTRING T_STRING  */
-#line 287 "cas-yacc.y"
+#line 286 "cas-yacc.y"
                                    {
-                char *s;
-		for (s = (yyvsp[0].s); *s; s++) {
-		    Dword d = *s;
-		    emit (d);
-		}
-                emit (0);
-	    }
-#line 2036 "cas-yacc.c"
+  char *s;
+  for (s = (yyvsp[0].s); *s; s++) {
+    Dword d = *s;
+    emit(d);
+  }
+  emit(0);
+}
+#line 2031 "cas-yacc.c"
     break;
 
   case 43: /* datadef: T_DEFWORD size opt_oparen values opt_cparen  */
-#line 295 "cas-yacc.y"
-                                                          {
-		int i;
-		if ((yyvsp[-3].i) < (yyvsp[-1].v).size) {
-		    sprintf (error_buffer, "%d initializers given, %"PRIi32" expected",
-			     (yyvsp[-1].v).size, (yyvsp[-3].i));
-		    yywarning (error_buffer);
-		    (yyvsp[-1].v).size = (yyvsp[-3].i);
-		}
-		for (i = 0; i < (yyvsp[-1].v).size; i += 2) {
-		  uint64_t e1 = (uint64_t)((yyvsp[-1].v).data[i]) << 32 >> 32;
-		  uint64_t e2 = (uint64_t)((yyvsp[-1].v).data[i + 1]) >> 32;
-		  emit_expression ((Expression*)(e1 + e2));
-		}
-		for (     ; i < (yyvsp[-3].i)     ; i++)
-		    emit (0);
-	    }
-#line 2057 "cas-yacc.c"
+#line 294 "cas-yacc.y"
+                                              {
+  int i;
+  if ((yyvsp[-3].i) < (yyvsp[-1].v).size) {
+    sprintf(error_buffer, "%d initializers given, %d expected",
+	    (yyvsp[-1].v).size, (yyvsp[-3].i));
+    yywarning(error_buffer);
+    (yyvsp[-1].v).size = (yyvsp[-3].i);
+  }
+  for (i = 0; i < (yyvsp[-1].v).size; i += 2) {
+    uint64_t e1 = (uint64_t)((yyvsp[-1].v).data[i]) << 32 >> 32;
+    uint64_t e2 = (uint64_t)((yyvsp[-1].v).data[i + 1]) >> 32;
+    emit_expression ((Expression*)(e1 + e2));
+  }
+  for (     ; i < (yyvsp[-3].i)     ; i++)
+    emit(0);
+}
+#line 2052 "cas-yacc.c"
     break;
 
   case 48: /* size: %empty  */
-#line 316 "cas-yacc.y"
+#line 315 "cas-yacc.y"
               {(yyval.i) = 1;}
-#line 2063 "cas-yacc.c"
+#line 2058 "cas-yacc.c"
     break;
 
   case 49: /* size: '[' expression ']'  */
-#line 317 "cas-yacc.y"
-                                 {
-		if ((yyvsp[-1].expr)->type != CONSTANT || (yyvsp[-1].expr)->detail.constant <= 0) {
-		    report (1, ARRAY_SIZE);
-		    (yyval.i) = 0;
-		} else
-		    (yyval.i) = (yyvsp[-1].expr)->detail.constant;
+#line 316 "cas-yacc.y"
+                     {
+  if ((yyvsp[-1].expr)->type != CONSTANT || (yyvsp[-1].expr)->detail.constant <= 0) {
+    report(1, ARRAY_SIZE);
+    (yyval.i) = 0;
+  } else
+    (yyval.i) = (yyvsp[-1].expr)->detail.constant;
 	    }
-#line 2075 "cas-yacc.c"
+#line 2070 "cas-yacc.c"
     break;
 
   case 50: /* size: '[' error ']'  */
-#line 324 "cas-yacc.y"
-                { (yyval.i) = -1;  yyerror ("malformed array size");}
-#line 2081 "cas-yacc.c"
+#line 323 "cas-yacc.y"
+                { (yyval.i) = -1;  yyerror("malformed array size");}
+#line 2076 "cas-yacc.c"
     break;
 
   case 51: /* expression_or_selector: expression  */
-#line 326 "cas-yacc.y"
+#line 325 "cas-yacc.y"
                                    {
-		(yyval.expr) = (yyvsp[0].expr);
-		}
-#line 2089 "cas-yacc.c"
+  (yyval.expr) = (yyvsp[0].expr);
+}
+#line 2084 "cas-yacc.c"
     break;
 
   case 52: /* expression_or_selector: segment  */
-#line 329 "cas-yacc.y"
-                      {
-		(yyval.expr) = newSelector (MK_SELECTOR ((yyvsp[0].i), 0, _LDT));
-	    }
-#line 2097 "cas-yacc.c"
+#line 328 "cas-yacc.y"
+          {
+  (yyval.expr) = newSelector(MK_SELECTOR((yyvsp[0].i), 0, _LDT));
+}
+#line 2092 "cas-yacc.c"
     break;
 
   case 53: /* values: %empty  */
-#line 334 "cas-yacc.y"
+#line 333 "cas-yacc.y"
               {(yyval.v).size = 0; (yyval.v).data = NULL;}
-#line 2103 "cas-yacc.c"
+#line 2098 "cas-yacc.c"
     break;
 
   case 54: /* values: expression_or_selector  */
-#line 335 "cas-yacc.y"
-                                     {
-		(yyval.v).data = safe_malloc (2 * sizeof (Dword)); 
-		(yyval.v).data[0] = (Dword)((int64_t)(yyvsp[0].expr) << 32 >> 32);
-		(yyval.v).data[1] = (Dword)((int64_t)(yyvsp[0].expr) >> 32);
-		(yyval.v).size = 2;
-	    }
-#line 2114 "cas-yacc.c"
+#line 334 "cas-yacc.y"
+                         {
+  (yyval.v).data = safe_malloc(2 * sizeof(Dword));
+  puts("foo");
+  (yyval.v).data[0] = (Uword)((int64_t)(yyvsp[0].expr) << 32 >> 32);
+  (yyval.v).data[1] = (Uword)((int64_t)(yyvsp[0].expr) >> 32);
+  (yyval.v).size = 2;
+}
+#line 2110 "cas-yacc.c"
     break;
 
   case 55: /* values: values ',' expression_or_selector  */
 #line 341 "cas-yacc.y"
-                                                { 
-		(yyval.v).data = safe_realloc ((yyval.v).data, ((yyval.v).size + 2) * sizeof (Dword)); 
-		(yyval.v).data[(yyval.v).size] = (Dword)((int64_t)(yyvsp[0].expr) << 32 >> 32);
-		(yyval.v).data[(yyval.v).size + 1] = (Dword)((int64_t)(yyvsp[0].expr) >> 32);
-		(yyval.v).size = (yyval.v).size + 2;
-	    }
-#line 2125 "cas-yacc.c"
+                                    { 
+  (yyval.v).data = safe_realloc((yyval.v).data, ((yyval.v).size + 2) * sizeof(Dword)); 
+  (yyval.v).data[(yyval.v).size] = (Uword)((int64_t)(yyvsp[0].expr) << 32 >> 32);
+  (yyval.v).data[(yyval.v).size + 1] = (Uword)((int64_t)(yyvsp[0].expr) >> 32);
+  puts("foo");
+  (yyval.v).size = (yyval.v).size + 2;
+}
+#line 2122 "cas-yacc.c"
     break;
 
   case 56: /* symbol: T_ADDRESS  */
-#line 348 "cas-yacc.y"
+#line 349 "cas-yacc.y"
                        {
-                int label = use_label ((yyvsp[0].s), current_segment);
-		if (NOT_FOUND == label) {
-		    yyerror ("fatal error");
-		    YYABORT;
-		}
-                (yyval.i) = label;
-            }
-#line 2138 "cas-yacc.c"
+  int label = use_label((yyvsp[0].s), current_segment);
+  if (NOT_FOUND == label) {
+    yyerror("fatal error");
+    YYABORT;
+  }
+  (yyval.i) = label;
+}
+#line 2135 "cas-yacc.c"
     break;
 
   case 57: /* segment: T_SEGMENT  */
-#line 357 "cas-yacc.y"
+#line 358 "cas-yacc.y"
                         {
-              (yyval.i) = lookup_segment ((yyvsp[0].s)); 
-	      if (NOT_FOUND == (yyval.i)) {
-		  yyerror ("fatal error");
-		  YYABORT;
-	      }
-	  }
-#line 2150 "cas-yacc.c"
+  (yyval.i) = lookup_segment((yyvsp[0].s)); 
+  if (NOT_FOUND == (yyval.i)) {
+    yyerror("fatal error");
+    YYABORT;
+  }
+}
+#line 2147 "cas-yacc.c"
     break;
 
   case 58: /* instruction: error instruction  */
-#line 366 "cas-yacc.y"
-              { yyerror ("unrecognized instruction, trying to recover"); }
-#line 2156 "cas-yacc.c"
+#line 367 "cas-yacc.y"
+{ yyerror("unrecognized instruction, trying to recover"); }
+#line 2153 "cas-yacc.c"
     break;
 
   case 59: /* instruction: T_ADD T_GREGISTER ',' T_GREGISTER  */
-#line 368 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (ADD, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2162 "cas-yacc.c"
+#line 369 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(ADD, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2159 "cas-yacc.c"
     break;
 
   case 60: /* instruction: T_ADD T_GREGISTER ',' expression  */
-#line 371 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (xADDI, (yyvsp[-2].i), 0));
-	      emit_expression ((yyvsp[0].expr));}
-#line 2169 "cas-yacc.c"
+#line 372 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(xADDI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));}
+#line 2166 "cas-yacc.c"
     break;
 
   case 61: /* instruction: T_AND T_GREGISTER ',' T_GREGISTER  */
-#line 375 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (AND, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2175 "cas-yacc.c"
+#line 376 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(AND, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2172 "cas-yacc.c"
     break;
 
   case 62: /* instruction: T_AND T_GREGISTER ',' expression  */
-#line 378 "cas-yacc.y"
-              {emit (BUILD_INSTRUCTION_A (xANDI, (yyvsp[-2].i), 0));
-		emit_expression ((yyvsp[0].expr));}
-#line 2182 "cas-yacc.c"
+#line 379 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(xANDI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));}
+#line 2179 "cas-yacc.c"
     break;
 
   case 63: /* instruction: T_CALL expression  */
-#line 382 "cas-yacc.y"
-              { 
-		  emit (BUILD_INSTRUCTION_A (xNCALL, 0, 0));
-		  emit_expression ((yyvsp[0].expr));
-              }
-#line 2191 "cas-yacc.c"
+#line 383 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xNCALL, 0, 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2188 "cas-yacc.c"
     break;
 
   case 64: /* instruction: T_CALL '[' T_GREGISTER ']'  */
-#line 388 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (NCALLX, (yyvsp[-1].i), 0));}
-#line 2197 "cas-yacc.c"
+#line 389 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(NCALLX, (yyvsp[-1].i), 0));}
+#line 2194 "cas-yacc.c"
     break;
 
   case 65: /* instruction: T_CALL '[' error ']'  */
-#line 391 "cas-yacc.y"
-              { report (1, INDIRECTION); }
-#line 2203 "cas-yacc.c"
+#line 392 "cas-yacc.y"
+{ report(1, INDIRECTION); }
+#line 2200 "cas-yacc.c"
     break;
 
   case 66: /* instruction: T_CALL segment ':' expression  */
-#line 394 "cas-yacc.y"
-              {
-		  Selector s = MK_SELECTOR ((yyvsp[-2].i), 0, _LDT); 
-		  /* the next instruction contains a segment selector 
-		     that must be adjusted if there is more than one module
-		     in the program */
-		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
-                      current_overhead++; /* NOT TESTED */
-                  }
-		  emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2220 "cas-yacc.c"
+#line 395 "cas-yacc.y"
+{
+  Selector s = MK_SELECTOR((yyvsp[-2].i), 0, _LDT); 
+  /* the next instruction contains a segment selector 
+     that must be adjusted if there is more than one module
+     in the program */
+  if (module_type == CLOF_EXE) {
+    store(FIX_SEGMENT); 
+  }
+  emit(BUILD_INSTRUCTION_C(xFCALL, 0, s));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2216 "cas-yacc.c"
     break;
 
   case 67: /* instruction: T_CALL segment  */
 #line 408 "cas-yacc.y"
-              {
-		  Selector s = MK_SELECTOR ((yyvsp[0].i), 0, _LDT); 
-		  /* the next instruction contains a segment selector 
-		     that must be adjusted if there is more than one module
-		     in the program */
-		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); 
-                      current_overhead++; /*NOT TESTED*/
-                  }
-		  emit (BUILD_INSTRUCTION_C (xFCALL, 0, s));
-		  emit_expression (NULL);
-	      }
-#line 2237 "cas-yacc.c"
+{
+  Selector s = MK_SELECTOR((yyvsp[0].i), 0, _LDT); 
+  /* the next instruction contains a segment selector 
+     that must be adjusted if there is more than one module
+     in the program */
+  if (module_type == CLOF_EXE) {
+    store(FIX_SEGMENT); 
+  }
+  emit(BUILD_INSTRUCTION_C(xFCALL, 0, s));
+  emit_expression(NULL);
+}
+#line 2232 "cas-yacc.c"
     break;
 
   case 68: /* instruction: T_CHIO expression  */
-#line 422 "cas-yacc.y"
-              { emit_displacement (CHIO, 0, (yyvsp[0].expr), 0); }
-#line 2243 "cas-yacc.c"
+#line 421 "cas-yacc.y"
+{ emit_displacement(CHIO, 0, (yyvsp[0].expr), 0); }
+#line 2238 "cas-yacc.c"
     break;
 
   case 69: /* instruction: T_CLC  */
-#line 425 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (CLC, 0, 0));}
-#line 2249 "cas-yacc.c"
+#line 424 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(CLC, 0, 0));}
+#line 2244 "cas-yacc.c"
     break;
 
   case 70: /* instruction: T_CLI  */
-#line 428 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (CLI, 0, 0));}
-#line 2255 "cas-yacc.c"
+#line 427 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(CLI, 0, 0));}
+#line 2250 "cas-yacc.c"
     break;
 
   case 71: /* instruction: T_CLRB T_GREGISTER ',' expression  */
-#line 431 "cas-yacc.y"
-              { emit_displacement (CLRBI, (yyvsp[-2].i), (yyvsp[0].expr), 0); /* CLRBI */ }
-#line 2261 "cas-yacc.c"
+#line 430 "cas-yacc.y"
+{ emit_displacement(CLRBI, (yyvsp[-2].i), (yyvsp[0].expr), 0); /* CLRBI */ }
+#line 2256 "cas-yacc.c"
     break;
 
   case 72: /* instruction: T_CLRB T_GREGISTER ',' T_GREGISTER  */
-#line 434 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (CLRB, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2267 "cas-yacc.c"
+#line 433 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(CLRB, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2262 "cas-yacc.c"
     break;
 
   case 73: /* instruction: T_CMP T_GREGISTER ',' T_GREGISTER  */
-#line 437 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (CMP, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2273 "cas-yacc.c"
+#line 436 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(CMP, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2268 "cas-yacc.c"
     break;
 
   case 74: /* instruction: T_CMP T_GREGISTER ',' expression  */
-#line 440 "cas-yacc.y"
-              { 
-		  emit (BUILD_INSTRUCTION_A (xCMPI, (yyvsp[-2].i), 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2282 "cas-yacc.c"
+#line 439 "cas-yacc.y"
+{ 
+  emit(BUILD_INSTRUCTION_A(xCMPI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2277 "cas-yacc.c"
     break;
 
   case 75: /* instruction: T_DEC T_GREGISTER  */
-#line 446 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (DEC, (yyvsp[0].i), 0));}
-#line 2288 "cas-yacc.c"
+#line 445 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(DEC, (yyvsp[0].i), 0));}
+#line 2283 "cas-yacc.c"
     break;
 
   case 76: /* instruction: T_DIV T_GREGISTER ',' T_GREGISTER  */
-#line 449 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (DIV, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2294 "cas-yacc.c"
+#line 448 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(DIV, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2289 "cas-yacc.c"
     break;
 
   case 77: /* instruction: T_DIV T_GREGISTER ',' expression  */
-#line 452 "cas-yacc.y"
-              {emit (BUILD_INSTRUCTION_A (xDIVI, (yyvsp[-2].i), 0));
-		emit_expression ((yyvsp[0].expr));}
-#line 2301 "cas-yacc.c"
+#line 451 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(xDIVI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));}
+#line 2296 "cas-yacc.c"
     break;
 
   case 78: /* instruction: T_DIV expression ',' T_GREGISTER  */
-#line 456 "cas-yacc.y"
-              {emit (BUILD_INSTRUCTION_A (xDIVJ, (yyvsp[0].i), 0));
-		emit_expression ((yyvsp[-2].expr));}
-#line 2308 "cas-yacc.c"
+#line 455 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(xDIVJ, (yyvsp[0].i), 0));
+  emit_expression((yyvsp[-2].expr));}
+#line 2303 "cas-yacc.c"
     break;
 
   case 79: /* instruction: T_REM T_GREGISTER ',' T_GREGISTER  */
-#line 460 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (REM, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2314 "cas-yacc.c"
+#line 459 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(REM, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2309 "cas-yacc.c"
     break;
 
   case 80: /* instruction: T_REM T_GREGISTER ',' expression  */
-#line 463 "cas-yacc.y"
-              {emit (BUILD_INSTRUCTION_A (xREMI, (yyvsp[-2].i), 0));
-		emit_expression ((yyvsp[0].expr));}
-#line 2321 "cas-yacc.c"
+#line 462 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(xREMI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));}
+#line 2316 "cas-yacc.c"
     break;
 
   case 81: /* instruction: T_REM expression ',' T_GREGISTER  */
-#line 467 "cas-yacc.y"
-              {emit (BUILD_INSTRUCTION_A (xREMJ, (yyvsp[0].i), 0));
-		emit_expression ((yyvsp[-2].expr));}
-#line 2328 "cas-yacc.c"
+#line 466 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(xREMJ, (yyvsp[0].i), 0));
+  emit_expression((yyvsp[-2].expr));}
+#line 2323 "cas-yacc.c"
     break;
 
   case 82: /* instruction: T_GETB T_GREGISTER ',' T_GREGISTER  */
-#line 471 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (GETB, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2334 "cas-yacc.c"
+#line 470 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(GETB, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2329 "cas-yacc.c"
     break;
 
   case 83: /* instruction: T_GETB T_GREGISTER ',' expression  */
-#line 474 "cas-yacc.y"
-              { emit_displacement (GETBI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2340 "cas-yacc.c"
+#line 473 "cas-yacc.y"
+{ emit_displacement(GETBI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2335 "cas-yacc.c"
     break;
 
   case 84: /* instruction: T_HLT  */
-#line 476 "cas-yacc.y"
-        {emit (BUILD_INSTRUCTION_A (HLT, 0, 0));}
-#line 2346 "cas-yacc.c"
+#line 475 "cas-yacc.y"
+        {emit(BUILD_INSTRUCTION_A(HLT, 0, 0));}
+#line 2341 "cas-yacc.c"
     break;
 
   case 85: /* instruction: T_IN T_GREGISTER ',' '?' expression  */
-#line 479 "cas-yacc.y"
-              { emit_displacement (IN, (yyvsp[-3].i), (yyvsp[0].expr), 0);}
-#line 2352 "cas-yacc.c"
+#line 478 "cas-yacc.y"
+{ emit_displacement(IN, (yyvsp[-3].i), (yyvsp[0].expr), 0);}
+#line 2347 "cas-yacc.c"
     break;
 
   case 86: /* instruction: T_INC T_GREGISTER  */
-#line 482 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (INC, (yyvsp[0].i), 0));}
-#line 2358 "cas-yacc.c"
+#line 481 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(INC, (yyvsp[0].i), 0));}
+#line 2353 "cas-yacc.c"
     break;
 
   case 87: /* instruction: T_JMP expression  */
-#line 485 "cas-yacc.y"
-              { 
-		  emit (BUILD_INSTRUCTION_A (xNJMP, 0, 0));
-		  emit_expression ((yyvsp[0].expr));
-              }
-#line 2367 "cas-yacc.c"
+#line 484 "cas-yacc.y"
+{ 
+  emit(BUILD_INSTRUCTION_A(xNJMP, 0, 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2362 "cas-yacc.c"
     break;
 
   case 88: /* instruction: T_JMP segment ':' expression  */
-#line 491 "cas-yacc.y"
-              {
-		  Selector s = MK_SELECTOR ((yyvsp[-2].i), 0, _LDT); 
-		  /* the next instruction contains a segment selector 
-		     that must be adjusted if there is more than one module
-		     in the program */
-		  if (module_type == CLOF_EXE) { /*NOT TESTED */
-		      emit_escape (FIX_SEGMENT);
-                      current_overhead++; 
-                  }
-		  emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2384 "cas-yacc.c"
+#line 490 "cas-yacc.y"
+{
+  Selector s = MK_SELECTOR((yyvsp[-2].i), 0, _LDT); 
+  /* the next instruction contains a segment selector 
+     that must be adjusted if there is more than one module
+     in the program */
+  if (module_type == CLOF_EXE) { /*NOT TESTED */
+    store(FIX_SEGMENT);
+  }
+  emit(BUILD_INSTRUCTION_C(xFJMP, 0, s));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2378 "cas-yacc.c"
     break;
 
   case 89: /* instruction: T_JMP segment  */
-#line 505 "cas-yacc.y"
-              {
-		  Selector s = MK_SELECTOR ((yyvsp[0].i), 0, _LDT); 
-		  /* the next instruction contains a segment selector 
-		     that must be adjusted if there is more than one module
-		     in the program */
-		  if (module_type == CLOF_EXE) { /*NOT TESTED */
-		      emit_escape (FIX_SEGMENT); 
-                      current_overhead++; 
-                  }
-		  emit (BUILD_INSTRUCTION_C (xFJMP, 0, s));
-		  emit_expression (NULL);
-	      }
-#line 2401 "cas-yacc.c"
+#line 503 "cas-yacc.y"
+{
+  Selector s = MK_SELECTOR((yyvsp[0].i), 0, _LDT); 
+  /* the next instruction contains a segment selector 
+     that must be adjusted if there is more than one module
+     in the program */
+  if (module_type == CLOF_EXE) { /*NOT TESTED */
+    store(FIX_SEGMENT); 
+  }
+  emit(BUILD_INSTRUCTION_C(xFJMP, 0, s));
+  emit_expression(NULL);
+}
+#line 2394 "cas-yacc.c"
     break;
 
   case 90: /* instruction: T_JNZ expression  */
-#line 519 "cas-yacc.y"
-              { emit_displacement (JNZ, 0, (yyvsp[0].expr), 1); }
-#line 2407 "cas-yacc.c"
+#line 516 "cas-yacc.y"
+{ emit_displacement(JNZ, 0, (yyvsp[0].expr), 1); }
+#line 2400 "cas-yacc.c"
     break;
 
   case 91: /* instruction: T_JZ expression  */
-#line 521 "cas-yacc.y"
-              { emit_displacement (JZ, 0, (yyvsp[0].expr), 1); }
-#line 2413 "cas-yacc.c"
+#line 518 "cas-yacc.y"
+{ emit_displacement(JZ, 0, (yyvsp[0].expr), 1); }
+#line 2406 "cas-yacc.c"
     break;
 
   case 92: /* instruction: T_JNC expression  */
-#line 523 "cas-yacc.y"
-              { emit_displacement (JNC, 0, (yyvsp[0].expr), 1); }
-#line 2419 "cas-yacc.c"
+#line 520 "cas-yacc.y"
+{ emit_displacement(JNC, 0, (yyvsp[0].expr), 1); }
+#line 2412 "cas-yacc.c"
     break;
 
   case 93: /* instruction: T_JC expression  */
-#line 525 "cas-yacc.y"
-              { emit_displacement (JC, 0, (yyvsp[0].expr), 1); }
-#line 2425 "cas-yacc.c"
+#line 522 "cas-yacc.y"
+{ emit_displacement(JC, 0, (yyvsp[0].expr), 1); }
+#line 2418 "cas-yacc.c"
     break;
 
   case 94: /* instruction: T_JNO expression  */
-#line 527 "cas-yacc.y"
-              { emit_displacement (JNO, 0, (yyvsp[0].expr), 1); }
-#line 2431 "cas-yacc.c"
+#line 524 "cas-yacc.y"
+{ emit_displacement(JNO, 0, (yyvsp[0].expr), 1); }
+#line 2424 "cas-yacc.c"
     break;
 
   case 95: /* instruction: T_JO expression  */
-#line 529 "cas-yacc.y"
-              { emit_displacement (JO, 0, (yyvsp[0].expr), 1); }
-#line 2437 "cas-yacc.c"
+#line 526 "cas-yacc.y"
+{ emit_displacement(JO, 0, (yyvsp[0].expr), 1); }
+#line 2430 "cas-yacc.c"
     break;
 
   case 96: /* instruction: T_JNS expression  */
-#line 531 "cas-yacc.y"
-              { emit_displacement (JNS, 0, (yyvsp[0].expr), 1); }
-#line 2443 "cas-yacc.c"
+#line 528 "cas-yacc.y"
+{ emit_displacement(JNS, 0, (yyvsp[0].expr), 1); }
+#line 2436 "cas-yacc.c"
     break;
 
   case 97: /* instruction: T_JS expression  */
-#line 533 "cas-yacc.y"
-              { emit_displacement (JS, 0, (yyvsp[0].expr), 1); }
-#line 2449 "cas-yacc.c"
+#line 530 "cas-yacc.y"
+{ emit_displacement(JS, 0, (yyvsp[0].expr), 1); }
+#line 2442 "cas-yacc.c"
     break;
 
   case 98: /* instruction: T_MOV T_GREGISTER ',' '[' expression ']'  */
-#line 536 "cas-yacc.y"
-              { 
-		  emit (BUILD_INSTRUCTION_A (xLD, (yyvsp[-4].i), 0));
-		  emit_expression ((yyvsp[-1].expr));
-              }
-#line 2458 "cas-yacc.c"
+#line 533 "cas-yacc.y"
+{ 
+  emit(BUILD_INSTRUCTION_A(xLD, (yyvsp[-4].i), 0));
+  emit_expression((yyvsp[-1].expr));
+}
+#line 2451 "cas-yacc.c"
     break;
 
   case 99: /* instruction: T_MOV T_GREGISTER ',' '[' error ']'  */
-#line 541 "cas-yacc.y"
-              { report (1, INDIRECTION); }
-#line 2464 "cas-yacc.c"
+#line 539 "cas-yacc.y"
+{ report(1, INDIRECTION); }
+#line 2457 "cas-yacc.c"
     break;
 
   case 100: /* instruction: T_MOV error ',' T_GREGISTER  */
-#line 544 "cas-yacc.y"
-              { yyerror ("Did you forget [] around the variable name?"); }
-#line 2470 "cas-yacc.c"
+#line 542 "cas-yacc.y"
+{ yyerror("Did you forget [] around the variable name?"); }
+#line 2463 "cas-yacc.c"
     break;
 
   case 101: /* instruction: T_MOV T_GREGISTER ',' expression  */
-#line 547 "cas-yacc.y"
-              {
-               emit (BUILD_INSTRUCTION_A (xLDI, (yyvsp[-2].i), 0));
-               emit_expression ((yyvsp[0].expr));
-	       }
-#line 2479 "cas-yacc.c"
+#line 545 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xLDI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2472 "cas-yacc.c"
     break;
 
   case 102: /* instruction: T_MOV '[' expression ']' ',' T_GREGISTER  */
-#line 553 "cas-yacc.y"
-              { 
-		  emit (BUILD_INSTRUCTION_A (xST, (yyvsp[0].i), 0));
-		  emit_expression ((yyvsp[-3].expr));
-              }
-#line 2488 "cas-yacc.c"
+#line 551 "cas-yacc.y"
+{ 
+  emit(BUILD_INSTRUCTION_A(xST, (yyvsp[0].i), 0));
+  emit_expression((yyvsp[-3].expr));
+}
+#line 2481 "cas-yacc.c"
     break;
 
   case 103: /* instruction: T_MOV '[' error ']' ',' T_GREGISTER  */
-#line 558 "cas-yacc.y"
-              { report (1, INDIRECTION); }
-#line 2494 "cas-yacc.c"
+#line 556 "cas-yacc.y"
+{ report(1, INDIRECTION); }
+#line 2487 "cas-yacc.c"
     break;
 
   case 104: /* instruction: T_MOV T_SREGISTER ',' T_GREGISTER  */
-#line 561 "cas-yacc.y"
-              {
-                  if ((yyvsp[-2].i)==_CODE) { report (1, BADUSEOFCS); YYABORT; }
-                  emit (BUILD_INSTRUCTION_A (MOVTS, (yyvsp[-2].i), (yyvsp[0].i)));
-              }
-#line 2503 "cas-yacc.c"
+#line 559 "cas-yacc.y"
+{
+  if ((yyvsp[-2].i)==_CODE) { report(1, BADUSEOFCS); YYABORT; }
+  emit(BUILD_INSTRUCTION_A(MOVTS, (yyvsp[-2].i), (yyvsp[0].i)));
+}
+#line 2496 "cas-yacc.c"
     break;
 
   case 105: /* instruction: T_MOV T_GREGISTER ',' T_SREGISTER  */
-#line 567 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (MOVFS, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2509 "cas-yacc.c"
+#line 565 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(MOVFS, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2502 "cas-yacc.c"
     break;
 
   case 106: /* instruction: T_MOV T_GREGISTER ',' T_GREGISTER  */
-#line 570 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (MOV, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2515 "cas-yacc.c"
+#line 568 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(MOV, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2508 "cas-yacc.c"
     break;
 
   case 107: /* instruction: T_MOV T_SREGISTER ',' segment  */
-#line 573 "cas-yacc.y"
-              {
-		  Selector s;
-                  if ((yyvsp[-2].i)==_CODE) { report (1, BADUSEOFCS); YYABORT; }
-		  s = MK_SELECTOR ((yyvsp[0].i), 0, _LDT); 
-		  /* the next instruction contains a segment selector 
-		     that must be adjusted if there is more than one module
-		     in the program */
-		  if (module_type == CLOF_EXE) {
-		      emit_escape (FIX_SEGMENT); /*NOT TESTED*/
-                      current_overhead++; 
-                  }
-		  emit (BUILD_INSTRUCTION_C (MOVSI, (yyvsp[-2].i), s)); /*WORKS*/
-	      }
-#line 2533 "cas-yacc.c"
+#line 571 "cas-yacc.y"
+{
+  Selector s;
+  if ((yyvsp[-2].i)==_CODE) { report(1, BADUSEOFCS); YYABORT; }
+  s = MK_SELECTOR((yyvsp[0].i), 0, _LDT); 
+  /* the next instruction contains a segment selector 
+     that must be adjusted if there is more than one module
+     in the program */
+  if (module_type == CLOF_EXE) {
+    store(FIX_SEGMENT); /*NOT TESTED*/
+  }
+  emit(BUILD_INSTRUCTION_C(MOVSI, (yyvsp[-2].i), s)); /*WORKS*/
+}
+#line 2525 "cas-yacc.c"
     break;
 
   case 108: /* instruction: T_MOV T_GREGISTER ',' '[' T_GREGISTER ']'  */
-#line 588 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (LDX, (yyvsp[-4].i), (yyvsp[-1].i)));}
-#line 2539 "cas-yacc.c"
+#line 585 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(LDX, (yyvsp[-4].i), (yyvsp[-1].i)));}
+#line 2531 "cas-yacc.c"
     break;
 
   case 109: /* instruction: T_MOV '[' T_GREGISTER ']' ',' T_GREGISTER  */
-#line 591 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (STX, (yyvsp[-3].i), (yyvsp[0].i)));}
-#line 2545 "cas-yacc.c"
+#line 588 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(STX, (yyvsp[-3].i), (yyvsp[0].i)));}
+#line 2537 "cas-yacc.c"
     break;
 
   case 110: /* instruction: T_MOV T_GREGISTER ',' '[' T_SREGISTER ':' expression ']'  */
-#line 594 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xLDS, (yyvsp[-6].i), (yyvsp[-3].i)));
-                  emit_expression ((yyvsp[-1].expr));
-	      }
-#line 2554 "cas-yacc.c"
+#line 591 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xLDS, (yyvsp[-6].i), (yyvsp[-3].i)));
+  emit_expression((yyvsp[-1].expr));
+}
+#line 2546 "cas-yacc.c"
     break;
 
   case 111: /* instruction: T_MOV '[' T_SREGISTER ':' expression ']' ',' T_GREGISTER  */
-#line 600 "cas-yacc.y"
-              {
-                  if ((yyvsp[-5].i)==_CODE) { report (1, BADUSEOFCS); YYABORT; }
-		  emit (BUILD_INSTRUCTION_A (xSTS, (yyvsp[-5].i), (yyvsp[0].i)));
-                  emit_expression ((yyvsp[-3].expr));
-	      }
-#line 2564 "cas-yacc.c"
+#line 597 "cas-yacc.y"
+{
+  if ((yyvsp[-5].i)==_CODE) { report(1, BADUSEOFCS); YYABORT; }
+  emit(BUILD_INSTRUCTION_A(xSTS, (yyvsp[-5].i), (yyvsp[0].i)));
+  emit_expression((yyvsp[-3].expr));
+}
+#line 2556 "cas-yacc.c"
     break;
 
   case 112: /* instruction: T_MOV T_GREGISTER '(' expression ')' ',' T_GREGISTER  */
-#line 607 "cas-yacc.y"
-              {
-		  if ((yyvsp[-3].expr)->type != CONSTANT) {
-		      report (1, VARINDEX);
-		  } else {
-		      emit (BUILD_INSTRUCTION_D (SETBY, (yyvsp[0].i), (yyvsp[-5].i), (yyvsp[-3].expr)->detail.constant));
-		  } /* SETBY */
-	      }
-#line 2576 "cas-yacc.c"
+#line 604 "cas-yacc.y"
+{
+  if ((yyvsp[-3].expr)->type != CONSTANT) {
+    report(1, VARINDEX);
+  } else {
+    emit(BUILD_INSTRUCTION_D(SETBY, (yyvsp[0].i), (yyvsp[-5].i), (yyvsp[-3].expr)->detail.constant));
+  } /* SETBY */
+}
+#line 2568 "cas-yacc.c"
     break;
 
   case 113: /* instruction: T_MOV T_GREGISTER ',' T_GREGISTER '(' expression ')'  */
-#line 616 "cas-yacc.y"
-              {
-		  if ((yyvsp[-1].expr)->type != CONSTANT) {
-		      report (1, VARINDEX);
-		  } else {
-		      emit (BUILD_INSTRUCTION_D (GETBY, (yyvsp[-5].i), (yyvsp[-3].i), (yyvsp[-1].expr)->detail.constant));
-		  } /* GETBY */
-	      }
-#line 2588 "cas-yacc.c"
+#line 613 "cas-yacc.y"
+{
+  if ((yyvsp[-1].expr)->type != CONSTANT) {
+    report(1, VARINDEX);
+  } else {
+    emit(BUILD_INSTRUCTION_D(GETBY, (yyvsp[-5].i), (yyvsp[-3].i), (yyvsp[-1].expr)->detail.constant));
+  } /* GETBY */
+}
+#line 2580 "cas-yacc.c"
     break;
 
   case 114: /* instruction: T_MUL T_GREGISTER ',' T_GREGISTER  */
-#line 625 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (MUL, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2594 "cas-yacc.c"
+#line 622 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(MUL, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2586 "cas-yacc.c"
     break;
 
   case 115: /* instruction: T_MUL T_GREGISTER ',' expression  */
-#line 628 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xMULI, (yyvsp[-2].i), 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2603 "cas-yacc.c"
+#line 625 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xMULI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2595 "cas-yacc.c"
     break;
 
   case 116: /* instruction: T_NEG T_GREGISTER  */
-#line 634 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (NEG, (yyvsp[0].i), 0));}
-#line 2609 "cas-yacc.c"
+#line 631 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(NEG, (yyvsp[0].i), 0));}
+#line 2601 "cas-yacc.c"
     break;
 
   case 117: /* instruction: T_NOP  */
-#line 637 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (NOP, 0, 0));}
-#line 2615 "cas-yacc.c"
+#line 634 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(NOP, 0, 0));}
+#line 2607 "cas-yacc.c"
     break;
 
   case 118: /* instruction: T_NOT T_GREGISTER  */
-#line 640 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (NOT, (yyvsp[0].i), 0));}
-#line 2621 "cas-yacc.c"
+#line 637 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(NOT, (yyvsp[0].i), 0));}
+#line 2613 "cas-yacc.c"
     break;
 
   case 119: /* instruction: T_OR T_GREGISTER ',' T_GREGISTER  */
-#line 643 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (OR, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2627 "cas-yacc.c"
+#line 640 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(OR, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2619 "cas-yacc.c"
     break;
 
   case 120: /* instruction: T_OR T_GREGISTER ',' expression  */
-#line 646 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xORI, (yyvsp[-2].i), 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2636 "cas-yacc.c"
+#line 643 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xORI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2628 "cas-yacc.c"
     break;
 
   case 121: /* instruction: T_OUT T_GREGISTER ',' '?' expression  */
-#line 652 "cas-yacc.y"
-              { emit_displacement (OUT, (yyvsp[-3].i), (yyvsp[0].expr), 0); }
-#line 2642 "cas-yacc.c"
+#line 649 "cas-yacc.y"
+{ emit_displacement(OUT, (yyvsp[-3].i), (yyvsp[0].expr), 0); }
+#line 2634 "cas-yacc.c"
     break;
 
   case 122: /* instruction: T_OUT expression ',' '?' expression  */
-#line 655 "cas-yacc.y"
-              { 
-		  emit_displacement (xOUTI, 0, (yyvsp[0].expr), 0); 
-		  emit_expression ((yyvsp[-3].expr));
-	      }
-#line 2651 "cas-yacc.c"
+#line 652 "cas-yacc.y"
+{ 
+  emit_displacement(xOUTI, 0, (yyvsp[0].expr), 0); 
+  emit_expression((yyvsp[-3].expr));
+}
+#line 2643 "cas-yacc.c"
     break;
 
   case 123: /* instruction: T_POP T_GREGISTER  */
-#line 661 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (POP, (yyvsp[0].i), 0));}
-#line 2657 "cas-yacc.c"
+#line 658 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(POP, (yyvsp[0].i), 0));}
+#line 2649 "cas-yacc.c"
     break;
 
   case 124: /* instruction: T_POPF  */
-#line 664 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (POPF, 0, 0));}
-#line 2663 "cas-yacc.c"
+#line 661 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(POPF, 0, 0));}
+#line 2655 "cas-yacc.c"
     break;
 
   case 125: /* instruction: T_PUSH T_GREGISTER  */
-#line 667 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (PUSH, (yyvsp[0].i), 0));}
-#line 2669 "cas-yacc.c"
+#line 664 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(PUSH, (yyvsp[0].i), 0));}
+#line 2661 "cas-yacc.c"
     break;
 
   case 126: /* instruction: T_PUSH expression  */
-#line 670 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xPUSHI, 0, 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2678 "cas-yacc.c"
+#line 667 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xPUSHI, 0, 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2670 "cas-yacc.c"
     break;
 
   case 127: /* instruction: T_PEEK T_GREGISTER ',' expression  */
-#line 676 "cas-yacc.y"
-              { emit_displacement (PEEK, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2684 "cas-yacc.c"
+#line 673 "cas-yacc.y"
+{ emit_displacement(PEEK, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2676 "cas-yacc.c"
     break;
 
   case 128: /* instruction: T_POKE T_GREGISTER ',' expression  */
-#line 679 "cas-yacc.y"
-              { emit_displacement (POKE, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2690 "cas-yacc.c"
+#line 676 "cas-yacc.y"
+{ emit_displacement(POKE, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2682 "cas-yacc.c"
     break;
 
   case 129: /* instruction: T_PUSHF  */
-#line 682 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (PUSHF, 0, 0));}
-#line 2696 "cas-yacc.c"
+#line 679 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(PUSHF, 0, 0));}
+#line 2688 "cas-yacc.c"
     break;
 
   case 130: /* instruction: T_RETN  */
-#line 685 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (NRET, 0, 0));}
-#line 2702 "cas-yacc.c"
+#line 682 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(NRET, 0, 0));}
+#line 2694 "cas-yacc.c"
     break;
 
   case 131: /* instruction: T_RETNI  */
-#line 688 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (INRET, 0, 0));}
-#line 2708 "cas-yacc.c"
+#line 685 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(INRET, 0, 0));}
+#line 2700 "cas-yacc.c"
     break;
 
   case 132: /* instruction: T_RETF  */
-#line 691 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (FRET, 0, 0));}
-#line 2714 "cas-yacc.c"
+#line 688 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(FRET, 0, 0));}
+#line 2706 "cas-yacc.c"
     break;
 
   case 133: /* instruction: T_RETFI  */
-#line 694 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (IFRET, 0, 0));}
-#line 2720 "cas-yacc.c"
+#line 691 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(IFRET, 0, 0));}
+#line 2712 "cas-yacc.c"
     break;
 
   case 134: /* instruction: T_ROL T_GREGISTER ',' T_GREGISTER  */
-#line 697 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (ROL, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2726 "cas-yacc.c"
+#line 694 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(ROL, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2718 "cas-yacc.c"
     break;
 
   case 135: /* instruction: T_ROL T_GREGISTER ',' expression  */
-#line 700 "cas-yacc.y"
-              { emit_displacement (ROLI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2732 "cas-yacc.c"
+#line 697 "cas-yacc.y"
+{ emit_displacement(ROLI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2724 "cas-yacc.c"
     break;
 
   case 136: /* instruction: T_ROR T_GREGISTER ',' T_GREGISTER  */
-#line 703 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (ROR, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2738 "cas-yacc.c"
+#line 700 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(ROR, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2730 "cas-yacc.c"
     break;
 
   case 137: /* instruction: T_ROR T_GREGISTER ',' expression  */
-#line 706 "cas-yacc.y"
-              { emit_displacement (RORI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2744 "cas-yacc.c"
+#line 703 "cas-yacc.y"
+{ emit_displacement(RORI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2736 "cas-yacc.c"
     break;
 
   case 138: /* instruction: T_SAL T_GREGISTER ',' T_GREGISTER  */
-#line 709 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (SAL, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2750 "cas-yacc.c"
+#line 706 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(SAL, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2742 "cas-yacc.c"
     break;
 
   case 139: /* instruction: T_SAL T_GREGISTER ',' expression  */
-#line 712 "cas-yacc.y"
-              { emit_displacement (SALI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2756 "cas-yacc.c"
+#line 709 "cas-yacc.y"
+{ emit_displacement(SALI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2748 "cas-yacc.c"
     break;
 
   case 140: /* instruction: T_SAR T_GREGISTER ',' T_GREGISTER  */
-#line 715 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (SAR, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2762 "cas-yacc.c"
+#line 712 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(SAR, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2754 "cas-yacc.c"
     break;
 
   case 141: /* instruction: T_SAR T_GREGISTER ',' expression  */
-#line 718 "cas-yacc.y"
-              { emit_displacement (SARI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2768 "cas-yacc.c"
+#line 715 "cas-yacc.y"
+{ emit_displacement(SARI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2760 "cas-yacc.c"
     break;
 
   case 142: /* instruction: T_SETB T_GREGISTER ',' T_GREGISTER  */
-#line 721 "cas-yacc.y"
-            { emit (BUILD_INSTRUCTION_A (SETB, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2774 "cas-yacc.c"
+#line 718 "cas-yacc.y"
+{ emit(BUILD_INSTRUCTION_A(SETB, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2766 "cas-yacc.c"
     break;
 
   case 143: /* instruction: T_SETB T_GREGISTER ',' expression  */
-#line 724 "cas-yacc.y"
-              { emit_displacement (SETBI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
-#line 2780 "cas-yacc.c"
+#line 721 "cas-yacc.y"
+{ emit_displacement(SETBI, (yyvsp[-2].i), (yyvsp[0].expr), 0); }
+#line 2772 "cas-yacc.c"
     break;
 
   case 144: /* instruction: T_STC  */
-#line 726 "cas-yacc.y"
-        {emit (BUILD_INSTRUCTION_A (STC, 0, 0));}
-#line 2786 "cas-yacc.c"
+#line 724 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(STC, 0, 0));}
+#line 2778 "cas-yacc.c"
     break;
 
   case 145: /* instruction: T_STI  */
-#line 729 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (STI, 0, 0));}
-#line 2792 "cas-yacc.c"
+#line 727 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(STI, 0, 0));}
+#line 2784 "cas-yacc.c"
     break;
 
   case 146: /* instruction: T_TRAP  */
-#line 732 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (TRAP, 0, 0));}
-#line 2798 "cas-yacc.c"
+#line 730 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(TRAP, 0, 0));}
+#line 2790 "cas-yacc.c"
     break;
 
   case 147: /* instruction: T_STOP  */
-#line 735 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (STOP, 0, 0));}
-#line 2804 "cas-yacc.c"
+#line 733 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(STOP, 0, 0));}
+#line 2796 "cas-yacc.c"
     break;
 
   case 148: /* instruction: T_SUB T_GREGISTER ',' T_GREGISTER  */
-#line 738 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (SUB, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2810 "cas-yacc.c"
+#line 736 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(SUB, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2802 "cas-yacc.c"
     break;
 
   case 149: /* instruction: T_SUB T_GREGISTER ',' expression  */
-#line 741 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xSUBI, (yyvsp[-2].i), 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2819 "cas-yacc.c"
+#line 739 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xSUBI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2811 "cas-yacc.c"
     break;
 
   case 150: /* instruction: T_TST T_GREGISTER ',' T_GREGISTER  */
-#line 747 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (TST, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2825 "cas-yacc.c"
+#line 745 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(TST, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2817 "cas-yacc.c"
     break;
 
   case 151: /* instruction: T_TST T_GREGISTER ',' expression  */
-#line 750 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xTSTI, (yyvsp[-2].i), 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2834 "cas-yacc.c"
+#line 748 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xTSTI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2826 "cas-yacc.c"
     break;
 
   case 152: /* instruction: T_XCHG T_GREGISTER ',' '[' expression ']'  */
-#line 756 "cas-yacc.y"
-              { 
-		  emit (BUILD_INSTRUCTION_A (xXCHG, (yyvsp[-4].i), 0));
-		  emit_expression ((yyvsp[-1].expr));
-              }
-#line 2843 "cas-yacc.c"
+#line 754 "cas-yacc.y"
+{ 
+  emit(BUILD_INSTRUCTION_A(xXCHG, (yyvsp[-4].i), 0));
+  emit_expression((yyvsp[-1].expr));
+}
+#line 2835 "cas-yacc.c"
     break;
 
   case 153: /* instruction: T_XCHG T_GREGISTER ',' '[' error ']'  */
-#line 761 "cas-yacc.y"
-              { report (1, INDIRECTION); }
-#line 2849 "cas-yacc.c"
+#line 759 "cas-yacc.y"
+{ report(1, INDIRECTION); }
+#line 2841 "cas-yacc.c"
     break;
 
   case 154: /* instruction: T_XOR T_GREGISTER ',' T_GREGISTER  */
-#line 764 "cas-yacc.y"
-            {emit (BUILD_INSTRUCTION_A (XOR, (yyvsp[-2].i), (yyvsp[0].i)));}
-#line 2855 "cas-yacc.c"
+#line 762 "cas-yacc.y"
+{emit(BUILD_INSTRUCTION_A(XOR, (yyvsp[-2].i), (yyvsp[0].i)));}
+#line 2847 "cas-yacc.c"
     break;
 
   case 155: /* instruction: T_XOR T_GREGISTER ',' expression  */
-#line 767 "cas-yacc.y"
-              {
-		  emit (BUILD_INSTRUCTION_A (xXORI, (yyvsp[-2].i), 0));
-		  emit_expression ((yyvsp[0].expr));
-	      }
-#line 2864 "cas-yacc.c"
+#line 765 "cas-yacc.y"
+{
+  emit(BUILD_INSTRUCTION_A(xXORI, (yyvsp[-2].i), 0));
+  emit_expression((yyvsp[0].expr));
+}
+#line 2856 "cas-yacc.c"
     break;
 
 
-#line 2868 "cas-yacc.c"
+#line 2860 "cas-yacc.c"
 
       default: break;
     }
@@ -3057,65 +3049,53 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 774 "cas-yacc.y"
+#line 772 "cas-yacc.y"
 
 
-static void emit_expression (Expression *e) 
+static void store_ptr(void *e)
 {
-    if (!e) {		/* zero constant */
-	emit (0);
-	return;
-    }
-    switch (e->type) {
-    case CONSTANT:
-	emit (e->detail.constant);
-	break;
-    case EXPRESSION:
-    case LABEL:
-    case SELECTOR:
-	emit_escape (FIX_EXPRESSION);
-	emit (0);		/* fake instruction */
-	
-	Uword d1 = (Uword)((uint64_t)(e) << 32 >> 32);
-	Uword d2 = (Uword)((uint64_t)(e) >> 32);
-	emit_escape (d1);
-	emit_escape (d2);
-
-	current_overhead += 2 + expression_overhead (e);
-	break;	
-    case DUMMY:
-	assert (e->type != DUMMY);
-    }
+  Uword d1 = (uint64_t)e << 32 >> 32; // LSB
+  Uword d2 = (uint64_t)e >> 32; // MSB
+  store(d1);
+  store(d2);
+  //  printf("------ %p %X %X\n", e, d1, d2);
 }
 
-static void emit_displacement (int opc, int op1, Expression *dspl, Bit relative) 
+static void emit_expression(Expression *e) 
 {
-    emit_escape (relative ? FIX_RDISPLACEMENT : FIX_ADISPLACEMENT);
-    emit (BUILD_INSTRUCTION_B (opc, op1, 0));
-
-    Uword d1 = (Uword)((uint64_t)(dspl) << 32 >> 32);
-    Uword d2 = (Uword)((uint64_t)(dspl) >> 32);
-    /*
-      fprintf(stderr, "IN: %p %p %p %d\n", dspl, d1, d2, current_overhead);
-    */
-    emit_escape (d1);
-    emit_escape (d2);
-    if (relative) {
-	emit_escape (offset);   /* current_offset */
-    } else {
-	current_overhead += 2 + expression_overhead (dspl);
-    }
+  assert(e && e->type != DUMMY); // ????
+  
+  if (e->type == CONSTANT) {
+    emit(e->detail.constant);
+  } else {
+    // EXPRESSION, LABEL, SELECTOR
+    store(FIX_EXPRESSION);
+    emit(0);		/* fake instruction */
+    //    printf("---- %X %p\n", FIX_EXPRESSION, e);
+    store_ptr(e);
+  }
 }
 
-void yywarning (char *s)
+static void emit_displacement(int opc, int op1, Expression *e, Bit relative) 
 {
-    fprintf (stderr, "warning:%s:%d: %s\n", *source, line_no, s);
+  store(relative ? FIX_RDISPLACEMENT : FIX_ADISPLACEMENT);
+  emit(BUILD_INSTRUCTION_B(opc, op1, 0));
+  
+  store_ptr(e);
+
+  if (relative) 
+    store(offset);   /* current_offset */
 }
 
-int yyerror (char *s)
+void yywarning(char *s)
 {
-    fprintf (stderr, "%s:%d: %s\n", *source, line_no, s);
-    success = 0;
-    return 0;
+  fprintf(stderr, "warning:%s:%d: %s\n", *source, line_no, s);
+}
+
+int yyerror(char *s)
+{
+  fprintf(stderr, "%s:%d: %s\n", *source, line_no, s);
+  success = 0;
+  return 0;
 }
 

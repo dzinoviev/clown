@@ -19,7 +19,7 @@ void component_error(__attribute__((unused)) const char *name,
   /* not really needed */
 }
 
-static int load_seg (char *fname, struct Segment *current_seg, int seg_no,
+static int load_seg(char *fname, struct Segment *current_seg, int seg_no,
 		     Dword offset, struct Clown_Segment_Descriptor *my_ldt)
 {
   int size = current_seg->image_size;
@@ -101,7 +101,7 @@ static int parse_code_file(char *fname)
   line_no = 1;
   source = &fname;
   if (yyparse()) {
-    fclose(yyin);
+     fclose(yyin);
     return 0;
   }
 

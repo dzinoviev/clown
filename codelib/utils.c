@@ -6,29 +6,29 @@
 
 jmp_buf failure;
 
-static void safe_write (int file, void *addr, int size)
+static void safe_write(int file, void *addr, int size)
 {
-  if (size != write (file, addr, size)) {
-    perror ("Output file");
-    longjmp (failure, 1);
+  if (size != write(file, addr, size)) {
+    perror("Output file");
+    longjmp(failure, 1);
   }    
 }
 
-void *safe_malloc (size_t size)
+void *safe_malloc(size_t size)
 {
-  void *ptr = malloc (size);
+  void *ptr = malloc(size);
   if (!ptr) {
-    perror ("malloc");
-    longjmp (failure, 1);
+    perror("malloc");
+    longjmp(failure, 1);
   }
   return ptr;
 }
       
-void *safe_realloc (void *ptr, size_t size)
+void *safe_realloc(void *ptr, size_t size)
 {
-  if (!(ptr = realloc (ptr, size))) {
-    perror ("realloc");
-    longjmp (failure, 1);
+  if (!(ptr = realloc(ptr, size))) {
+    perror("realloc");
+    longjmp(failure, 1);
   }
   return ptr;
 }
@@ -41,7 +41,7 @@ void *safe_realloc (void *ptr, size_t size)
 static unsigned char buffer_base64[BASE64_BUFSIZE] = {0};
 static int base64_phase = 0;
 static const unsigned char base64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const int unbase64[] = {
+const int unbase64[] = {
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* 00-0F */
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,  /* 10-1F */
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,  /* 20-2F */
@@ -61,8 +61,15 @@ static const int unbase64[] = {
     };
 
 
-int base64_decode (char *orig, Dword *decoded)
+int base64_decode(char *orig, Dword *decoded)
 {
+  int l = strlen(orig) / 8;
+  for(int i = 0; i < l; i++) {
+    sscanf(&orig[8*i], "%08X", &decoded[i]);
+    decoded[i] = ntohl(decoded[i]);
+  }
+  return l;
+  /*
   int i = 0;
   int unbase64_phase = 0;
   Dword *start = decoded;
@@ -71,7 +78,7 @@ int base64_decode (char *orig, Dword *decoded)
   for (char *cur = orig; *cur; cur++) {
     int shift;
     int32_t d = unbase64[(int)*cur];
-    if (d == -1) {		/* bad character */
+    if (d == -1) {		// bad character 
       return -1;
     }
     shift = i * BASE64_SYM - 2 * unbase64_phase;
@@ -82,7 +89,7 @@ int base64_decode (char *orig, Dword *decoded)
     if (i < BASE64_ZIPFACTOR) {
       i++;
     } else {
-      *decoded++ = ntohl (my_word);
+      *decoded++ = ntohl(my_word);
       my_word = 0;
       unbase64_phase = (unbase64_phase + 1) % BASE64_PHASES;
       if (unbase64_phase > 0)
@@ -92,19 +99,20 @@ int base64_decode (char *orig, Dword *decoded)
   }
 
   if (i > 0) 
-    *decoded++ = ntohl (my_word);
+    *decoded++ = ntohl(my_word);
   return decoded - start;
+*/
 }
 
-void safe_base64 (int file, Dword word)
+void safe_base64(int file, Dword word)
 {
-  int i;
-  uint32_t my_word = htonl (word);
+  uint64_t my_word = htonl(word);
 
+  /*
   buffer_base64[base64_phase * BASE64_ZIPFACTOR] 
     |= (my_word & BASE64_MASK(BASE64_SYM - 2 * base64_phase)) << (2 * base64_phase);
 
-  for (i = 1; i <= BASE64_ZIPFACTOR; i++) {
+  for (int i = 1; i <= BASE64_ZIPFACTOR; i++) {
     uint32_t shifted;
     int shift = BASE64_SYM * i - 2 * base64_phase;
     if (shift >= 0)
@@ -112,34 +120,38 @@ void safe_base64 (int file, Dword word)
     else
       shifted = my_word << -shift;
       
-    buffer_base64[i + base64_phase * BASE64_ZIPFACTOR] = shifted & BASE64_MASK (BASE64_SYM);
+    buffer_base64[i + base64_phase * BASE64_ZIPFACTOR] = shifted & BASE64_MASK(BASE64_SYM);
   }
 
   base64_phase = (base64_phase + 1) % BASE64_PHASES;
   
   if (base64_phase == 0) {
-    for (i = 0; i < BASE64_BUFSIZE; i++)
+    for (int i = 0; i < BASE64_BUFSIZE; i++)
       buffer_base64[i] = base64[buffer_base64[i]];
-    safe_write (file, buffer_base64, BASE64_BUFSIZE);
-    memset (buffer_base64, 0, sizeof (buffer_base64));
-  }
+    safe_write(file, buffer_base64, BASE64_BUFSIZE);
+    memset(buffer_base64, 0, sizeof(buffer_base64));
+    }*/
+
+  char b[16];
+  sprintf(b, "%08lX", my_word);
+  safe_write(file, b, 8);
 }
 
-static void finalize_base64 (int file)
+static void finalize_base64(int file)
 {
   if (base64_phase == 0)
     return;
   for (int i = 0; i < base64_phase * BASE64_ZIPFACTOR + 1; i++)
     buffer_base64[i] = base64[buffer_base64[i]];
-  safe_write (file, buffer_base64, base64_phase * BASE64_ZIPFACTOR + 1);
+  safe_write(file, buffer_base64, base64_phase * BASE64_ZIPFACTOR + 1);
   base64_phase = 0;
-  memset (buffer_base64, 0, sizeof (buffer_base64));
+  memset(buffer_base64, 0, sizeof(buffer_base64));
 }
 
-void safe_string (int file, char *string)
+void safe_string(int file, char *string)
 {
-  size_t len = strlen (string);
-  finalize_base64 (file);
-  safe_write (file, string, len);
+  size_t len = strlen(string);
+  finalize_base64(file);
+  safe_write(file, string, len);
 }
 

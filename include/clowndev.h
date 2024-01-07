@@ -1,10 +1,14 @@
 #ifndef CLOWNDEV_H
 #define CLOWNDEV_H 1
 
-
+#include <stdlib.h>
+#include <string.h>
 #include <setjmp.h>
+#ifdef __STRICT_ANSI__
+char *strdup(const char *s);
+#endif
+
 #include "isa.h"
-#include "symtab.h"
 
 #define COPYRIGHT "Copyright © 2004, 2008, 2011, 2023 D. Zinoviev\n"\
   "This program is free software; you may redistribute it under the terms of\n"\
@@ -41,6 +45,7 @@ struct Segment {
   Bit   global;
 
   Dword *image;
+  unsigned code_size;
   unsigned image_size;
   unsigned image_extent;
 
@@ -52,8 +57,8 @@ struct Segment {
   int  id;
   int  in_use;
   int  escapes;
-  int  link_overhead;
-  int  new_index;
+  //  int  link_overhead;
+  int  new_loc;
   int  module;
 
   /* This field is used only by the loader/clown */
@@ -74,7 +79,7 @@ struct Label {
     /* This field is only used by the linker */
     int  id;
     int  in_use;
-    int  new_index;
+    int  new_loc;
 };
 
 struct LabelTable {
@@ -108,9 +113,9 @@ typedef struct _Expression {
 #define FIX_ADISPLACEMENT ((Dword)0xFF000002)
 #define FIX_RDISPLACEMENT ((Dword)0xFF000004)
 #define FIX_EXPRESSION    ((Dword)0xFF000008)
+#define FIX_NOTHING       ((Dword)0xFF000010)
 
 extern jmp_buf   failure;
-extern int current_overhead;
 extern int link_overhead;
 extern struct Module *modules;
 extern int current_module;
@@ -118,7 +123,7 @@ extern int line_no;
 extern char **source;
 extern int codelimit;
 extern FILE *yyin;
-extern int escapes;
+//extern int escapes;
 extern int debug;
 extern int listing;
 extern Clof_Type module_type;
@@ -146,7 +151,7 @@ int try_to_evaluate (Expression *e, struct LabelTable *labels,
 int expression_overhead (Expression *e);
 void list_segments (struct SegmentTable st);
 void list_labels (struct LabelTable syms, struct SegmentTable segs);
-Dword *build_expressions (Dword* code, int codesize, int *truesize, int *escapes);
+Dword *build_expressions (Dword* code, int codesize, int *truesize/*, int *escapes*/);
 int yyparse (void);
 void yyrestart (FILE*);
 int base64_decode (char *orig, Dword *decoded);

@@ -3,33 +3,34 @@
 #include <hardware.h>
 
 #define DEC 10
-	mov %r1, 1234
-	call printf
-	stop
+	MOV %R1, 1234
+	CALL printf
+	STOP
 
-printf:	mov  %r10, DEC
-	push %r10
-	xor  %r0, %r0
-	mov %r11, '0'
+printf:	MOV  %R10, DEC
+	PUSH %R10
+	XOR  %R0, %R0
+	MOV %R11, '0'
 
-	cmp %r1, %r0
-	jz zero
+	CMP %R1, %R0
+	JZ zero
 divide:	
-	mov %r2, %r1
-	div %r2, %r10
-	mul %r2, %r10
-	mov %r4, %r1
-	sub %r4, %r2
-	push %r4
-	div %r1, %r10
-	cmp %r1, %r0
-	jnz divide
+	MOV %R2, %R1
+	DIV %R2, %R10
+	MUL %R2, %R10
+	MOV %R4, %R1
+	SUB %R4, %R2
+	PUSH %R4
+	DIV %R1, %R10
+	CMP %R1, %R0
+	JNZ divide
 
 do_print:
-	pop %r1
-	cmp %r1, %r10
-	jz done
-zero:	add %r1, %r11
+	POP %R1
+	CMP %R1, %R10
+	JZ DONE
+	
+zero:	ADD %R1, %R11
 	OUT	%R1, ?(IOBASE_TTY + 0)		; to screen	
-	jmp do_print
-done:	retn
+	JMP do_print
+done:	RETN

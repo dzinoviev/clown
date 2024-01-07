@@ -52,7 +52,7 @@ static enum {
 struct Clown_IODevice hdd_device;
 
 
-void reset_hdd (void)
+void reset_hdd(void)
 {
     dest_track = 0;
     track = 0;
@@ -64,28 +64,31 @@ void reset_hdd (void)
     operation = DSCOP_NONE;
 }
 
-Bit init_hdd (void)
+Bit init_hdd(void)
 {
-    char disc_path[PATH_MAX] = "";
-    char *path = getenv (DISC_HOME);
+  // TODO:
+  // Make it possible to choose the image from the command line
+  
+  char disc_path[PATH_MAX] = "";
+  char *path = getenv(DISC_HOME);
 
-    if (path)
-      strcpy (disc_path, path);
-    strcat (disc_path, DISC_IMAGE);
-    disc_path[PATH_MAX - 1] = 0;
+  if (path)
+    strcpy(disc_path, path);
+  strcat(disc_path, DISC_IMAGE);
+  disc_path[PATH_MAX - 1] = 0;
 
-    if (!(running = hdd_init (disc_path, &params, &n_words)))
-      return 0;
+  if (!(running = hdd_init(disc_path, &params, &n_words)))
+    return 0;
     
-    reset_hdd ();
-    delta_seek = (params.max_seek - params.t2t_seek) / (params.n_tracks - 2);
-    delta_phi = params.rot_speed / n_words;
-    if (delta_phi == 0)
-	delta_phi = 1;		/* the disc must rotate, anyway! */
-    return 1;
+  reset_hdd();
+  delta_seek = (params.max_seek - params.t2t_seek) / (params.n_tracks - 2);
+  delta_phi = params.rot_speed / n_words;
+  if (delta_phi == 0)
+    delta_phi = 1;		// The disc must rotate, anyway! 
+  return 1;
 }
 
-Dword read_hdd (void)
+Dword read_hdd(void)
 {
   if (!running)
     return 0;
@@ -97,10 +100,10 @@ Dword read_hdd (void)
   }
 }
 
-void write_hdd (Dword datum)
+void write_hdd(Dword datum)
 {
 #ifdef DEBUG
-  printf ("Write: %0x [%d]\n", datum, operation);
+  printf("Write: %0x [%d]\n", datum, operation);
 #endif
   if (running) {
     switch (operation) {
@@ -118,7 +121,7 @@ void write_hdd (Dword datum)
     case PREP_DSCOP_WRITE_START:
       operation = (operation == PREP_DSCOP_READ_START) ? DSCOP_READ_START
 	: DSCOP_WRITE_START;
-      datum = MAX (datum, 0);
+      datum = MAX(datum, 0);
       datum = datum % params.n_sectors;
       dest_phi = datum * (DISC_WORDS_PER_SECTOR + DISC_WORDS_PER_GAP);
       if (dest_phi == phi) {
@@ -137,7 +140,7 @@ void write_hdd (Dword datum)
   }
 }
 
-Dword status_hdd (void)
+Dword status_hdd(void)
 {
     if (running) {
 	Dword status;
@@ -151,7 +154,7 @@ Dword status_hdd (void)
 	    status = 0;		/* busy */
 	}
 #ifdef DEBUG
-	printf ("Status: %d\n", status);
+	printf("Status: %d\n", status);
 #endif
 	return status;
     } else {
@@ -159,24 +162,24 @@ Dword status_hdd (void)
     }
 }
 
-Dword id_hdd ()
+Dword id_hdd()
 {
     if (running) {
 	Dword d;
 	char id[] = " hdd";
 	id[0] = DEVICE_ID;
-	memcpy (&d, id, sizeof (Dword));
+	memcpy(&d, id, sizeof(Dword));
 	return d;
     } else {
 	return 0;
     }
 }
 
-void control_hdd (Dword datum)
+void control_hdd(Dword datum)
 {
     if (running) {
 #ifdef DEBUG
-	printf ("Control: %ld\n", datum);
+	printf("Control: %ld\n", datum);
 #endif
 	switch (datum) {
 	case 0:			/* SEEK TRACK */
@@ -203,7 +206,7 @@ void control_hdd (Dword datum)
     }
 }
 
-void execute_hdd (__attribute__((unused)) Bit dummy)
+void execute_hdd(__attribute__((unused)) Bit dummy)
 {
     if (!running)
 	return;
@@ -229,7 +232,7 @@ void execute_hdd (__attribute__((unused)) Bit dummy)
 	    if (operation == DSCOP_READ_START) {
 		operation = DSCOP_READ;
 		/* THINK HOW TO FIX THIS! */
-		hdd_read_sector (track, 
+		hdd_read_sector(track, 
 				 dest_phi / (DISC_WORDS_PER_SECTOR 
 					     + DISC_WORDS_PER_GAP), 
 				 hidden_buffer);
@@ -237,7 +240,7 @@ void execute_hdd (__attribute__((unused)) Bit dummy)
 	    } else {
 		operation = DSCOP_WRITE;
 		hidden_buffer[0] = buffer[0];
-		/*		hdd_write_sector (track, 
+		/*		hdd_write_sector(track, 
 				 dest_phi / (DISC_WORDS_PER_SECTOR 
 					     + DISC_WORDS_PER_GAP), 
 					     hidden_buffer);*/
@@ -249,7 +252,7 @@ void execute_hdd (__attribute__((unused)) Bit dummy)
 	if (counter == delta_phi) {
 	    if (hidden_pointer == DISC_WORDS_PER_SECTOR) {
 		if (mode == INTERRUPT)
-		    raise_exception (hdd_device.IRQ);
+		    raise_exception(hdd_device.IRQ);
 		operation = DSCOP_NONE;
 		pointer = 0;
 		break;
@@ -263,11 +266,11 @@ void execute_hdd (__attribute__((unused)) Bit dummy)
     case DSCOP_WRITE:	/* writing the words */
 	if (counter == delta_phi) {
 	    if (hidden_pointer == DISC_WORDS_PER_SECTOR) {
-		hdd_write_sector (track, dest_phi 
+		hdd_write_sector(track, dest_phi 
 				  / (DISC_WORDS_PER_SECTOR 
 				     + DISC_WORDS_PER_GAP), hidden_buffer);
 		if (mode == INTERRUPT)
-		    raise_exception (hdd_device.IRQ);
+		    raise_exception(hdd_device.IRQ);
 		operation = DSCOP_NONE;
 		pointer = 0;
 		break;
@@ -286,7 +289,7 @@ void execute_hdd (__attribute__((unused)) Bit dummy)
 		counter = 0;
 	    } else {
 		if (mode == INTERRUPT)
-		    raise_exception (hdd_device.IRQ);
+		    raise_exception(hdd_device.IRQ);
 		operation = DSCOP_NONE;
 	    }
 	}
@@ -297,7 +300,7 @@ void execute_hdd (__attribute__((unused)) Bit dummy)
 	    track += direction;
 	    if (track == dest_track) {
 		if (mode == INTERRUPT)
-		    raise_exception (hdd_device.IRQ);
+		    raise_exception(hdd_device.IRQ);
 		operation = DSCOP_NONE;
 	    }
 	    counter = 0;

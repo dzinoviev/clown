@@ -1,39 +1,39 @@
 #include "clown/config.h"
-.code $segfault
+.CODE $segfault
 
-	mov %ds, $mydata	; BAD:	 we destroy %DS!
-	mov %r10, msg
-	push %r10
-	call puts
-	inc %sp
+	MOV %DS, $mydata	; BAD:	 we destroy %DS!
+	MOV %R10, msg
+	PUSH %R10
+	CALL puts
+	INC %SP
 	
-	mov %r1, 1		; fix the problem
-	retfi
+	MOV %R1, 1		; fix the problem
+	RETFI
 
 puts:
-	push %r1		; save registers
-	push %r2		; save registers
-	peek %r1, 3 ; stack: %r2[top], %r1[-1], ret.add.[-2], string[-3]
+	PUSH %R1		; save registers
+	PUSH %R2		; save registers
+	PEEK %R1, 3 ; stack: %r2[top], %r1[-1], ret.add.[-2], string[-3]
 				
 write:	
-	mov %r2, [%r1]
-	cmp %r2, 0		; null character?
-	jz endw
+	MOV %R2, [%R1]
+	CMP %R2, 0		; null character?
+	JZ endw
 				
-	out %r2, ?(IOBASE_TTY + 0)
-	inc %r1			; go to next character
-	jmp write
+	OUT %R2, ?(IOBASE_TTY + 0)
+	INC %R1			; go to next character
+	JMP write
 				
 endw:	
-	mov %r2, '\n'		; terminating new line
-	out %r2, ?(IOBASE_TTY + 0)
+	MOV %R2, '\n'		; terminating new line
+	OUT %R2, ?(IOBASE_TTY + 0)
 				
-	pop %r2			; restore the stack
-	pop %r1
-	retn
+	POP %R2			; restore the stack
+	POP %R1
+	RETN
 
-.data $mydata
-msg:	.string "Division by zero attempted. Trying to fix. If you see this message again, then I guess it didn't work.\n"
+.DATA $mydata
+msg: .STRING "Division by zero attempted. Trying to fix it.\nIf you see this message again, then I failed.\n"
 	
-.data $isr
-.global myisr:	.word[16] ; the ISR segment
+.DATA $isr
+.GLOBAL myisr:	.WORD[16] ; the ISR segment

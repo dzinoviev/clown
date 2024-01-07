@@ -13,62 +13,62 @@ struct Clown_IODevice timer_device;
 
 void reset_timer (void)
 {
-    counter = 0;
-    interval = -1;
-    state = IDLE;
+  counter = 0;
+  interval = -1;
+  state = IDLE;
 }
 
 void write_timer (Dword datum)
 {
-    switch (datum) {
-    case 0:			/* STOP and RESET */
-	reset_timer ();
-	break;
-    case 1:			/* SET */
-	state = READY;
-	break;
-    default:		   
-	if (state == READY) {
-	    if (datum > 0) {	/* START */
-		counter = datum - 1;
-		state = WORKING;
-	    } else 		/* CHANGE INTERVAL */
-		interval = -datum;
-	}
-	break;
+  switch (datum) {
+  case 0:			/* STOP and RESET */
+    reset_timer ();
+    break;
+  case 1:			/* SET */
+    state = READY;
+    break;
+  default:		   
+    if (state == READY) {
+      if (datum > 0) {	/* START */
+	counter = datum - 1;
+	state = WORKING;
+      } else 		/* CHANGE INTERVAL */
+	interval = -datum;
     }
+    break;
+  }
 }
 
 Dword read_timer (void)
 {
-    return counter;
+  return counter;
 }
 
 Dword id_timer ()
 {
-    Dword d;
-    char id[] = " timer";
-    id[0] = DEVICE_ID;
-    memcpy (&d, id, sizeof (Dword));
-    return d;
+  Dword d;
+  char id[] = " timer";
+  id[0] = DEVICE_ID;
+  memcpy (&d, id, sizeof (Dword));
+  return d;
 }
 
 
 Bit init_timer (void)
 {
-    reset_timer ();
-    return 1;			/* it never fails */
+  reset_timer ();
+  return 1;			/* it never fails */
 }
 
 void execute_timer (__attribute__((unused)) Bit dummy)
 {
-    if (state == WORKING && !(--counter)) {
-	raise_exception (timer_device.IRQ);
-	if (interval > 1)
-	  counter = interval - 1;
-	else
-	  state = IDLE;
-    }
+  if (state == WORKING && !(--counter)) {
+    raise_exception (timer_device.IRQ);
+    if (interval > 1)
+      counter = interval - 1;
+    else
+      state = IDLE;
+  }
 }
 
 static struct Clown_IOPort ports[] =  {
@@ -76,7 +76,7 @@ static struct Clown_IOPort ports[] =  {
   {read_timer, NULL,0 }, 
 };
 struct Clown_IODevice timer_device = {2, ports, 
-execute_timer, 
-init_timer, 
-reset_timer, 0, 0, 0
+  execute_timer, 
+  init_timer, 
+  reset_timer, 0, 0, 0
 };

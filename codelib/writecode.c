@@ -17,8 +17,7 @@
 static int output_offset;
 static int bin_offset;
 Dword offset;
-int current_overhead;
-int link_overhead;
+//int link_overhead;
 int debug = 1;
 
 void init_module(struct Module *m, char *fname)
@@ -33,9 +32,6 @@ void init_module(struct Module *m, char *fname)
   
 static void list_segment(struct Segment s)
 {
-  int size = (module_type == CLOF_BIN) 
-    ? (s.image_size - s.link_overhead) 
-    : s.image_size;
   if (s.defined) {
     char type = 0;
     switch (s.type) {
@@ -53,9 +49,9 @@ static void list_segment(struct Segment s)
       break;
     }
     fprintf(stderr, "%3d. $%-15s %c DEF size=%4d\n",
-	     s.new_index, s.name, type, size);
+	    s.new_loc, s.name, type, s.code_size);
   } else
-    fprintf(stderr, "%3d. $%-17s UNDEF\n", s.new_index, s.name);
+    fprintf(stderr, "%3d. $%-17s UNDEF\n", s.new_loc, s.name);
 }
 
 void list_segments(struct SegmentTable st)
@@ -76,17 +72,13 @@ void list_segments(struct SegmentTable st)
 
 static void list_label(struct Label l, struct Segment *seglist)
 {
-  fprintf(stderr, 
-	   "%-16s %c ", 
-	   l.name, 
-	   l.export ? 'G' : ' ');
+  fprintf(stderr, "%-16s %c ", l.name, l.export ? 'G' : ' ');
   if (l.defined) {
-    fprintf(stderr, 
-	     "DEF $%s:(0x%08"PRIu32"X)\n", 
-	     (l.segment != DEFAULT_SEGMENT)
-	     ? seglist[l.segment].name
-	     : DEFAULT_SEGMENT_NAME,
-	     l.address);
+    fprintf(stderr, "DEF $%s:0x%08X\n", 
+	    (l.segment != DEFAULT_SEGMENT)
+	    ? seglist[l.segment].name
+	    : DEFAULT_SEGMENT_NAME,
+	    l.address);
   } else {
     fputs("UNDEF \n", stderr);
   }
@@ -129,32 +121,36 @@ static void list_word(Dword instr, int withaddress)
   output_offset++;
   if (!listing)
     return;
-    
+
   if (withaddress) {
+    fprintf(stderr, "0x%04X: ", bin_offset);
     bin_offset++;
-    fprintf(stderr, "0x%08X: ", bin_offset - 1);
   } else
-    fprintf(stderr, "            ");
-  fprintf(stderr, "0x%08"PRIu32"X ", instr);
+    fprintf(stderr, "        ");
+  fprintf(stderr, "0x%08X ", instr);
   if (instr == (char)instr) {
     if (iscntrl((char)instr) || isspace((char)instr))
-      fputs(ascii[instr], stderr);
+      fprintf(stderr, " (%s)", ascii[instr]);
     else
       if (isprint((char)instr))
-	fprintf(stderr, "'%c'", (char)instr);
+	fprintf(stderr, " ('%c)'", (char)instr);
   }
-  fprintf(stderr, "%d\n", instr);
+  fprintf(stderr, "\n");
 }
 
 static void write_expression(int outfile, Expression *e, struct LabelTable *labels)
 {
-  if (!e) {
+  assert(e); // ?
+  /*
+    if (!e) {
     safe_base64(outfile, 0);
     list_word(0, 0);
     return;
-  }
+    }
+  */
   safe_base64(outfile, e->type);
   list_word(e->type, 0);
+
   switch (e->type) {
   case CONSTANT:
   case SELECTOR:
@@ -162,12 +158,12 @@ static void write_expression(int outfile, Expression *e, struct LabelTable *labe
     list_word(e->detail.constant, 1);
     break;
   case LABEL:
-    safe_base64(outfile, labels->labels[e->detail.label].new_index);
+    safe_base64(outfile, labels->labels[e->detail.label].new_loc);
     list_word(e->detail.label, 1);
     break;
   case EXPRESSION:
     safe_base64(outfile, e->detail.expression.operation);
-    list_word(e->detail.expression.operation, 0);
+    list_word(           e->detail.expression.operation, 0);
     write_expression(outfile, e->detail.expression.left, labels);
     write_expression(outfile, e->detail.expression.right, labels);
     break;
@@ -264,7 +260,7 @@ void write_header(int outfile,
   }
 }
 
-static int save_escape(int pointer, Dword state, Dword instr, int outfile,
+static int save_escape(int code_off, Dword state, Dword instr, int outfile,
 			struct SegmentTable *st, 
 			struct Segment *seg,
 			struct LabelTable *labels)
@@ -273,14 +269,9 @@ static int save_escape(int pointer, Dword state, Dword instr, int outfile,
   Dword my_offset, target_offset, segment = NOT_FOUND;
 
   if (state != FIX_SEGMENT) {
-    uint64_t e1 = (uint64_t)(seg->image[pointer]) << 32 >> 32;
-    uint64_t e2 = (uint64_t)(seg->image[pointer + 1]) << 32;
+    uint64_t e1 = (uint64_t)(seg->image[code_off++]) << 32 >> 32;
+    uint64_t e2 = (uint64_t)(seg->image[code_off++]) << 32;
     e = (Expression*)(e1 + e2);
-    /*
-    fprintf(stderr, "OUT: %p %p %p %x %x\n", e1, e2, e, seg->image[pointer],
-    seg->image[pointer + 1]);
-    */
-    pointer += 2;
     assert(e);
   }
 
@@ -291,10 +282,10 @@ static int save_escape(int pointer, Dword state, Dword instr, int outfile,
      */
     segment = SEL_ID(I_SEG(instr));
     if (seg->defined
-	&& seg->new_index != DEFAULT_SEGMENT
+	&& seg->new_loc != DEFAULT_SEGMENT
 	&& module_type == CLOF_BIN) {
       Dword newseg = I_SEG(instr);
-      SET_NEWID(newseg, st->segments[segment].new_index);
+      SET_NEWID(newseg, st->segments[segment].new_loc);
       UPDATE_SEGMENT(instr, newseg);
     } else {
       /* do nothing -- let the linker take care of this */
@@ -312,7 +303,7 @@ static int save_escape(int pointer, Dword state, Dword instr, int outfile,
      * emit_escape(offset);
      */
 
-    my_offset = seg->image[pointer++];
+    my_offset = seg->image[code_off++];
 
     if (0 >= try_to_evaluate(e, labels, st, &target_offset, &segment)) {
       component_error(seg->name, "relative jump", "undefined displacement");
@@ -338,7 +329,6 @@ static int save_escape(int pointer, Dword state, Dword instr, int outfile,
       safe_base64(outfile, state);
       list_word(state, 0);
       safe_base64(outfile, instr);
-      list_word(instr, 0);
       write_expression(outfile, e, labels);
     } else {
       if (0 >= try_to_evaluate(e, labels, st, &target_offset, &segment)) {
@@ -378,7 +368,7 @@ static int save_escape(int pointer, Dword state, Dword instr, int outfile,
     assert(0);
   }
 
-  return pointer;
+  return code_off;
 }
 
 int save_segment(int outfile, int id,
@@ -386,13 +376,14 @@ int save_segment(int outfile, int id,
 		  struct LabelTable *labels,
 		  int fragment)
 {
-  int status = 1;
   struct Segment *seg = &st->segments[id];
 
   if (fragment & FIRST_FRAGMENT) {
-    static char tmp[64]; // Long enough
+    static char tmp[128]; // Long enough
     sprintf(tmp,
-	    "  <bin segment=\"%d\"><![CDATA[",  st->segments[id].new_index);
+	    "  <bin segment=\"%d\" size=\"%d\"><![CDATA[",
+	    st->segments[id].new_loc,
+	    st->segments[id].code_size);
     safe_string(outfile, tmp);
     output_offset = 0;
     bin_offset = 0;
@@ -401,56 +392,45 @@ int save_segment(int outfile, int id,
   if (listing)
     fprintf(stderr, "$%s\n", seg->name);
 
-  Dword escape = ~FIX_SEGMENT;
-  unsigned pointer = 0;
-  int newpointer;
-  while (pointer < seg->image_size) {
-    Dword instr = seg->image[pointer++];
-     
-    if (   instr == FIX_SEGMENT
-	|| instr == FIX_ADISPLACEMENT
-	|| instr == FIX_RDISPLACEMENT
-	|| instr == FIX_EXPRESSION) {
+  Dword escape = FIX_NOTHING;
+  int code_off = 0;
+    
+  while ((unsigned)code_off < seg->image_size) {
+    Dword instr = seg->image[code_off++];
+   
+    if (   instr == FIX_SEGMENT	|| instr == FIX_ADISPLACEMENT
+	|| instr == FIX_RDISPLACEMENT || instr == FIX_EXPRESSION) {
       if (escape == instr) { // Real escape
 	safe_base64(outfile, instr);
 	list_word(instr, 1);
-	escape = ~FIX_SEGMENT;
-      } else if (escape == ~FIX_SEGMENT) { // Escape prefix 
+	escape = FIX_NOTHING;
+      } else if (escape == FIX_NOTHING) { // Escape prefix 
 	escape = instr;
       } else {		// Special symbol
-	newpointer = save_escape(pointer, escape, instr, outfile, st, seg, labels);
-	if (newpointer == -1)
-	  status = 0;
-	else
-	  pointer = newpointer;
-	escape = ~FIX_SEGMENT;
+	if(-1 == (code_off = save_escape(code_off, escape, instr, outfile, st, seg, labels)))
+	    return 0;
+	escape = FIX_NOTHING;
       }
     } else {
-      if (escape == ~FIX_SEGMENT) {	// Normal copy 
+      if (escape == FIX_NOTHING) {	// Normal copy 
 	safe_base64(outfile, instr);
 	list_word(instr, 1);
       } else {		// Special symbol 
-	newpointer = save_escape(pointer, escape, instr, outfile, st, seg, labels);
-	if (newpointer == -1) status = 0; else pointer = newpointer;
-	escape = ~FIX_SEGMENT;
+	if(-1 == (code_off = save_escape(code_off, escape, instr, outfile, st, seg, labels)))
+	  return 0;
+	escape = FIX_NOTHING;
       }
     }
   }
 
-  if (escape != ~FIX_SEGMENT) {
-    component_error(seg->name, "warning: incomplete escape sequence at EOF",
-		     "ESC");
-  }
-  
   free(seg->image);
   
-  if (fragment & LAST_FRAGMENT) {
-    safe_string(outfile, "]]></bin>\n");
-  }
+  if (escape != FIX_NOTHING)
+    component_error(seg->name, "warning: incomplete escape sequence at EOF",
+		     "ESC");
   
-  /*
-    assert((module_type == CLOF_BIN) || (offset==0) || (output_offset == offset + current_overhead));
-  */
-  return status;
+  if (fragment & LAST_FRAGMENT)
+    safe_string(outfile, "]]></bin>\n");
+  
+  return 1;
 }
-
