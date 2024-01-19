@@ -7,10 +7,6 @@
 int expression_overhead(Expression *e)
 {
   assert(e && e->type != DUMMY); // ???
-  /*
-  if (!e)
-  return 1;
-*/
   switch (e->type) {
   case CONSTANT:
   case LABEL:
@@ -21,7 +17,7 @@ int expression_overhead(Expression *e)
       + expression_overhead(e->detail.expression.left) 
       + expression_overhead(e->detail.expression.right);
   case DUMMY:
-    //assert(e->type != DUMMY);
+    break;
   }
   return 0;
 }
@@ -99,13 +95,13 @@ Expression *do_math(int op, Expression *left, Expression *right)
       left->detail.constant >>= right->detail.constant;
       break;
     case C_UNARY_MIN:
-      left->detail.constant =- left->detail.constant;
+      left->detail.constant = -left->detail.constant;
       break;
     case '!':
-      left->detail.constant =! left->detail.constant;
+      left->detail.constant = !left->detail.constant;
       break;
     case '~':
-      left->detail.constant =~ left->detail.constant;
+      left->detail.constant = ~left->detail.constant;
       break;
     }
     free(right);
@@ -192,13 +188,13 @@ int try_to_evaluate(Expression *e, struct LabelTable *labels,
       *value >>= rvalue;
       return 1;
     case C_UNARY_MIN:
-      *value =- (*value);
+      *value = -(*value);
       return 1;
     case '!':
-      *value =! (*value);
+      *value = !(*value);
       return 1;
     case '~':
-      *value =~ (*value);
+      *value = ~(*value);
       return 1;
     }
     break;
@@ -214,22 +210,19 @@ static Expression *restore_expression(Dword* code, int *pointer)
 
     switch (type) {
     case CONSTANT:
-      //	link_overhead++;
 	return newConstant(code[(*pointer)++]);
     case SELECTOR:
-      //	link_overhead++;
-	return newSelector(code[(*pointer)++]);
+ 	return newSelector(code[(*pointer)++]);
     case LABEL:
-      //	link_overhead++;
-	return newLabel(code[(*pointer)++]);
+ 	return newLabel(code[(*pointer)++]);
     case EXPRESSION:
-      //	link_overhead+=2;
+      {
 	Dword op = code[(*pointer)++];
 	Expression *left = restore_expression(code, pointer);
 	Expression *right = restore_expression(code, pointer);
 	return newExpression(op, left, right);
+      }
     case DUMMY:
-      //	link_overhead++;
 	return NULL;
     }
     return NULL;		/* this never happens */
@@ -250,17 +243,10 @@ Dword *build_expressions(Dword* code, int wordcodesize,
 	    
       truecode[(*truesize)++] = (Dword)((int64_t)e << 32 >> 32);
       truecode[(*truesize)++] = (Dword)((int64_t)e >> 32);
-	    
-      //      (*escapes) += 2;
-      //      link_overhead += 2;
       break;
     case FIX_SEGMENT:
-      //      (*escapes)+=2;
-      //      link_overhead++;
       break;
     case FIX_RDISPLACEMENT:
-      //      (*escapes)+=2;
-      //      link_overhead++;
       break;
     default:
       break;
@@ -269,6 +255,5 @@ Dword *build_expressions(Dword* code, int wordcodesize,
 
   truecode = safe_realloc(truecode, sizeof(Dword) * (*truesize));
 
-  //  printf("????? %d\n", *truesize);
   return truecode;
 }
