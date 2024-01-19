@@ -13,14 +13,14 @@ simplified computer system.
 
 CLOWN is still a work in progress, now once again under active
 development after a lengthy hiatus. The code base is stable, although
-not yet feature complete.
+not yet feature-complete.
 
 
 Compatibility:
 
 CLOWN is known to compile and run on several variants of Linux, as
 well as Mac OS X. It should work in any reasonably sane *nix
-environment, and if not please let us know. A Windows port is planned,
+environment, and if not, please let us know. A Windows port is planned
 and should be underway soon.
 
 The Gnu readline library is also required. 
@@ -41,6 +41,7 @@ Make sure that the readline library is accessible to the linker
 terminal prompt:
 	
 	cd <src-root>
+        ./configure
 	make 
 	make install
 
@@ -55,7 +56,7 @@ bin/cas assembler
 License:
 
 This distribution of CLOWN is placed under the MIT license (see
-license.txt in this same directory), though a free use license may be
+license.txt in this same directory), though a free-use license may be
 available from Dmitry.
 
 Copyright and contact:
