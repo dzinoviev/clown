@@ -35,7 +35,7 @@ static cycle_t do_move_to_regular (Dword datum, Bit reg)
 static cycle_t do_return (Bit interrupt)
 {
   Dword pc, tmp, flags;
-  cycle_t cycles, cycles_all = 0;
+  cycle_t cycles = 0, cycles_all = 0;
   Selector cs;
   Bit old_cpl;
 
@@ -138,7 +138,7 @@ cycle_t do_pop (Dword *datum, Dword offset)
     if (cycles != EFAIL && offset == PUSHPOP)
       clown.SP++;
   }
-  /*    printf ("<< %d\n", *datum);*/
+
   return cycles;
 }
 
@@ -814,8 +814,7 @@ cycle_t clown_decode_execute (Dword i, Uword op3)
   case NCALLX:
     op1 = I_OP1 (i);
     op3 = clown.gpr[op1];
-    /* That's right - no "break" here! */
-    [[fallthrough]];
+    // fall through
   case xNCALL:
     cycles_all = do_push (clown.pc, PUSHPOP);
     if (cycles_all != EFAIL)

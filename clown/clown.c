@@ -56,7 +56,7 @@ static void normal_terminal()
 }
 
 #else
-#ifdef HAVE_STRUCT_TERMIOS
+#if defined(HAVE_STRUCT_TERMIOS) || defined(__APPLE__)
 static struct termios gettty;
 static void instant_terminal()
 {

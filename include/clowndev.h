@@ -10,7 +10,7 @@ char *strdup(const char *s);
 
 #include "isa.h"
 
-#define COPYRIGHT "Copyright © 2004, 2008, 2011, 2023 D. Zinoviev\n"\
+#define COPYRIGHT "Copyright © 2004-2023 D. Zinoviev\n"\
   "This program is free software; you may redistribute it under the terms of\n"\
   "the GNU General Public License.  This program has absolutely no warranty.\n"
 
@@ -57,7 +57,6 @@ struct Segment {
   int  id;
   int  in_use;
   int  escapes;
-  //  int  link_overhead;
   int  new_loc;
   int  module;
 
@@ -123,7 +122,6 @@ extern int line_no;
 extern char **source;
 extern int codelimit;
 extern FILE *yyin;
-//extern int escapes;
 extern int debug;
 extern int listing;
 extern Clof_Type module_type;
