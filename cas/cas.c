@@ -51,7 +51,14 @@ int main (int argc, char *argv[])
     strcpy (cmdline, CPP" ");
     /* Get default CPP options */
     strcat (cmdline, "-I");
-    strcat (cmdline, INCLUDEHOME" ");
+
+    const char *HOME= getenv("CLOWN");
+    if (HOME) {
+      strcat (cmdline, HOME);
+      strcat (cmdline, "/include ");
+    } else {
+      strcat (cmdline, ".");
+    }
     strcat (cmdline, cpp_options);
     strcat (cmdline, " ");
   } else

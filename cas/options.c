@@ -29,7 +29,7 @@ static void show_usage (char *name)
     fputs ("  -h, --help               show this message and exit\n", stderr);
     fputs ("  -P, --nocpp              do not preprocess\n", stderr);
     fputs ("  --pass-to-cpp \"OPTIONS\"  pass OPTIONS to preprocessor\n", stderr);
-    fputs ("      option -I"INCLUDEHOME" is passed implicitly\n", stderr);
+    fputs ("      option -I$CLOWN/include is passed implicitly\n", stderr);
     fputs ("  -b, --cle                generate a CLE module (default)\n", stderr);
     fputs ("  -s, --clo                generate a CLO module\n", stderr);
     fprintf (stderr, "  -e ADDR, --entry ADDR    set start address (default %"PRIi32")\n", offset);
