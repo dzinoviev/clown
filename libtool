@@ -1,6 +1,5 @@
 #! /bin/bash
 # Generated automatically by config.status (clown) 2.10
-# Libtool was configured on host leo:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
@@ -145,7 +144,7 @@ sharedlib_from_linklib_cmd="printf %s\\n"
 AR="ar"
 
 # Flags to create an archive.
-AR_FLAGS="cru"
+AR_FLAGS="cr"
 
 # How to feed a file listing to the archiver.
 archiver_list_spec="@"
@@ -412,7 +411,7 @@ hardcode_automatic=no
 inherit_rpath=no
 
 # Whether libtool must link a program against all its dependency libraries.
-link_all_deplibs=unknown
+link_all_deplibs=no
 
 # Set to "yes" if exported symbols are required.
 always_export_symbols=no
@@ -11788,7 +11787,7 @@ hardcode_automatic=no
 inherit_rpath=no
 
 # Whether libtool must link a program against all its dependency libraries.
-link_all_deplibs=unknown
+link_all_deplibs=no
 
 # Set to "yes" if exported symbols are required.
 always_export_symbols=no

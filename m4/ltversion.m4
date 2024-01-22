@@ -1,1 +1,1 @@
-/home/dmitry/anaconda3/share/aclocal/ltversion.m4
+/usr/share/aclocal/ltversion.m4

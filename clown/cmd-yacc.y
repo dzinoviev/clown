@@ -57,7 +57,7 @@ operation:
 ;
 
 show_flags: T_FLAGS optformat T_EOL {
-    show_flags ($2); 
+  show_flags (/*$2*/); 
     return 0; 
 };
 
