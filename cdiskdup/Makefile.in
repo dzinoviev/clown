@@ -88,7 +88,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = cdisksup$(EXEEXT)
+bin_PROGRAMS = cdiskdup$(EXEEXT)
 subdir = cdiskdup
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -104,9 +104,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_cdisksup_OBJECTS = clodd.$(OBJEXT) options.$(OBJEXT)
-cdisksup_OBJECTS = $(am_cdisksup_OBJECTS)
-cdisksup_DEPENDENCIES = ../devlib/libclowndevices.la
+am_cdiskdup_OBJECTS = clodd.$(OBJEXT) options.$(OBJEXT)
+cdiskdup_OBJECTS = $(am_cdiskdup_OBJECTS)
+cdiskdup_DEPENDENCIES = ../devlib/libclowndevices.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -146,8 +146,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(cdisksup_SOURCES)
-DIST_SOURCES = $(cdisksup_SOURCES)
+SOURCES = $(cdiskdup_SOURCES)
+DIST_SOURCES = $(cdiskdup_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -304,8 +304,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-cdisksup_LDADD = ../devlib/libclowndevices.la
-cdisksup_SOURCES = clodd.c options.c clodd.h
+cdiskdup_LDADD = ../devlib/libclowndevices.la
+cdiskdup_SOURCES = clodd.c options.c clodd.h
 all: all-am
 
 .SUFFIXES:
@@ -389,9 +389,9 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-cdisksup$(EXEEXT): $(cdisksup_OBJECTS) $(cdisksup_DEPENDENCIES) $(EXTRA_cdisksup_DEPENDENCIES) 
-	@rm -f cdisksup$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(cdisksup_OBJECTS) $(cdisksup_LDADD) $(LIBS)
+cdiskdup$(EXEEXT): $(cdiskdup_OBJECTS) $(cdiskdup_DEPENDENCIES) $(EXTRA_cdiskdup_DEPENDENCIES) 
+	@rm -f cdiskdup$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cdiskdup_OBJECTS) $(cdiskdup_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

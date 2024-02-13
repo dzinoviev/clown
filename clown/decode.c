@@ -35,27 +35,27 @@ static cycle_t do_move_to_regular (Dword datum, Bit reg)
 static cycle_t do_return (Bit interrupt)
 {
   Dword pc, tmp, flags;
-  cycle_t cycles = 0, cycles_all = 0;
+  cycle_t cycles = 0;//, cycles_all = 0;
   Selector cs;
   Bit old_cpl;
 
   if ((cycles = do_pop (&pc, PUSHPOP)) == EFAIL) /* pop PC */
     return EFAIL;
-  cycles_all += cycles;
+//  cycles_all += cycles;
 
   if ((cycles = do_pop (&tmp, PUSHPOP)) == EFAIL) { /* pop CS */
-    cycles_all += do_push (pc, PUSHPOP);
+    /*cycles_all += */do_push (pc, PUSHPOP);
     return EFAIL;
   }
-  cycles_all += cycles;
+//  cycles_all += cycles;
 
   if (interrupt) {
     if ((cycles = do_pop (&flags, PUSHPOP)) == EFAIL) { /* pop the flags */
-      cycles_all += do_push (tmp, PUSHPOP);
-      cycles_all += do_push (pc, PUSHPOP);
+      /*cycles_all += */do_push (tmp, PUSHPOP);
+      /*cycles_all += */do_push (pc, PUSHPOP);
       return EFAIL;
     }
-    cycles_all += cycles;
+    //cycles_all += cycles;
   }
 
 
@@ -64,12 +64,12 @@ static cycle_t do_return (Bit interrupt)
 
   if ((cycles = clown_load_seg (cs, _CODE)) == EFAIL) {
     /* restore the stack */
-    cycles_all += do_push (flags, PUSHPOP);
-    cycles_all += do_push (tmp, PUSHPOP);
-    cycles_all += do_push (pc, PUSHPOP);
+    /*cycles_all += */do_push (flags, PUSHPOP);
+    /*cycles_all += */do_push (tmp, PUSHPOP);
+    /*cycles_all += */do_push (pc, PUSHPOP);
     return EFAIL;
   }
-  cycles_all += cycles;
+//  cycles_all += cycles;
 
   /* Do we have an inter-ring return? */
   if (old_cpl              < clown.flags.bitwise.cpl &&
