@@ -25,20 +25,23 @@ static void show_usage (char *name)
     assert (name);
 
     fprintf (stderr, "USAGE: %s [option...] IFILE.s\n", name);
-    fputs ("Options:\n", stderr);
-    fputs ("  -h, --help               show this message and exit\n", stderr);
-    fputs ("  -P, --nocpp              do not preprocess\n", stderr);
-    fputs ("  --pass-to-cpp \"OPTIONS\"  pass OPTIONS to preprocessor\n", stderr);
-    fputs ("      option -I$CLOWN/include is passed implicitly\n", stderr);
-    fputs ("  -b, --cle                generate a CLE module (default)\n", stderr);
-    fputs ("  -s, --clo                generate a CLO module\n", stderr);
-    fprintf (stderr, "  -e ADDR, --entry ADDR    set start address (default %"PRIi32")\n", offset);
-    fputs ("  -o OFILE                 set output file name (default IFILE.cle/IFILE.clo)\n", stderr);
-    fputs ("  -v, --version            print assembler version number and exit\n", stderr);
-    fputs ("  -l, --listing            produce listings\n", stderr);
-    fputs ("  -ng, --nodebug           do not generate debug info\n", stderr);
-    fputs ("  -V                       print assembler version number\n", stderr);
-    fputs ("  --                       treat the next argument as a file name\n", stderr);
+
+    fputs (
+"Options:\n"
+"  -h, --help               show this message and exit\n"
+"  -P, --nocpp              do not preprocess\n"
+"  --pass-to-cpp \"OPTIONS\"  pass OPTIONS to preprocessor\n"
+"      option -I$CLOWN/include is passed implicitly\n"
+"  -b, --cle                generate a CLE module (default)\n"
+"  -s, --clo                generate a CLO module\n"
+"  -e ADDR, --entry ADDR    set start address (default 0)\n"
+"  -o OFILE                 set output file name (default IFILE.cle/IFILE.clo)\n"
+"  -v, --version            print assembler version number and exit\n"
+"  -l, --listing            produce listings\n"
+"  -ng, --nodebug           do not generate debug info\n"
+"  -V                       print assembler version number\n"
+"  --                       treat the next argument as a file name\n",
+	   stderr);
 }
 
 int get_options (int argc, char *argv[], char **object,
@@ -194,16 +197,14 @@ int get_options (int argc, char *argv[], char **object,
     }
 
     if (!*opt_names) {
-      fprintf (stderr,
-	       "%s: no input files\n", 
-	       argv[0]);
+      fprintf (stderr, "%s: no input files\n", argv[0]);
       *ecode = EXIT_FAILURE;
       return 0;
     }
 
     switch (module_type) {
     case CLOF_UNKNOWN:
-      module_type = CLOF_BIN; // Not a fall-through!
+      module_type = CLOF_BIN; 
       __attribute__((fallthrough));
     case CLOF_BIN:
       suffix = "cle";

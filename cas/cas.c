@@ -42,7 +42,7 @@ int main (int argc, char *argv[])
   if (!get_options (argc, argv, &object, source, &ecode))
     return ecode;
 
-  cmdlen += sizeof (INCLUDEHOME) + 2;
+  cmdlen += sizeof (INCLUDEHOME /* TODO */ ) + 2;
   if (cpp_options)
     cmdlen += sizeof CPP + strlen (cpp_options) + 3;
   cmdline = safe_malloc (cmdlen);
